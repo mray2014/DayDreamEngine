@@ -1,51 +1,31 @@
-
+#include <pch.h>
 #include <iostream>
-#include <glad\\glad.h>
-#include <GLFW\glfw3.h>
-#include <DreamMath.h>
+#include "DreamGraphics.h"
 
-void WindowResizeCallBack(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
-}
 
 int main()
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Bitch Niggas", NULL, NULL);
+	DreamGraphics* graphics = DreamGraphics::GetInstance();
 
-	if (window == NULL)
+	graphics->InitGraphics();
+	DreamPointer* windowPtr = graphics->CreateWindow(800, 600, "Bitch Niggas");
+	graphics->CreateContext(windowPtr);
+	graphics->FindCorrectFunctionPointers();
+
+	graphics->SetViewPort(0, 0, 800, 600);
+	graphics->SetWindowResizeCallBack(windowPtr);
+	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+	while (!graphics->CheckWindowClose(windowPtr))
 	{
-		printf("Failed to create a window");
-		glfwTerminate();
-		return - 1;
+		graphics->ClearScreen();
+
+
+		graphics->SwapBuffers(windowPtr);
+		graphics->CheckInputs();
 	}
 
-	glfwMakeContextCurrent(window);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-		printf("Failed to Init GLAD");
-		return -1;
-	 }
-
-
-	glViewport(0,0,800,600);
-	glfwSetWindowSizeCallback(window, WindowResizeCallBack);
-
-	glClearColor(0.2f,0.3f,0.3f,1.0f);
-
-	while (!glfwWindowShouldClose(window))
-	{
-		glClear(GL_COLOR_BUFFER_BIT);
-
-
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
+	graphics->TerminateGraphics();
 	return 0;
 }
