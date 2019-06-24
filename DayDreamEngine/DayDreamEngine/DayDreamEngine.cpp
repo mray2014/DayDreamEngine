@@ -5,7 +5,7 @@
 
 int main()
 {
-
+	
 	DreamGraphics* graphics = DreamGraphics::GetInstance();
 
 	graphics->InitGraphics();
@@ -27,5 +27,6 @@ int main()
 	}
 
 	graphics->TerminateGraphics();
+	delete windowPtr;
 	return 0;
 }

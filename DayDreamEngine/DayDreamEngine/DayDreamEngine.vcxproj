@@ -93,12 +93,13 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DreamLibrary.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -160,7 +161,6 @@
     <ClCompile Include="DreamDXGraphics.cpp" />
     <ClCompile Include="DreamGLGraphics.cpp" />
     <ClCompile Include="DreamGraphics.cpp" />
-    <ClCompile Include="DreamPhysics.cpp" />
     <ClCompile Include="DreamVulkanGraphics.cpp" />
     <ClCompile Include="Libraries\glad.c" />
   </ItemGroup>
@@ -169,7 +169,6 @@
     <ClInclude Include="DreamDXGraphics.h" />
     <ClInclude Include="DreamGLGraphics.h" />
     <ClInclude Include="DreamGraphics.h" />
-    <ClInclude Include="DreamPhysics.h" />
     <ClInclude Include="DreamVulkanGraphics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

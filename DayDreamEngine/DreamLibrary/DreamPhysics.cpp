@@ -1,4 +1,3 @@
-#include <iostream>
 #include "DreamPhysics.h"
 
 using namespace DayDreamEngine::Physics;

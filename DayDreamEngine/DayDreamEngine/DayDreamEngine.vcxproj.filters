@@ -13,51 +13,54 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="PlatformDependent">
+      <UniqueIdentifier>{c44997bb-b65b-4547-9d3d-dd162f4b3ae3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PlatformDependent\Header">
+      <UniqueIdentifier>{430e7143-3f2d-4f5e-9305-a5a1e2b13702}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PlatformDependent\Source">
+      <UniqueIdentifier>{e7df1f34-fb09-4904-94bd-a7370c49abac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DayDreamEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Libraries\glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Platform\Universal\Libs\pch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DreamPhysics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DreamGraphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DreamGLGraphics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DreamDXGraphics.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>PlatformDependent\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DreamGLGraphics.cpp">
+      <Filter>PlatformDependent\Source</Filter>
     </ClCompile>
     <ClCompile Include="DreamVulkanGraphics.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>PlatformDependent\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Libraries\glad.c">
+      <Filter>PlatformDependent\Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DreamPhysics.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DreamGraphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DreamGLGraphics.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DreamDXGraphics.h">
-      <Filter>Header Files</Filter>
+      <Filter>PlatformDependent\Header</Filter>
     </ClInclude>
     <ClInclude Include="DreamVulkanGraphics.h">
-      <Filter>Header Files</Filter>
+      <Filter>PlatformDependent\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamGLGraphics.h">
+      <Filter>PlatformDependent\Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
