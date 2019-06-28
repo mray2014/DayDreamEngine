@@ -1,11 +1,18 @@
 #include <pch.h>
 #include <iostream>
 #include "DreamGraphics.h"
-
+#include <DreamStackAllocator.h>
 
 int main()
 {
 	
+	DreamStackAllocator* stack = DreamStackAllocator::GetInstance();
+	DreamVector3* newPosition = new(stack->Allocate(sizeof(DreamVector3), AlignmentType::_16BitAlign)) DreamVector3(2, 5, 4);
+
+	printf("x: %f, y: %f, z: %f", newPosition->x, newPosition->y, newPosition->z);
+
+	DreamStackAllocator::ShutDown();
+
 	DreamGraphics* graphics = DreamGraphics::GetInstance();
 
 	graphics->InitGraphics();

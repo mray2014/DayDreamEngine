@@ -24,12 +24,24 @@
     <ClCompile Include="DreamPhysics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DreamStackAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DreamPoolAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header\DreamMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Header\DreamPhysics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Header\DreamPoolAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Header\DreamStackAllocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

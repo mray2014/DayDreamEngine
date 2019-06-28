@@ -1,8 +1,6 @@
 #pragma once
 #include <DreamMath.h>
 
-using namespace DayDreamEngine::Math;
-
 class DreamPointer {
 public:
 	DreamPointer(void* newPtr) {
