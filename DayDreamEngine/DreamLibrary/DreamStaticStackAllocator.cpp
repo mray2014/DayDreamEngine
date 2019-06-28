@@ -1,10 +1,30 @@
-#include "DreamStackAllocator.h"
+#include "DreamStaticStackAllocator.h"
 #include <stdlib.h>
 #include <iostream>
 
-DreamStackAllocator* DreamStackAllocator::stackAllocator = nullptr;
+DreamStaticStackAllocator* DreamStaticStackAllocator::stackAllocator = nullptr;
 
-DreamStackAllocator::DreamStackAllocator()
+template <class T>
+T* DreamStaticStackAllocator::AllocateThat(AlignmentType type) {
+
+	size_t classSize = sizeof(T);
+	size_t allocMarkSize = sizeof(AllocationMark);
+	void* lastAlloc = stackAllocator->backPtr;
+
+	stackAllocator->backPtr = stackAllocator->frontPtr;
+	stackAllocator->frontPtr = (void*)((ptrdiff_t)stackAllocator->frontPtr + classSize + allocMarkSize);
+
+	AllocationMark* newAllocMark = new(stackAllocator->backPtr) AllocationMark;
+	newAllocMark->lastAllocationMark = lastAlloc;
+
+	stackAllocator->backPtr = (void*)((ptrdiff_t)stackAllocator->backPtr + allocMarkSize);
+
+	T* newObj = new(stackAllocator->backPtr) T();
+
+	return newObj;
+}
+
+DreamStaticStackAllocator::DreamStaticStackAllocator()
 {
 	startPtr = malloc(MAX_STACK_MEMORY_SIZE);
 	backPtr = startPtr;
@@ -13,20 +33,20 @@ DreamStackAllocator::DreamStackAllocator()
 }
 
 
-DreamStackAllocator * DreamStackAllocator::GetInstance()
+DreamStaticStackAllocator * DreamStaticStackAllocator::GetInstance()
 {
 	if (stackAllocator == nullptr) {
-		stackAllocator = new DreamStackAllocator();
+		stackAllocator = new DreamStaticStackAllocator();
 	}
 	return stackAllocator;
 }
 
-void DreamStackAllocator::ShutDown()
+void DreamStaticStackAllocator::ShutDown()
 {
 	delete stackAllocator;
 }
 
-void * DreamStackAllocator::Allocate(size_t size, AlignmentType type)
+void * DreamStaticStackAllocator::Allocate(size_t size, AlignmentType type)
 {
 	size_t allocMarkSize = sizeof(AllocationMark);
 	void* lastAlloc = backPtr;
@@ -42,7 +62,7 @@ void * DreamStackAllocator::Allocate(size_t size, AlignmentType type)
 	return backPtr;
 }
 
-void DreamStackAllocator::MarkChunk(const char * memChunkTitle)
+void DreamStaticStackAllocator::MarkChunk(const char * memChunkTitle)
 {
 	void* newChunkPtr = Allocate(sizeof(ChunkMark), AlignmentType::_16BitAlign);
 	ChunkMark* chunkMark = new(newChunkPtr) ChunkMark;
@@ -52,7 +72,7 @@ void DreamStackAllocator::MarkChunk(const char * memChunkTitle)
 	chunkPtr = newChunkPtr;
 }
 
-void DreamStackAllocator::PopChunk()
+void DreamStaticStackAllocator::PopChunk()
 {
 	while (frontPtr != chunkPtr)
 	{
@@ -60,7 +80,7 @@ void DreamStackAllocator::PopChunk()
 	}
 }
 
-void DreamStackAllocator::Pop()
+void DreamStaticStackAllocator::Pop()
 {
 	if (frontPtr == startPtr)
 	{
@@ -68,7 +88,6 @@ void DreamStackAllocator::Pop()
 		return;
 	}
 	size_t allocMarkSize = sizeof(AllocationMark);
-	delete backPtr;
 
 	backPtr = (void*)((ptrdiff_t)backPtr - allocMarkSize);
 	AllocationMark* newAllocMark = (AllocationMark*)backPtr;
@@ -76,10 +95,9 @@ void DreamStackAllocator::Pop()
 	frontPtr = backPtr;
 	backPtr = newAllocMark->lastAllocationMark;
 
-	delete newAllocMark;
 }
 
-void DreamStackAllocator::Clear()
+void DreamStaticStackAllocator::Clear()
 {
 	while (frontPtr != startPtr)
 	{
@@ -87,7 +105,7 @@ void DreamStackAllocator::Clear()
 	}
 }
 
-DreamStackAllocator::~DreamStackAllocator()
+DreamStaticStackAllocator::~DreamStaticStackAllocator()
 {
 	Clear();
 	delete startPtr;

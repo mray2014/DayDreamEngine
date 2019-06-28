@@ -20,17 +20,21 @@ struct ChunkMark
 	const char* chunkTitle;
 };
 
-class DreamStackAllocator
+class DreamStaticStackAllocator
 {
 public:
-	static DreamStackAllocator* GetInstance();
+	template <class T>
+	static T* AllocateThat(AlignmentType type);
+	static DreamStaticStackAllocator* GetInstance();
 	static void ShutDown();
 	void* Allocate(size_t size, AlignmentType type);
 	void MarkChunk(const char* memChunkTitle);
 	void PopChunk();
 	void Pop();
 	void Clear();
-	~DreamStackAllocator();
+	~DreamStaticStackAllocator();
+
+
 private:
 	// 
 	void* startPtr = nullptr;
@@ -40,6 +44,6 @@ private:
 
 	uint32_t usedMemorySize = 0;
 
-	DreamStackAllocator();
-	static DreamStackAllocator* stackAllocator;
+	DreamStaticStackAllocator();
+	static DreamStaticStackAllocator* stackAllocator;
 };

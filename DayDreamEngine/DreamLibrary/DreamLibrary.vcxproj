@@ -248,13 +248,13 @@
     <ClCompile Include="DreamMath.cpp" />
     <ClCompile Include="DreamPhysics.cpp" />
     <ClCompile Include="DreamPoolAllocator.cpp" />
-    <ClCompile Include="DreamStackAllocator.cpp" />
+    <ClCompile Include="DreamStaticStackAllocator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header\DreamMath.h" />
     <ClInclude Include="Header\DreamPhysics.h" />
     <ClInclude Include="Header\DreamPoolAllocator.h" />
-    <ClInclude Include="Header\DreamStackAllocator.h" />
+    <ClInclude Include="Header\DreamStaticStackAllocator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
