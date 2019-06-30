@@ -30,6 +30,9 @@
     <ClCompile Include="DreamStaticStackAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DreamAllocatorManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header\DreamMath.h">
@@ -42,6 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Header\DreamStaticStackAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Header\DreamAllocatorManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

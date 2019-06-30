@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#define MAX_STACK_MEMORY_SIZE 50000
+#define MAX_STACK_MEMORY_SIZE (uint32_t)50000
 
 enum AlignmentType {
 	_4BitAlign,
@@ -16,34 +16,33 @@ struct AllocationMark {
 struct ChunkMark
 {
 	void* lastChunkMark;
-	uint32_t chunkSize;
 	const char* chunkTitle;
 };
 
 class DreamStaticStackAllocator
 {
 public:
-	template <class T>
-	static T* AllocateThat(AlignmentType type);
-	static DreamStaticStackAllocator* GetInstance();
-	static void ShutDown();
 	void* Allocate(size_t size, AlignmentType type);
 	void MarkChunk(const char* memChunkTitle);
 	void PopChunk();
 	void Pop();
 	void Clear();
+	uint32_t GetUsedMemorySize();
+	uint32_t GetMaxStackSize();
+	DreamStaticStackAllocator(uint32_t maxStackSize = MAX_STACK_MEMORY_SIZE);
 	~DreamStaticStackAllocator();
 
-
-private:
-	// 
 	void* startPtr = nullptr;
 	void* backPtr = nullptr;
 	void* frontPtr = nullptr;
 	void* chunkPtr = nullptr;
+	void* endPtr = nullptr;
 
 	uint32_t usedMemorySize = 0;
+private:
+	//
+	uint32_t maxStackSize = 0;
 
-	DreamStaticStackAllocator();
-	static DreamStaticStackAllocator* stackAllocator;
 };
+
+

@@ -2,62 +2,40 @@
 #include <stdlib.h>
 #include <iostream>
 
-DreamStaticStackAllocator* DreamStaticStackAllocator::stackAllocator = nullptr;
-
-template <class T>
-T* DreamStaticStackAllocator::AllocateThat(AlignmentType type) {
-
-	size_t classSize = sizeof(T);
-	size_t allocMarkSize = sizeof(AllocationMark);
-	void* lastAlloc = stackAllocator->backPtr;
-
-	stackAllocator->backPtr = stackAllocator->frontPtr;
-	stackAllocator->frontPtr = (void*)((ptrdiff_t)stackAllocator->frontPtr + classSize + allocMarkSize);
-
-	AllocationMark* newAllocMark = new(stackAllocator->backPtr) AllocationMark;
-	newAllocMark->lastAllocationMark = lastAlloc;
-
-	stackAllocator->backPtr = (void*)((ptrdiff_t)stackAllocator->backPtr + allocMarkSize);
-
-	T* newObj = new(stackAllocator->backPtr) T();
-
-	return newObj;
-}
-
-DreamStaticStackAllocator::DreamStaticStackAllocator()
+DreamStaticStackAllocator::DreamStaticStackAllocator(uint32_t maxStackSize)
 {
-	startPtr = malloc(MAX_STACK_MEMORY_SIZE);
+	maxStackSize = maxStackSize;
+
+	startPtr = malloc(maxStackSize);
 	backPtr = startPtr;
 	frontPtr = startPtr;
 	chunkPtr = startPtr;
+	endPtr = (void*)((ptrdiff_t)startPtr + maxStackSize);
 }
 
 
-DreamStaticStackAllocator * DreamStaticStackAllocator::GetInstance()
-{
-	if (stackAllocator == nullptr) {
-		stackAllocator = new DreamStaticStackAllocator();
-	}
-	return stackAllocator;
-}
-
-void DreamStaticStackAllocator::ShutDown()
-{
-	delete stackAllocator;
-}
-
+//4 bytes to Allocatd a AllocMark
+//12 bytes to Allocate a Chunk Mark
+//16 bytes for marking a Chunk
 void * DreamStaticStackAllocator::Allocate(size_t size, AlignmentType type)
 {
 	size_t allocMarkSize = sizeof(AllocationMark);
+	
+	void* newFront = (void*)((ptrdiff_t) frontPtr + size + allocMarkSize);
+	if (newFront > endPtr) {
+		printf("ERROR: Stack Overflow!! Allocate more space for this stack and build again!");
+		return nullptr;
+	}
+
 	void* lastAlloc = backPtr;
-
 	backPtr = frontPtr;
-	frontPtr = (void*)((ptrdiff_t) frontPtr + size + allocMarkSize);
-
+	frontPtr = newFront;
 	AllocationMark* newAllocMark = new(backPtr) AllocationMark;
 	newAllocMark->lastAllocationMark = lastAlloc;
 
 	backPtr = (void*)((ptrdiff_t)backPtr + allocMarkSize);
+
+	usedMemorySize += size + allocMarkSize;
 
 	return backPtr;
 }
@@ -66,18 +44,46 @@ void DreamStaticStackAllocator::MarkChunk(const char * memChunkTitle)
 {
 	void* newChunkPtr = Allocate(sizeof(ChunkMark), AlignmentType::_16BitAlign);
 	ChunkMark* chunkMark = new(newChunkPtr) ChunkMark;
-	chunkMark->lastChunkMark = chunkPtr;
-	chunkMark->chunkSize = (ptrdiff_t)newChunkPtr - (ptrdiff_t)chunkPtr;
+	chunkMark->lastChunkMark = chunkPtr;	
 	chunkMark->chunkTitle = memChunkTitle;
 	chunkPtr = newChunkPtr;
 }
 
 void DreamStaticStackAllocator::PopChunk()
 {
-	while (frontPtr != chunkPtr)
+	if (chunkPtr == startPtr) {
+		printf("No chunks to pop\n");
+		printf("Current used mem size ------- %d bytes\n", usedMemorySize);
+		return;
+	}
+
+	uint32_t fullChunkAllocSize = sizeof(ChunkMark) + sizeof(AllocationMark);
+	uint32_t numOfPops = 0;
+	uint32_t sizeOfPoppedOffChunk = (ptrdiff_t)frontPtr - ((ptrdiff_t)chunkPtr + sizeof(ChunkMark));
+	uint32_t sizeOfNextChunk = 0;
+	const char* title = ((ChunkMark*)chunkPtr)->chunkTitle;
+
+	printf("Current used mem size ------- %d bytes\n", usedMemorySize);
+	while (backPtr != chunkPtr)
 	{
 		Pop();
+		numOfPops++;		
 	}
+
+	ChunkMark* curChunkPtr = (ChunkMark*)chunkPtr;
+
+	if (curChunkPtr->lastChunkMark != startPtr) {
+		sizeOfNextChunk = ((ptrdiff_t)curChunkPtr - sizeof(AllocationMark)) - ((ptrdiff_t)curChunkPtr->lastChunkMark + sizeof(ChunkMark));
+	}
+
+	printf("Num of Pops ----------------- %d pops\n", numOfPops);
+	printf("Chunk of memory popped off -- %d bytes\n", sizeOfPoppedOffChunk);
+	printf("Total memory popped off ----- %d bytes\n", (sizeOfPoppedOffChunk + fullChunkAllocSize));
+	printf("[Next Chunk To Pop ~ '%s']\n", title);
+	printf("Next Chunk Mem Size --------- %d bytes\n", sizeOfNextChunk);
+	chunkPtr = curChunkPtr->lastChunkMark;
+	Pop();
+	printf("New used mem size ----------- %d bytes\n\n", usedMemorySize);
 }
 
 void DreamStaticStackAllocator::Pop()
@@ -87,6 +93,7 @@ void DreamStaticStackAllocator::Pop()
 		printf("Nothing on the stack");
 		return;
 	}
+	uint32_t memBlockSize = (ptrdiff_t)frontPtr - (ptrdiff_t)backPtr;
 	size_t allocMarkSize = sizeof(AllocationMark);
 
 	backPtr = (void*)((ptrdiff_t)backPtr - allocMarkSize);
@@ -95,6 +102,7 @@ void DreamStaticStackAllocator::Pop()
 	frontPtr = backPtr;
 	backPtr = newAllocMark->lastAllocationMark;
 
+	usedMemorySize -= (memBlockSize + allocMarkSize);
 }
 
 void DreamStaticStackAllocator::Clear()
@@ -103,6 +111,16 @@ void DreamStaticStackAllocator::Clear()
 	{
 		Pop();
 	}
+}
+
+uint32_t DreamStaticStackAllocator::GetUsedMemorySize()
+{
+	return usedMemorySize;
+}
+
+uint32_t DreamStaticStackAllocator::GetMaxStackSize()
+{
+	return maxStackSize;
 }
 
 DreamStaticStackAllocator::~DreamStaticStackAllocator()
