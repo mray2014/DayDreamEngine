@@ -48,8 +48,11 @@ void DreamAllocatorManager::PrintMainStaticAllocatorUsedMemorySize()
 
 DreamStaticStackAllocator * DreamAllocatorManager::CreateNewStackAllocator(uint32_t stackSize)
 {
+	void* newStackPtr = stackAllocator->Allocate(sizeof(DreamStaticStackAllocator));
 
-	return nullptr;
+	DreamStaticStackAllocator* newStack = new(newStackPtr) DreamStaticStackAllocator(stackAllocator->Allocate(stackSize), stackSize);
+
+	return newStack;
 }
 
 DreamPoolAllocator * DreamAllocatorManager::CreateNewPoolAllocator(uint32_t poolSize)

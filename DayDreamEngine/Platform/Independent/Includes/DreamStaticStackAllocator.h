@@ -22,7 +22,7 @@ struct ChunkMark
 class DreamStaticStackAllocator
 {
 public:
-	void* Allocate(size_t size, AlignmentType type);
+	void* Allocate(size_t size, AlignmentType type = AlignmentType::_16BitAlign);
 	void MarkChunk(const char* memChunkTitle);
 	void PopChunk();
 	void Pop();
@@ -30,6 +30,7 @@ public:
 	uint32_t GetUsedMemorySize();
 	uint32_t GetMaxStackSize();
 	DreamStaticStackAllocator(uint32_t maxStackSize = MAX_STACK_MEMORY_SIZE);
+	DreamStaticStackAllocator(void* startOfStackMemory, uint32_t maxStackSize);
 	~DreamStaticStackAllocator();
 
 	void* startPtr = nullptr;

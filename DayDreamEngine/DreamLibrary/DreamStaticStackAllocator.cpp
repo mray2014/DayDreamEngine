@@ -13,6 +13,17 @@ DreamStaticStackAllocator::DreamStaticStackAllocator(uint32_t maxStackSize)
 	endPtr = (void*)((ptrdiff_t)startPtr + maxStackSize);
 }
 
+DreamStaticStackAllocator::DreamStaticStackAllocator(void * startOfStackMemory, uint32_t maxStackSize)
+{
+	maxStackSize = maxStackSize;
+
+	startPtr = startOfStackMemory;
+	backPtr = startPtr;
+	frontPtr = startPtr;
+	chunkPtr = startPtr;
+	endPtr = (void*)((ptrdiff_t)startPtr + maxStackSize);
+}
+
 
 //4 bytes to Allocatd a AllocMark
 //12 bytes to Allocate a Chunk Mark
@@ -52,9 +63,16 @@ void DreamStaticStackAllocator::MarkChunk(const char * memChunkTitle)
 void DreamStaticStackAllocator::PopChunk()
 {
 	if (chunkPtr == startPtr) {
-		printf("No chunks to pop\n");
-		printf("Current used mem size ------- %d bytes\n", usedMemorySize);
-		return;
+		if (usedMemorySize == 0) {
+			printf("No chunks to pop\n");
+			printf("Current used mem size ------- %d bytes\n\n", usedMemorySize);
+			return;
+		}
+		else {
+			printf("Clearing the rest of the stack!\n");
+			Clear();
+			return;
+		}
 	}
 
 	uint32_t fullChunkAllocSize = sizeof(ChunkMark) + sizeof(AllocationMark);
@@ -107,10 +125,22 @@ void DreamStaticStackAllocator::Pop()
 
 void DreamStaticStackAllocator::Clear()
 {
+	if (frontPtr == startPtr) {
+		printf("Nothing to clear in stack!\n");
+		printf("Current used mem size ------- %d bytes\n\n", usedMemorySize);
+		return;
+	}
+	uint32_t numOfPops = 0;
+	uint32_t sizeOfPoppedOffChunk = (ptrdiff_t)frontPtr - (ptrdiff_t)startPtr;
+	printf("Current used mem size ------- %d bytes\n", usedMemorySize);
 	while (frontPtr != startPtr)
 	{
 		Pop();
+		numOfPops++;
 	}
+	printf("Num of Pops ----------------- %d pops\n", numOfPops);
+	printf("Total memory popped off ----- %d bytes\n", sizeOfPoppedOffChunk);
+	printf("New used mem size ------- %d bytes\n\n", usedMemorySize);
 }
 
 uint32_t DreamStaticStackAllocator::GetUsedMemorySize()
