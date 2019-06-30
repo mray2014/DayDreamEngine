@@ -57,7 +57,11 @@ DreamStaticStackAllocator * DreamAllocatorManager::CreateNewStackAllocator(uint3
 
 DreamPoolAllocator * DreamAllocatorManager::CreateNewPoolAllocator(uint32_t poolSize)
 {
-	return nullptr;
+	void* newPoolPtr = stackAllocator->Allocate(sizeof(DreamPoolAllocator));
+
+	DreamPoolAllocator* newPool = new(newPoolPtr) DreamPoolAllocator(stackAllocator->Allocate(poolSize), poolSize);
+
+	return newPool;
 }
 
 

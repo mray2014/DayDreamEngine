@@ -1,6 +1,7 @@
 
 #include "pch.h"
 #include <iostream>
+#include "DreamFileIO.h"
 #include "DreamMath.h"
 #include "DreamPhysics.h"
 #include "DreamAllocatorManager.h"
@@ -39,14 +40,22 @@ static void CreatingNewStackTest() {
 
 int main()
 {
-	DreamVector3 position = DreamVector3(5,2,5);
-	//printf("x: %f, y: %f, z: %f\n", position.x, position.y, position.z);
-	 
+	DreamVector2 position = DreamVector2(3,3);
+	DreamVector2 position2 = DreamVector2(3,3);
+
+	position = position - position2;
+	printf("x: %f, y: %f\n", position.x, position.y);
+
+	position -= position2;
+	printf("x: %f, y: %f\n", position.x, position.y);
+
+	position *= 4;
+	printf("x: %f, y: %f\n", position.x, position.y);
+
 	DreamAllocatorManager::InitMainStackAllocator();
 	
-	ChunkTest();
-	CreatingNewStackTest();
-
+	//ChunkTest();
+	//CreatingNewStackTest();
 
 	DreamAllocatorManager::ShutDownMainStackAllocator();
 }
