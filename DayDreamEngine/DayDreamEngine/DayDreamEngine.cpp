@@ -2,10 +2,25 @@
 #include <iostream>
 #include "DreamGraphics.h"
 #include <DreamAllocatorManager.h>
+#include <DreamFileIO.h>
 
 int main()
 {
-	
+	DreamFileIO::OpenFileWrite("word.txt", FileWriteType::OverWrite);
+	DreamFileIO::WriteLine("Yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahh");
+	DreamFileIO::WriteLine("Yoooooooo");
+	DreamFileIO::WriteLine("Yaeeeeeeeeeee");
+	DreamFileIO::WriteLine("Yweeeeeeeeeeeeeee");
+	DreamFileIO::CloseFileWrite();
+
+	if (DreamFileIO::OpenFileRead("word.txt")) {
+		char* line;
+		while (DreamFileIO::ReadLine(&line)) {
+			printf("%s", line);
+		}
+		DreamFileIO::CloseFileRead();
+	}
+
 	DreamAllocatorManager::InitMainStackAllocator();
 	DreamVector3* newPosition = DreamAllocatorManager::AllocateOnMainSA<DreamVector3>();
 

@@ -1,16 +1,20 @@
 #pragma once
-enum FileType {
-	_txt,
-	_json
+#include <pch.h>
+
+enum FileWriteType {
+	OverWrite,
+	AppendToEnd
 };
 class DreamFileIO
 {
 public:
-	static bool OpenFile(const char* filePath);
-	static const char* ReadLine();
-	static void CloseFile();
-	static void WriteLine();
-	
+	static bool OpenFileRead(const char* filePath);
+	static void OpenFileWrite(const char* filePath, FileWriteType type);
+	static const bool ReadLine(char** lineOut);
+	static void CloseFileRead();
+	static void CloseFileWrite();
+	static void WriteLine(const char* lineToWrite);
+	static void Write(const char* lineToWrite);
 
 };
 
