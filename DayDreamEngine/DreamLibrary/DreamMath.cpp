@@ -3,7 +3,128 @@
 #include <GLFW\glfw3.h>
 #include "DreamMath.h"
 
-int DreamMath::AddNum(int a, int b)
-{
-	return (a+b);
+
+
+
+#ifdef WINDOWS
+
+#include<cmath>
+
+float DreamMath::sin(float degrees)
+{	
+	return std::sinf(degrees * DEG2RAD);
 }
+
+float DreamMath::cos(float degrees)
+{
+	return std::cosf(degrees * DEG2RAD);
+}
+
+float DreamMath::tan(float degrees)
+{
+	return std::tanf(degrees * DEG2RAD);
+}
+
+float DreamMath::asin(float num)
+{
+	if (num < -1 || num > 1) {
+		printf("Not a valid number...");
+		return -9999;
+	}
+	return std::asinf(num);
+}
+
+float DreamMath::acos(float num)
+{
+	if (num < -1 && num > 1) {
+		printf("Not a valid number...");
+		return -1;
+	}
+	return std::acosf(num);
+}
+
+float DreamMath::atan(float num)
+{
+	if (num < -1 && num > 1) {
+		printf("Not a valid number...");
+		return -1;
+	}
+	return std::atanf(num);
+}
+
+float DreamMath::pow(float num, float exp)
+{
+	return std::powf(num, exp);
+}
+
+float DreamMath::floor(float a)
+{
+	return std::floorf(a);
+}
+
+float DreamMath::ceiling(float a)
+{
+	return std::ceilf(a);
+}
+
+float DreamMath::rad2deg(float radians)
+{
+	return radians * RAD2DEG;
+}
+
+float DreamMath::deg2rad(float degrees)
+{
+	return degrees * DEG2RAD;
+}
+
+float DreamMath::sqrtf(float num)
+{
+	return std::sqrtf(num);
+}
+
+float DreamMath::lerp(float A, float B, float time)
+{
+	return 0.0f;
+}
+
+float DreamMath::lerp(DreamVector2 A, DreamVector2 B, float time)
+{
+	return 0.0f;
+}
+
+float DreamMath::lerp(DreamVector3 A, DreamVector3 B, float time)
+{
+	return 0.0f;
+}
+
+float DreamMath::lerp(DreamVector4 A, DreamVector4 B, float time)
+{
+	return 0.0f;
+}
+
+float DreamMath::Dot(float * vec1, float * vec2, int size )
+{
+	float dot = 0;
+
+	for(int i = 0; i < size; i++)
+	{
+		dot += vec1[i] * vec2[i];
+	}
+
+	return dot;
+}
+
+float DreamMath::Dot(float vec1[], float vec2[])
+{
+	float dot = 0;
+	int size = (int) sizeof(vec1) / sizeof(float);
+
+	for (int i = 0; i < size; i++)
+	{
+		dot += vec1[i] * vec2[i];
+	}
+
+	return dot;
+}
+
+#endif

@@ -21,6 +21,11 @@ int main()
 		DreamFileIO::CloseFileRead();
 	}
 
+
+	printf("%f", DreamMath::sin(89));
+	printf("%f", DreamMath::cos(89));
+	printf("%f", DreamMath::tan(89));
+
 	DreamAllocatorManager::InitMainStackAllocator();
 	DreamVector3* newPosition = DreamAllocatorManager::AllocateOnMainSA<DreamVector3>();
 

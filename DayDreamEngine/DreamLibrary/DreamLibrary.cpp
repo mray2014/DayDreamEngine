@@ -79,18 +79,34 @@ static void FileIOUnitTesting() {
 	}
 
 }
+static void MathUnitTest() { 
+	printf("\n%f" , DreamMath::sin(60));	// 0.8660254
+	printf("\n%f", DreamMath::cos(60));		// 0.5
+	printf("\n%f", DreamMath::tan(60));		// 1.732050
+	printf("\n%f", DreamMath::asin(60));	// -1
+	printf("\n%f", DreamMath::acos(0.38));	// 1.18100003
+	printf("\n%f", DreamMath::atan(0.38));	// 0.363147009
+	printf("\n%f", DreamMath::ceiling(0.5f)); // 1
+	printf("\n%f", DreamMath::pow(4,3));	// 64
+	printf("\n%f", DreamMath::floor(0.2));	// 0
+	printf("\n%f", DreamMath::sqrtf(16));	// 4
+}
 
 static void UnitTest() {
 
 	VectorUnitTest();
 	DreamAllocatorManager::InitMainStackAllocator();
 
+
 	//ChunkTest();
 	//CreatingNewStackTest();
+
 
 	DreamAllocatorManager::ShutDownMainStackAllocator();
 
 	FileIOUnitTesting();
+	MathUnitTest();
+
 }
 
 int main()
