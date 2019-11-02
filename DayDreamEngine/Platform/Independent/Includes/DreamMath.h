@@ -533,71 +533,89 @@ public:
 
 };
 
-struct DreamMatrix3X3 {
-public:
-	float matrix[3][3];
-
-
-};
-
-
-//#ifdef ROW_MAJOR
-//
-//float x1, y1, z1, w1 = 0;
-//float x2, y2, z2, w2 = 0;
-//float x3, y3, z3, w3 = 0;
-//float x4, y4, z4, w4 = 0;
-//
-//#elif defined COL_MAJOR
-//float x1, x2, x3, x4 = 0;
-//float y1, y2, y3, y4 = 0;
-//float z1, z2, z3, z4 = 0;
-//float w1, w2, w3, w4 = 0;
-//#endif
-
 struct DreamMatrix4X4 {
 public:
-	float matrix[4][4];
+	float matrix[4][4] = { 0 };
+
+
+	DreamMatrix4X4()
+	{
+	}
+
+	DreamMatrix4X4(const DreamMatrix4X4& m) {
+
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
+		}
+	}
+	/*DreamMatrix4X4(const DreamMatrix3X3& m) {
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
+		}
+	}*/
+
+	void Inverse() {
+
+	}
 
 	void Transpose() {
 
 		float store = 0;
 
-		store = this->matrix[1][0];
-		this->matrix[1][0] = this->matrix[0][1];
-		this->matrix[0][1] = store;
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
 
-		store = this->matrix[2][0];
-		this->matrix[2][0] = this->matrix[0][2];
-		this->matrix[0][2] = store;
-
-		store = this->matrix[3][0];
-		this->matrix[3][0] = this->matrix[0][3];
-		this->matrix[0][3] = store;
-
-		store = this->matrix[2][1];
-		this->matrix[2][1] = this->matrix[1][2];
-		this->matrix[1][2] = store;
-
-		store = this->matrix[3][1];
-		this->matrix[3][1] = this->matrix[1][3];
-		this->matrix[1][3] = store;
-
-		store = this->matrix[3][2];
-		this->matrix[3][2] = this->matrix[2][3];
-		this->matrix[2][3] = store;
-
-	}
-	void Inverse() {
+			store = this->matrix[curRow][curCol];
+			this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
+			this->matrix[curCol][curRow] = store;
+		}
 
 	}
 
 	float Determinate() {
 
-		return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2] * this->matrix[0][3]) 
+		return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2] * this->matrix[0][3])
 			- (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2] * this->matrix[1][3])
 			- (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2] * this->matrix[2][3])
 			- (this->matrix[3][0] * this->matrix[3][1] * this->matrix[3][2] * this->matrix[3][3]);
+	}
+
+	DreamMatrix4X4 operator*(DreamMatrix4X4 m) {
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+				+ (this->matrix[curRow][1] * m.matrix[1][curCol])
+				+ (this->matrix[curRow][2] * m.matrix[2][curCol])
+				+ (this->matrix[curRow][3] * m.matrix[3][curCol]);
+
+		}
+		return newMatrix;
+	}
+
+	void operator*=(DreamMatrix4X4 m) {
+
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+				+ (this->matrix[curRow][1] * m.matrix[1][curCol])
+				+ (this->matrix[curRow][2] * m.matrix[2][curCol])
+				+ (this->matrix[curRow][3] * m.matrix[3][curCol]);
+
+		}
+
+		*this = newMatrix;
 	}
 
 	static DreamMatrix4X4 Identity() {
@@ -619,192 +637,99 @@ public:
 	static DreamMatrix4X4 CreateScaleMatrix(DreamVector3 scale) {
 
 	}
+};
 
-	DreamMatrix4X4()
+
+struct DreamMatrix3X3 {
+public:
+	float matrix[3][3] = { 0 };
+
+	DreamMatrix3X3()
 	{
+		
 	}
 
-	DreamMatrix4X4(const DreamMatrix4X4& m) {
+	DreamMatrix3X3(const DreamMatrix3X3& m) {
 
-		this->matrix[0][0] = m.matrix[0][0];
-		this->matrix[0][1] = m.matrix[0][1];
-		this->matrix[0][2] = m.matrix[0][2];
-		this->matrix[0][3] = m.matrix[0][3];
-
-
-		this->matrix[1][0] = m.matrix[1][0];
-		this->matrix[1][1] = m.matrix[1][1];
-		this->matrix[1][2] = m.matrix[1][2];
-		this->matrix[1][3] = m.matrix[1][3];
-
-
-		this->matrix[2][0] = m.matrix[2][0];
-		this->matrix[2][1] = m.matrix[2][1];
-		this->matrix[2][2] = m.matrix[2][2];
-		this->matrix[2][3] = m.matrix[2][3];
-
-
-		this->matrix[3][0] = m.matrix[3][0];
-		this->matrix[3][1] = m.matrix[3][1];
-		this->matrix[3][2] = m.matrix[3][2];
-		this->matrix[3][3] = m.matrix[3][3];
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
+		}
 	}
 
-	DreamMatrix4X4 operator*(DreamMatrix4X4 m) {
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+	DreamMatrix3X3(const DreamMatrix4X4& m) {
 
-		newMatrix.matrix[0][0] = (this->matrix[0][0] * m.matrix[0][0]) 
-								+ (this->matrix[0][1] * m.matrix[1][0])
-								+ (this->matrix[0][2] * m.matrix[2][0]) 
-								+ (this->matrix[0][3] * m.matrix[3][0]);
-		newMatrix.matrix[0][1] = (this->matrix[0][0] * m.matrix[0][1])
-								+ (this->matrix[0][1] * m.matrix[1][1])
-								+ (this->matrix[0][2] * m.matrix[2][1])
-								+ (this->matrix[0][3] * m.matrix[3][1]);
-		newMatrix.matrix[0][2] = (this->matrix[0][0] * m.matrix[0][2])
-								+ (this->matrix[0][1] * m.matrix[1][2])
-								+ (this->matrix[0][2] * m.matrix[2][2])
-								+ (this->matrix[0][3] * m.matrix[3][2]);
-		newMatrix.matrix[0][3] = (this->matrix[0][0] * m.matrix[0][3])
-								+ (this->matrix[0][1] * m.matrix[1][3])
-								+ (this->matrix[0][2] * m.matrix[2][3])
-								+ (this->matrix[0][3] * m.matrix[3][3]);
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
+		}
+	}
 
+	void Transpose() {
 
-		newMatrix.matrix[1][0] = (this->matrix[1][0] * m.matrix[0][0])
-								+ (this->matrix[1][1] * m.matrix[1][0])
-								+ (this->matrix[1][2] * m.matrix[2][0])
-								+ (this->matrix[1][3] * m.matrix[3][0]);
-		newMatrix.matrix[1][1] = (this->matrix[1][0] * m.matrix[0][1])
-								+ (this->matrix[1][1] * m.matrix[1][1])
-								+ (this->matrix[1][2] * m.matrix[2][1])
-								+ (this->matrix[1][3] * m.matrix[3][1]);
-		newMatrix.matrix[1][2] = (this->matrix[1][0] * m.matrix[0][2])
-								+ (this->matrix[1][1] * m.matrix[1][2])
-								+ (this->matrix[1][2] * m.matrix[2][2])
-								+ (this->matrix[1][3] * m.matrix[3][2]);
-		newMatrix.matrix[1][3] = (this->matrix[1][0] * m.matrix[0][3])
-								+ (this->matrix[1][1] * m.matrix[1][3])
-								+ (this->matrix[1][2] * m.matrix[2][3])
-								+ (this->matrix[1][3] * m.matrix[3][3]);
+		float store = 0;
 
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
 
-		newMatrix.matrix[2][0] = (this->matrix[2][0] * m.matrix[0][0])
-								+ (this->matrix[2][1] * m.matrix[1][0])
-								+ (this->matrix[2][2] * m.matrix[2][0])
-								+ (this->matrix[2][3] * m.matrix[3][0]);
-		newMatrix.matrix[2][1] = (this->matrix[2][0] * m.matrix[0][1])
-								+ (this->matrix[2][1] * m.matrix[1][1])
-								+ (this->matrix[2][2] * m.matrix[2][1])
-								+ (this->matrix[2][3] * m.matrix[3][1]);
-		newMatrix.matrix[2][2] = (this->matrix[2][0] * m.matrix[0][2])
-								+ (this->matrix[2][1] * m.matrix[1][2])
-								+ (this->matrix[2][2] * m.matrix[2][2])
-								+ (this->matrix[2][3] * m.matrix[3][2]);
-		newMatrix.matrix[2][3] = (this->matrix[2][0] * m.matrix[0][3])
-								+ (this->matrix[2][1] * m.matrix[1][3])
-								+ (this->matrix[2][2] * m.matrix[2][3])
-								+ (this->matrix[2][3] * m.matrix[3][3]);
+			store = this->matrix[curRow][curCol];
+			this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
+			this->matrix[curCol][curRow] = store;
+		}
+	}
+	void Inverse() {
 
+	}
 
+	float Determinate() {
 
-		newMatrix.matrix[3][0] = (this->matrix[3][0] * m.matrix[0][0])
-								+ (this->matrix[3][1] * m.matrix[1][0])
-								+ (this->matrix[3][2] * m.matrix[2][0])
-								+ (this->matrix[3][3] * m.matrix[3][0]);
-		newMatrix.matrix[3][1] = (this->matrix[3][0] * m.matrix[0][1])
-								+ (this->matrix[3][1] * m.matrix[1][1])
-								+ (this->matrix[3][2] * m.matrix[2][1])
-								+ (this->matrix[3][3] * m.matrix[3][1]);
-		newMatrix.matrix[3][2] = (this->matrix[3][0] * m.matrix[0][2])
-								+ (this->matrix[3][1] * m.matrix[1][2])
-								+ (this->matrix[3][2] * m.matrix[2][2])
-								+ (this->matrix[3][3] * m.matrix[3][2]);
-		newMatrix.matrix[3][3] = (this->matrix[3][0] * m.matrix[0][3])
-								+ (this->matrix[3][1] * m.matrix[1][3])
-								+ (this->matrix[3][2] * m.matrix[2][3])
-								+ (this->matrix[3][3] * m.matrix[3][3]);
+		return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2])
+			 - (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2])
+			 - (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2]);
+	}
 
+	DreamMatrix3X3 operator*(DreamMatrix3X3 m) {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+											 + (this->matrix[curRow][1] * m.matrix[1][curCol])
+											 + (this->matrix[curRow][2] * m.matrix[2][curCol]);
+
+		}
 		return newMatrix;
 	}
-	void operator*=(DreamMatrix4X4 m) {
+	void operator*=(DreamMatrix3X3 m) {
 
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
 
-		newMatrix.matrix[0][0] = (this->matrix[0][0] * m.matrix[0][0])
-			+ (this->matrix[0][1] * m.matrix[1][0])
-			+ (this->matrix[0][2] * m.matrix[2][0])
-			+ (this->matrix[0][3] * m.matrix[3][0]);
-		newMatrix.matrix[0][1] = (this->matrix[0][0] * m.matrix[0][1])
-			+ (this->matrix[0][1] * m.matrix[1][1])
-			+ (this->matrix[0][2] * m.matrix[2][1])
-			+ (this->matrix[0][3] * m.matrix[3][1]);
-		newMatrix.matrix[0][2] = (this->matrix[0][0] * m.matrix[0][2])
-			+ (this->matrix[0][1] * m.matrix[1][2])
-			+ (this->matrix[0][2] * m.matrix[2][2])
-			+ (this->matrix[0][3] * m.matrix[3][2]);
-		newMatrix.matrix[0][3] = (this->matrix[0][0] * m.matrix[0][3])
-			+ (this->matrix[0][1] * m.matrix[1][3])
-			+ (this->matrix[0][2] * m.matrix[2][3])
-			+ (this->matrix[0][3] * m.matrix[3][3]);
-
-
-		newMatrix.matrix[1][0] = (this->matrix[1][0] * m.matrix[0][0])
-			+ (this->matrix[1][1] * m.matrix[1][0])
-			+ (this->matrix[1][2] * m.matrix[2][0])
-			+ (this->matrix[1][3] * m.matrix[3][0]);
-		newMatrix.matrix[1][1] = (this->matrix[1][0] * m.matrix[0][1])
-			+ (this->matrix[1][1] * m.matrix[1][1])
-			+ (this->matrix[1][2] * m.matrix[2][1])
-			+ (this->matrix[1][3] * m.matrix[3][1]);
-		newMatrix.matrix[1][2] = (this->matrix[1][0] * m.matrix[0][2])
-			+ (this->matrix[1][1] * m.matrix[1][2])
-			+ (this->matrix[1][2] * m.matrix[2][2])
-			+ (this->matrix[1][3] * m.matrix[3][2]);
-		newMatrix.matrix[1][3] = (this->matrix[1][0] * m.matrix[0][3])
-			+ (this->matrix[1][1] * m.matrix[1][3])
-			+ (this->matrix[1][2] * m.matrix[2][3])
-			+ (this->matrix[1][3] * m.matrix[3][3]);
-
-
-		newMatrix.matrix[2][0] = (this->matrix[2][0] * m.matrix[0][0])
-			+ (this->matrix[2][1] * m.matrix[1][0])
-			+ (this->matrix[2][2] * m.matrix[2][0])
-			+ (this->matrix[2][3] * m.matrix[3][0]);
-		newMatrix.matrix[2][1] = (this->matrix[2][0] * m.matrix[0][1])
-			+ (this->matrix[2][1] * m.matrix[1][1])
-			+ (this->matrix[2][2] * m.matrix[2][1])
-			+ (this->matrix[2][3] * m.matrix[3][1]);
-		newMatrix.matrix[2][2] = (this->matrix[2][0] * m.matrix[0][2])
-			+ (this->matrix[2][1] * m.matrix[1][2])
-			+ (this->matrix[2][2] * m.matrix[2][2])
-			+ (this->matrix[2][3] * m.matrix[3][2]);
-		newMatrix.matrix[2][3] = (this->matrix[2][0] * m.matrix[0][3])
-			+ (this->matrix[2][1] * m.matrix[1][3])
-			+ (this->matrix[2][2] * m.matrix[2][3])
-			+ (this->matrix[2][3] * m.matrix[3][3]);
-
-
-
-		newMatrix.matrix[3][0] = (this->matrix[3][0] * m.matrix[0][0])
-			+ (this->matrix[3][1] * m.matrix[1][0])
-			+ (this->matrix[3][2] * m.matrix[2][0])
-			+ (this->matrix[3][3] * m.matrix[3][0]);
-		newMatrix.matrix[3][1] = (this->matrix[3][0] * m.matrix[0][1])
-			+ (this->matrix[3][1] * m.matrix[1][1])
-			+ (this->matrix[3][2] * m.matrix[2][1])
-			+ (this->matrix[3][3] * m.matrix[3][1]);
-		newMatrix.matrix[3][2] = (this->matrix[3][0] * m.matrix[0][2])
-			+ (this->matrix[3][1] * m.matrix[1][2])
-			+ (this->matrix[3][2] * m.matrix[2][2])
-			+ (this->matrix[3][3] * m.matrix[3][2]);
-		newMatrix.matrix[3][3] = (this->matrix[3][0] * m.matrix[0][3])
-			+ (this->matrix[3][1] * m.matrix[1][3])
-			+ (this->matrix[3][2] * m.matrix[2][3])
-			+ (this->matrix[3][3] * m.matrix[3][3]);
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+											 + (this->matrix[curRow][1] * m.matrix[1][curCol])
+											 + (this->matrix[curRow][2] * m.matrix[2][curCol]);
+		}
 
 		*this = newMatrix;
 	}
+
+
+	static DreamMatrix3X3 Identity() {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+		newMatrix.matrix[0][0] = 1;
+		newMatrix.matrix[1][1] = 1;
+		newMatrix.matrix[2][2] = 1;
+
+		return newMatrix;
+	}
+
 };
 
 struct DreamTransform {
@@ -819,3 +744,17 @@ public:
 			* DreamMatrix4X4::CreateTranslationMatrix(position);
 	}
 };
+
+//#ifdef ROW_MAJOR
+//
+//float x1, y1, z1, w1 = 0;
+//float x2, y2, z2, w2 = 0;
+//float x3, y3, z3, w3 = 0;
+//float x4, y4, z4, w4 = 0;
+//
+//#elif defined COL_MAJOR
+//float x1, x2, x3, x4 = 0;
+//float y1, y2, y3, y4 = 0;
+//float z1, z2, z3, z4 = 0;
+//float w1, w2, w3, w4 = 0;
+//#endif

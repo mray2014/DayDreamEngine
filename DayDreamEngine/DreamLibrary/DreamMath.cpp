@@ -84,22 +84,7 @@ float DreamMath::sqrtf(float num)
 
 float DreamMath::lerp(float A, float B, float time)
 {
-	return 0.0f;
-}
-
-float DreamMath::lerp(DreamVector2 A, DreamVector2 B, float time)
-{
-	return 0.0f;
-}
-
-float DreamMath::lerp(DreamVector3 A, DreamVector3 B, float time)
-{
-	return 0.0f;
-}
-
-float DreamMath::lerp(DreamVector4 A, DreamVector4 B, float time)
-{
-	return 0.0f;
+	return ((1 - time) * A) + (time * B);
 }
 
 float DreamMath::Dot(float * vec1, float * vec2, int size )

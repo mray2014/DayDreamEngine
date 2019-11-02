@@ -80,6 +80,31 @@ static void FileIOUnitTesting() {
 
 }
 static void MathUnitTest() { 
+
+	DreamMatrix4X4 indentity = DreamMatrix4X4::Identity();
+
+	DreamMatrix4X4 test = DreamMatrix4X4();
+
+	test.matrix[0][0] = 4;
+	test.matrix[0][1] = 4;
+	test.matrix[0][2] = 4;
+	test.matrix[0][3] = 4;
+
+	test.matrix[1][0] = 4;
+	test.matrix[1][1] = 4;
+	test.matrix[1][2] = 4;
+	test.matrix[1][3] = 4;
+
+	test.matrix[2][0] = 4;
+	test.matrix[2][1] = 4;
+	test.matrix[2][2] = 4;
+	test.matrix[2][3] = 4;
+
+	test *= 2;
+	indentity *= 2;
+
+	test *= indentity;
+
 	printf("\n%f" , DreamMath::sin(60));	// 0.8660254
 	printf("\n%f", DreamMath::cos(60));		// 0.5
 	printf("\n%f", DreamMath::tan(60));		// 1.732050

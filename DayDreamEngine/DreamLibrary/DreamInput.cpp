@@ -58,7 +58,7 @@ int DreamInput::Initialize()
 	memset(&currentData, 0x0, sizeof(XINPUT_STATE));
 
 	DWORD result = ERROR_ALERTED;
-	result = XInputGetState(0, &currentData);
+	//result = XInputGetState(0, &currentData);
 
 	if (result == ERROR_SUCCESS)
 	{
@@ -81,7 +81,7 @@ void DreamInput::Update()
 		memset(&currentData, 0x0, sizeof(XINPUT_STATE));
 
 		DWORD result = ERROR_ALERTED;
-		result = XInputGetState(0, &currentData);
+		//result = XInputGetState(0, &currentData);
 
 		if (result == ERROR_SUCCESS)
 		{
@@ -98,7 +98,7 @@ void DreamInput::Update()
 	else
 	{
 		DWORD result = ERROR_ALERTED;
-		result = XInputGetState(0, &currentData);
+		//result = XInputGetState(0, &currentData);
 
 		if (result == ERROR_SUCCESS)
 		{
