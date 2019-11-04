@@ -52,6 +52,11 @@ float DreamMath::atan(float num)
 	return std::atanf(num);
 }
 
+float DreamMath::abs(float num)
+{
+	return std::abs(num);
+}
+
 float DreamMath::pow(float num, float exp)
 {
 	return std::powf(num, exp);

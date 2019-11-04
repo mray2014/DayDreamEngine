@@ -7,6 +7,9 @@
 #define COL_MAJOR
 #endif
 
+namespace DreamMath {
+
+#define E 0.000001
 
 #define PI 3.14159265358979323846
 
@@ -14,24 +17,362 @@
 
 #define DEG2RAD (float)(PI / 180)
 
-class DreamMath {
-public:
-	static float sin(float degrees);
-	static float cos(float degrees);
-	static float tan(float degrees);
-	static float asin(float num);
-	static float acos(float num);
-	static float atan(float num);
-	static float pow(float num, float exp);
-	static float floor(float a);
-	static float ceiling(float a);
-	static float rad2deg(float radians);
-	static float deg2rad(float degrees);
-	static float sqrtf(float num);
-	static float lerp(float A, float B, float time);
-	static float Dot(float* vec1, float* vec2, int size);
-	static float Dot(float vec1[], float vec2[]);
-};
+
+
+	float sin(float degrees);
+	float cos(float degrees);
+	float tan(float degrees);
+	float asin(float num);
+	float acos(float num);
+	float atan(float num);
+	float abs(float num);
+	float pow(float num, float exp);
+	float floor(float a);
+	float ceiling(float a);
+	float rad2deg(float radians);
+	float deg2rad(float degrees);
+	float sqrtf(float num);
+	float lerp(float A, float B, float time);
+	float Dot(float* vec1, float* vec2, int size);
+	float Dot(float vec1[], float vec2[]);
+
+
+	struct DreamMatrix3X3 {
+	public:
+		float matrix[3][3] = { 0 };
+
+		DreamMatrix3X3()
+		{
+
+		}
+
+		DreamMatrix3X3(const DreamMatrix3X3& m) {
+
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
+			}
+		}
+
+		void Transpose() {
+
+			float store = 0;
+
+			int curRow = 0;
+			for (int i = 1; i < (3 * 3); i++) {
+				int curCol = i % 3;
+
+				store = this->matrix[curRow][curCol];
+				this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
+				this->matrix[curCol][curRow] = store;
+
+				if (curCol == 2) {
+					curRow++;
+					i = (curRow * 3) + curRow;
+				}
+			}
+		}
+		void Inverse() {
+
+		}
+
+		float Determinate() {
+
+			return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2])
+				- (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2])
+				- (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2]);
+		}
+
+		static DreamMatrix3X3 Identity() {
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+			newMatrix.matrix[0][0] = 1;
+			newMatrix.matrix[1][1] = 1;
+			newMatrix.matrix[2][2] = 1;
+
+			return newMatrix;
+		}
+
+#pragma region Operator Overload
+
+
+		DreamMatrix3X3 operator*(DreamMatrix3X3 m) {
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
+					+ (this->matrix[curRow][2] * m.matrix[2][curCol]);
+
+			}
+			return newMatrix;
+		}
+		void operator*=(DreamMatrix3X3 m) {
+
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
+					+ (this->matrix[curRow][2] * m.matrix[2][curCol]);
+			}
+
+			*this = newMatrix;
+		}
+		DreamMatrix3X3 operator*(int num) {
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+			return newMatrix;
+		}
+		DreamMatrix3X3 operator*(float num) {
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+			return newMatrix;
+		}
+		void operator*=(int num) {
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+		}
+		void operator*=(float num) {
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+		}
+		DreamMatrix3X3 operator/(int num) {
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+			return newMatrix;
+		}
+		DreamMatrix3X3 operator/(float num) {
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+			return newMatrix;
+		}
+		void operator/=(int num) {
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+		}
+		void operator/=(float num) {
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+		}
+
+#pragma endregion
+
+	};
+	struct DreamMatrix4X4 {
+	public:
+		float matrix[4][4] = { 0 };
+
+
+		DreamMatrix4X4()
+		{
+		}
+
+		DreamMatrix4X4(const DreamMatrix4X4& m) {
+
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
+			}
+		}
+		DreamMatrix4X4(const DreamMatrix3X3& m) {
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
+			}
+		}
+
+		void Inverse() {
+
+		}
+
+		void Transpose() {
+
+			float store = 0;
+
+			int curRow = 0;
+			for (int i = 1; i < (4 * 4); i++) {
+				int curCol = i % 4;
+
+				store = this->matrix[curRow][curCol];
+				this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
+				this->matrix[curCol][curRow] = store;
+
+				if (curCol == 3) {
+					curRow++;
+					i = (curRow * 4) + curRow;
+				}
+			}
+
+		}
+
+		float Determinate() {
+
+			return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2] * this->matrix[0][3])
+				- (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2] * this->matrix[1][3])
+				- (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2] * this->matrix[2][3])
+				- (this->matrix[3][0] * this->matrix[3][1] * this->matrix[3][2] * this->matrix[3][3]);
+		}
+
+		DreamMatrix3X3 Get3X3() {
+
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol];
+			}
+			return newMatrix;
+		}
+
+		static DreamMatrix4X4 Identity() {
+			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+			newMatrix.matrix[0][0] = 1;
+			newMatrix.matrix[1][1] = 1;
+			newMatrix.matrix[2][2] = 1;
+			newMatrix.matrix[3][3] = 1;
+
+			return newMatrix;
+		}
+#pragma region Operator Overloads
+
+
+		DreamMatrix4X4 operator*(DreamMatrix4X4 m) {
+			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
+					+ (this->matrix[curRow][2] * m.matrix[2][curCol])
+					+ (this->matrix[curRow][3] * m.matrix[3][curCol]);
+
+			}
+			return newMatrix;
+		}
+
+		void operator*=(DreamMatrix4X4 m) {
+
+			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
+					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
+					+ (this->matrix[curRow][2] * m.matrix[2][curCol])
+					+ (this->matrix[curRow][3] * m.matrix[3][curCol]);
+
+			}
+
+			*this = newMatrix;
+		}
+		DreamMatrix4X4 operator*(int num) {
+			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+			return newMatrix;
+		}
+		DreamMatrix4X4  operator*(float num) {
+			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+			return newMatrix;
+		}
+		void operator*=(int num) {
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+		}
+		void operator*=(float num) {
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
+			}
+		}
+		DreamMatrix4X4 operator/(int num) {
+			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+			return newMatrix;
+		}
+		DreamMatrix4X4  operator/(float num) {
+			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+			return newMatrix;
+		}
+		void operator/=(int num) {
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+		}
+		void operator/=(float num) {
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
+			}
+		}
+
+#pragma endregion
+	};
+
 
 
 struct DreamVector2 {
@@ -87,60 +428,58 @@ public:
 
 #pragma region Operator OverLoads
 
-	DreamVector2& operator+(DreamVector2& v) {
+	DreamVector2 operator+(DreamVector2 v) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x + v.x;
 		newVec.y = this->y + v.y;
 
 		return newVec;
 	}
-	DreamVector2& operator-(DreamVector2& v) {
+	DreamVector2 operator-(DreamVector2 v) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x - v.x;
 		newVec.y = this->y - v.y;
 
 		return newVec;
 	}
-	DreamVector2& operator*(DreamVector2& v) {
+	DreamVector2 operator*(DreamVector2 v) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x * v.x;
 		newVec.y = this->y * v.y;
 
 		return newVec;
 	}
-	DreamVector2& operator/(DreamVector2& v) {
+	DreamVector2 operator/(DreamVector2 v) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x / v.x;
 		newVec.y = this->y / v.y;
 
 		return newVec;
 	}
-	void operator+=(DreamVector2& v) {
+	void operator+=(DreamVector2 v) {
 		this->x += v.x;
 		this->y += v.y;
 	}
-	void operator-=(DreamVector2& v) {
+	void operator-=(DreamVector2 v) {
 		this->x -= v.x;
 		this->y -= v.y;
 	}
-	void operator*=(DreamVector2& v) {
+	void operator*=(DreamVector2 v) {
 		this->x *= v.x;
 		this->y *= v.y;
 	}
-    void operator/=(DreamVector2& v) {
+	void operator/=(DreamVector2 v) {
 		this->x /= v.x;
 		this->y /= v.y;
 
 	}
-
-
-	DreamVector2& operator*(int num) {
+	DreamVector2 operator*(int num) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x * num;
 		newVec.y = this->y * num;
 		return newVec;
 	}
-	DreamVector2&  operator*(float num) {
+	DreamVector2  operator*(float num) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x * num;
 		newVec.y = this->y * num;
@@ -155,13 +494,13 @@ public:
 		this->y *= num;
 	}
 
-	DreamVector2& operator/(int num) {
+	DreamVector2 operator/(int num) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x / num;
 		newVec.y = this->y / num;
 		return newVec;
 	}
-	DreamVector2&  operator/(float num) {
+	DreamVector2  operator/(float num) {
 		DreamVector2 newVec = DreamVector2();
 		newVec.x = this->x / num;
 		newVec.y = this->y / num;
@@ -175,6 +514,9 @@ public:
 		this->x /= num;
 		this->y /= num;
 
+	}
+	bool operator==(DreamVector2 v) {
+		return (this->x == v.x) && (this->y == v.y);
 	}
 
 #pragma endregion
@@ -247,7 +589,7 @@ public:
 
 #pragma region Operator OverLoads
 
-	DreamVector3& operator+(DreamVector3& v) {
+	DreamVector3 operator+(DreamVector3 v) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x + v.x;
 		newVec.y = this->y + v.y;
@@ -255,7 +597,7 @@ public:
 
 		return newVec;
 	}
-	DreamVector3& operator-(DreamVector3& v) {
+	DreamVector3 operator-(DreamVector3 v) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x - v.x;
 		newVec.y = this->y - v.y;
@@ -263,7 +605,7 @@ public:
 
 		return newVec;
 	}
-	DreamVector3& operator*(DreamVector3& v) {
+	DreamVector3 operator*(DreamVector3 v) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x * v.x;
 		newVec.y = this->y * v.y;
@@ -271,7 +613,7 @@ public:
 
 		return newVec;
 	}
-	DreamVector3& operator/(DreamVector3& v) {
+	DreamVector3 operator/(DreamVector3 v) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x / v.x;
 		newVec.y = this->y / v.y;
@@ -279,37 +621,35 @@ public:
 
 		return newVec;
 	}
-	void operator+=(DreamVector3& v) {
+	void operator+=(DreamVector3 v) {
 		this->x += v.x;
 		this->y += v.y;
 		this->z += v.z;
 	}
-	void operator-=(DreamVector3& v) {
+	void operator-=(DreamVector3 v) {
 		this->x -= v.x;
 		this->y -= v.y;
 		this->z -= v.z;
 	}
-	void operator*=(DreamVector3& v) {
+	void operator*=(DreamVector3 v) {
 		this->x *= v.x;
 		this->y *= v.y;
 		this->z *= v.z;
 	}
-	void operator/=(DreamVector3& v) {
+	void operator/=(DreamVector3 v) {
 		this->x /= v.x;
 		this->y /= v.y;
 		this->z /= v.z;
 
 	}
-
-
-	DreamVector3& operator*(int num) {
+	DreamVector3 operator*(int num) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x * num;
 		newVec.y = this->y * num;
 		newVec.z = this->z * num;
 		return newVec;
 	}
-	DreamVector3&  operator*(float num) {
+	DreamVector3  operator*(float num) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x * num;
 		newVec.y = this->y * num;
@@ -327,14 +667,14 @@ public:
 		this->z *= num;
 	}
 
-	DreamVector3& operator/(int num) {
+	DreamVector3 operator/(int num) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x / num;
 		newVec.y = this->y / num;
 		newVec.z = this->z / num;
 		return newVec;
 	}
-	DreamVector3&  operator/(float num) {
+	DreamVector3 operator/(float num) {
 		DreamVector3 newVec = DreamVector3();
 		newVec.x = this->x / num;
 		newVec.y = this->y / num;
@@ -350,6 +690,28 @@ public:
 		this->x /= num;
 		this->y /= num;
 		this->z /= num;
+	}
+	bool operator==(DreamVector3 v) {
+		return (this->x == v.x) && (this->y == v.y) && (this->z == v.z);
+	}
+
+	DreamVector3 operator* (DreamMatrix3X3 m) {
+		DreamVector3 newVec = DreamVector3();
+
+		newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]);
+		newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]);
+		newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]);
+
+		return newVec;
+	}
+	void operator*= (DreamMatrix3X3 m) {
+		DreamVector3 newVec = DreamVector3();
+
+		newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]);
+		newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]);
+		newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]);
+
+		*this = newVec;
 	}
 
 #pragma endregion
@@ -418,7 +780,7 @@ public:
 
 #pragma region Operator OverLoads
 
-	DreamVector4& operator+(DreamVector4& v) {
+	DreamVector4 operator+(DreamVector4 v) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x + v.x;
 		newVec.y = this->y + v.y;
@@ -427,7 +789,7 @@ public:
 
 		return newVec;
 	}
-	DreamVector4& operator-(DreamVector4& v) {
+	DreamVector4 operator-(DreamVector4 v) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x - v.x;
 		newVec.y = this->y - v.y;
@@ -436,7 +798,7 @@ public:
 
 		return newVec;
 	}
-	DreamVector4& operator*(DreamVector4& v) {
+	DreamVector4 operator*(DreamVector4 v) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x * v.x;
 		newVec.y = this->y * v.y;
@@ -445,7 +807,7 @@ public:
 
 		return newVec;
 	}
-	DreamVector4& operator/(DreamVector4& v) {
+	DreamVector4 operator/(DreamVector4 v) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x / v.x;
 		newVec.y = this->y / v.y;
@@ -454,25 +816,25 @@ public:
 
 		return newVec;
 	}
-	void operator+=(DreamVector4& v) {
+	void operator+=(DreamVector4 v) {
 		this->x += v.x;
 		this->y += v.y;
 		this->z += v.z;
 		this->w += v.w;
 	}
-	void operator-=(DreamVector4& v) {
+	void operator-=(DreamVector4 v) {
 		this->x -= v.x;
 		this->y -= v.y;
 		this->z -= v.z;
 		this->w -= v.w;
 	}
-	void operator*=(DreamVector4& v) {
+	void operator*=(DreamVector4 v) {
 		this->x *= v.x;
 		this->y *= v.y;
 		this->z *= v.z;
 		this->w *= v.w;
 	}
-	void operator/=(DreamVector4& v) {
+	void operator/=(DreamVector4 v) {
 		this->x /= v.x;
 		this->y /= v.y;
 		this->z /= v.z;
@@ -480,7 +842,7 @@ public:
 
 	}
 
-	DreamVector4& operator*(int num) {
+	DreamVector4 operator*(int num) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x * num;
 		newVec.y = this->y * num;
@@ -488,7 +850,7 @@ public:
 		newVec.w = this->w * num;
 		return newVec;
 	}
-	DreamVector4&  operator*(float num) {
+	DreamVector4  operator*(float num) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x * num;
 		newVec.y = this->y * num;
@@ -509,7 +871,7 @@ public:
 		this->w *= num;
 	}
 
-	DreamVector4& operator/(int num) {
+	DreamVector4 operator/(int num) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x / num;
 		newVec.y = this->y / num;
@@ -517,7 +879,7 @@ public:
 		newVec.w = this->w / num;
 		return newVec;
 	}
-	DreamVector4&  operator/(float num) {
+	DreamVector4  operator/(float num) {
 		DreamVector4 newVec = DreamVector4();
 		newVec.x = this->x / num;
 		newVec.y = this->y / num;
@@ -538,336 +900,86 @@ public:
 		this->w /= num;
 	}
 
+	bool operator==(DreamVector4 v) {
+		return (this->x == v.x) && (this->y == v.y) && (this->z == v.z) && (this->w == v.w);
+	}
+
+	DreamVector4 operator* (DreamMatrix4X4 m) {
+		 DreamVector4 newVec = DreamVector4();
+
+		 newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]) + (this->w * m.matrix[3][0]);
+		 newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]) + (this->w * m.matrix[3][1]);
+		 newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]) + (this->w * m.matrix[3][2]);
+		 newVec.w = (this->x * m.matrix[0][3]) + (this->y * m.matrix[1][3]) + (this->z * m.matrix[2][3]) + (this->w * m.matrix[3][3]);
+
+		 return newVec;
+	}
+
+	void operator*= (DreamMatrix4X4 m) {
+		DreamVector4 newVec = DreamVector4();
+
+		newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]) + (this->w * m.matrix[3][0]);
+		newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]) + (this->w * m.matrix[3][1]);
+		newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]) + (this->w * m.matrix[3][2]);
+		newVec.w = (this->x * m.matrix[0][3]) + (this->y * m.matrix[1][3]) + (this->z * m.matrix[2][3]) + (this->w * m.matrix[3][3]);
+
+		*this = newVec;
+	}
 #pragma endregion
 
 };
 
-struct DreamMatrix4X4 {
-public:
-	float matrix[4][4] = { 0 };
 
 
-	DreamMatrix4X4()
-	{
-	}
+static DreamMatrix4X4 CreateTranslationMatrix(DreamVector3 translation) {
+	DreamMatrix4X4 translationMatrix = DreamMatrix4X4::Identity();
+	translationMatrix.matrix[3][0] = translation.x;
+	translationMatrix.matrix[3][1] = translation.y;
+	translationMatrix.matrix[3][2] = translation.z;
+	return translationMatrix;
+}
+static DreamMatrix4X4 CreateRotationMatrix(DreamVector3 rotation) {
+	DreamMatrix3X3 rotMatrixX = DreamMatrix3X3();
+	DreamMatrix3X3 rotMatrixY = DreamMatrix3X3();
+	DreamMatrix3X3 rotMatrixZ = DreamMatrix3X3();
 
-	DreamMatrix4X4(const DreamMatrix4X4& m) {
+	rotMatrixX.matrix[0][0] = 1;
+	rotMatrixX.matrix[1][1] = DreamMath::cos(rotation.x);
+	rotMatrixX.matrix[1][2] = DreamMath::sin(rotation.x);
+	rotMatrixX.matrix[2][1] = -DreamMath::sin(rotation.x);
+	rotMatrixX.matrix[2][2] = DreamMath::cos(rotation.x);
 
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
-		}
-	}
-	/*DreamMatrix4X4(const DreamMatrix3X3& m) {
+	rotMatrixY.matrix[1][1] = 1;
+	rotMatrixY.matrix[0][0] = DreamMath::cos(rotation.y);
+	rotMatrixY.matrix[0][2] = -DreamMath::sin(rotation.y);
+	rotMatrixY.matrix[2][0] = DreamMath::sin(rotation.y);
+	rotMatrixY.matrix[2][2] = DreamMath::cos(rotation.y);
 
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
-		}
-	}*/
+	rotMatrixZ.matrix[2][2] = 1;
+	rotMatrixZ.matrix[0][0] = DreamMath::cos(rotation.z);
+	rotMatrixZ.matrix[0][1] = DreamMath::sin(rotation.z);
+	rotMatrixZ.matrix[1][0] = -DreamMath::sin(rotation.z);
+	rotMatrixZ.matrix[1][1] = DreamMath::cos(rotation.z);
 
-	void Inverse() {
+	DreamMatrix3X3 finalRotMatrix = rotMatrixX * rotMatrixY * rotMatrixZ;
 
-	}
+	DreamMatrix4X4 final4X4Mat = finalRotMatrix;
+	final4X4Mat.matrix[3][3] = 1;
 
-	void Transpose() {
-
-		float store = 0;
-
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-
-			store = this->matrix[curRow][curCol];
-			this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
-			this->matrix[curCol][curRow] = store;
-		}
-
-	}
-
-	float Determinate() {
-
-		return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2] * this->matrix[0][3])
-			 - (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2] * this->matrix[1][3])
-			 - (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2] * this->matrix[2][3])
-			 - (this->matrix[3][0] * this->matrix[3][1] * this->matrix[3][2] * this->matrix[3][3]);
-	}
-
-	DreamMatrix4X4 operator*(DreamMatrix4X4 m) {
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-											 + (this->matrix[curRow][1] * m.matrix[1][curCol])
-											 + (this->matrix[curRow][2] * m.matrix[2][curCol])
-											 + (this->matrix[curRow][3] * m.matrix[3][curCol]);
-
-		}
-		return newMatrix;
-	}
-
-	void operator*=(DreamMatrix4X4 m) {
-
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-											 + (this->matrix[curRow][1] * m.matrix[1][curCol])
-											 + (this->matrix[curRow][2] * m.matrix[2][curCol])
-											 + (this->matrix[curRow][3] * m.matrix[3][curCol]);
-
-		}
-
-		*this = newMatrix;
-	}
-	DreamMatrix4X4& operator*(int num) {
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-		return newMatrix;
-	}
-	DreamMatrix4X4&  operator*(float num) {
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-		return newMatrix;
-	}
-	void operator*=(int num) {
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-	}
-	void operator*=(float num) {
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-	}
-	DreamMatrix4X4& operator/(int num) {
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-		return newMatrix;
-	}
-	DreamMatrix4X4&  operator/(float num) {
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-		return newMatrix;
-	}
-	void operator/=(int num) {
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-	}
-	void operator/=(float num) {
-		for (int i = 0; i < (4 * 4); i++) {
-			int curRow = i / 4;
-			int curCol = i % 4;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-	}
-
-	static DreamMatrix4X4 Identity() {
-		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-
-		newMatrix.matrix[0][0] = 1;
-		newMatrix.matrix[1][1] = 1;
-		newMatrix.matrix[2][2] = 1;
-		newMatrix.matrix[3][3] = 1;
-
-		return newMatrix;
-	}
-	static DreamMatrix4X4 CreateTranslationMatrix(DreamVector3 translation) {
-
-	}
-	static DreamMatrix4X4 CreateRotationMatrix(DreamVector3 rotation) {
-
-	}
-	static DreamMatrix4X4 CreateScaleMatrix(DreamVector3 scale) {
-
-	}
-};
+	return final4X4Mat;
+}
+static DreamMatrix4X4 CreateScaleMatrix(DreamVector3 scale) {
+	DreamMatrix4X4 scaleMatrix = DreamMatrix4X4();
+	scaleMatrix.matrix[0][0] = scale.x;
+	scaleMatrix.matrix[1][1] = scale.y;
+	scaleMatrix.matrix[2][2] = scale.z;
+	scaleMatrix.matrix[3][3] = 1;
+	return scaleMatrix;
+}
 
 
-struct DreamMatrix3X3 {
-public:
-	float matrix[3][3] = { 0 };
-
-	DreamMatrix3X3()
-	{
-		
-	}
-
-	DreamMatrix3X3(const DreamMatrix3X3& m) {
-
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
-		}
-	}
-
-	DreamMatrix3X3(const DreamMatrix4X4& m) {
-
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
-		}
-	}
-
-	void Transpose() {
-
-		float store = 0;
-
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-
-			store = this->matrix[curRow][curCol];
-			this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
-			this->matrix[curCol][curRow] = store;
-		}
-	}
-	void Inverse() {
-
-	}
-
-	float Determinate() {
-
-		return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2])
-			 - (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2])
-			 - (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2]);
-	}
-
-	DreamMatrix3X3 operator*(DreamMatrix3X3 m) {
-		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-											 + (this->matrix[curRow][1] * m.matrix[1][curCol])
-											 + (this->matrix[curRow][2] * m.matrix[2][curCol]);
-
-		}
-		return newMatrix;
-	}
-	void operator*=(DreamMatrix3X3 m) {
-
-		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-											 + (this->matrix[curRow][1] * m.matrix[1][curCol])
-											 + (this->matrix[curRow][2] * m.matrix[2][curCol]);
-		}
-
-		*this = newMatrix;
-	}
-	DreamMatrix3X3& operator*(int num) {
-		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-		return newMatrix;
-	}
-	DreamMatrix3X3&  operator*(float num) {
-		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-		return newMatrix;
-	}
-	void operator*=(int num) {
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-	}
-	void operator*=(float num) {
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-		}
-	}
-	DreamMatrix3X3& operator/(int num) {
-		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-		return newMatrix;
-	}
-	DreamMatrix3X3&  operator/(float num) {
-		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-		return newMatrix;
-	}
-	void operator/=(int num) {
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-	}
-	void operator/=(float num) {
-		for (int i = 0; i < (3 * 3); i++) {
-			int curRow = i / 3;
-			int curCol = i % 3;
-			this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-		}
-	}
 
 
-	static DreamMatrix3X3 Identity() {
-		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-
-		newMatrix.matrix[0][0] = 1;
-		newMatrix.matrix[1][1] = 1;
-		newMatrix.matrix[2][2] = 1;
-
-		return newMatrix;
-	}
-
-};
 
 struct DreamTransform {
 public:
@@ -876,11 +988,14 @@ public:
 	DreamVector3 scale;
 
 	DreamMatrix4X4 GetWorldMatrix() {
-		return DreamMatrix4X4::CreateScaleMatrix(scale)
-			* DreamMatrix4X4::CreateRotationMatrix(rotation)
-			* DreamMatrix4X4::CreateTranslationMatrix(position);
+		return DreamMath::CreateScaleMatrix(scale)
+			* DreamMath::CreateRotationMatrix(rotation)
+			* DreamMath::CreateTranslationMatrix(position);
 	}
 };
+};
+
+
 
 //#ifdef ROW_MAJOR
 //

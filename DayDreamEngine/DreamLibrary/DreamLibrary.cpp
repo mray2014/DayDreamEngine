@@ -1,10 +1,13 @@
 
 #include "pch.h"
+#include <assert.h>
 #include <iostream>
 #include "DreamFileIO.h"
 #include "DreamMath.h"
 #include "DreamPhysics.h"
 #include "DreamAllocatorManager.h"
+
+using namespace DreamMath;
 
 static void ChunkUnitTest() 
 {
@@ -105,15 +108,54 @@ static void MathUnitTest() {
 
 	test *= indentity;
 
+	DreamTransform newTransform = DreamTransform();
+	newTransform.position = DreamVector3(20,19,400);
+	newTransform.rotation = DreamVector3(0, 20, 90);
+	newTransform.scale = DreamVector3(2, 2, 2);
+
+	DreamMatrix4X4 worldMatrix = newTransform.GetWorldMatrix();
+
+	worldMatrix.Transpose();
+
+	DreamMatrix3X3 rot = worldMatrix.Get3X3();
+
+	rot.Transpose();
+
+	DreamMatrix4X4 rot4X4 = rot;
+
+	float lerpedNum = DreamMath::lerp(4, 5, 0.8f);
+	assert(DreamMath::abs(lerpedNum - 4.8f) < E);
+
+	DreamVector3 vecA = DreamVector3();
+	DreamVector3 vecB = DreamVector3(1, 5, 12);
+
+	DreamVector3 position1 = DreamVector3::lerp(vecA, vecB, 0.0f);
+	DreamVector3 position2 = DreamVector3::lerp(vecA, vecB, 0.4f);
+	DreamVector3 position3 = DreamVector3::lerp(vecA, vecB, 0.5f);
+	DreamVector3 position4 = DreamVector3::lerp(vecA, vecB, 0.7f);
+	DreamVector3 position5 = DreamVector3::lerp(vecA, vecB, 1.0f);
+
+	position1 += DreamVector3();
+
+	assert(position1 == DreamVector3());
+	assert(position2 == DreamVector3(0.4f, 2.0f, 4.8f));
+	assert(position3 == DreamVector3(0.5f, 2.5f, 6.0f));
+	assert(position4 == DreamVector3(0.7f, 3.5f, 8.4f));
+	assert(position5 == DreamVector3(1, 5, 12));
+
+	worldMatrix.Transpose();
+	DreamVector4 matrixMul= DreamVector4(1,1,1,1) * worldMatrix;
+
+
 	printf("\n%f" , DreamMath::sin(60));	// 0.8660254
 	printf("\n%f", DreamMath::cos(60));		// 0.5
 	printf("\n%f", DreamMath::tan(60));		// 1.732050
 	printf("\n%f", DreamMath::asin(60));	// -1
-	printf("\n%f", DreamMath::acos(0.38));	// 1.18100003
-	printf("\n%f", DreamMath::atan(0.38));	// 0.363147009
+	printf("\n%f", DreamMath::acos(0.38f));	// 1.18100003
+	printf("\n%f", DreamMath::atan(0.38f));	// 0.363147009
 	printf("\n%f", DreamMath::ceiling(0.5f)); // 1
 	printf("\n%f", DreamMath::pow(4,3));	// 64
-	printf("\n%f", DreamMath::floor(0.2));	// 0
+	printf("\n%f", DreamMath::floor(0.2f));	// 0
 	printf("\n%f", DreamMath::sqrtf(16));	// 4
 }
 
