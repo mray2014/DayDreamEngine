@@ -117,4 +117,12 @@ float DreamMath::Dot(float vec1[], float vec2[])
 	return dot;
 }
 
+float DreamMath::FixFloatingPointError(float num)
+{
+	if (DreamMath::abs(num) < EPSILON) {
+		num = 0;
+	}
+	return num;
+}
+
 #endif

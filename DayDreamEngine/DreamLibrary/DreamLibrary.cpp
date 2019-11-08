@@ -6,6 +6,8 @@
 #include "DreamMath.h"
 #include "DreamPhysics.h"
 #include "DreamAllocatorManager.h"
+#include <vector>
+#include <stack>
 
 using namespace DreamMath;
 
@@ -111,7 +113,7 @@ static void MathUnitTest() {
 	DreamTransform newTransform = DreamTransform();
 	newTransform.position = DreamVector3(20,19,400);
 	newTransform.rotation = DreamVector3(0, 20, 90);
-	newTransform.scale = DreamVector3(2, 2, 2);
+	newTransform.scale = DreamVector3(1, 1, 1);
 
 	DreamMatrix4X4 worldMatrix = newTransform.GetWorldMatrix();
 
@@ -124,7 +126,7 @@ static void MathUnitTest() {
 	DreamMatrix4X4 rot4X4 = rot;
 
 	float lerpedNum = DreamMath::lerp(4, 5, 0.8f);
-	assert(DreamMath::abs(lerpedNum - 4.8f) < E);
+	assert(DreamMath::FixFloatingPointError(lerpedNum - 4.8f) == 0);
 
 	DreamVector3 vecA = DreamVector3();
 	DreamVector3 vecB = DreamVector3(1, 5, 12);
@@ -146,6 +148,12 @@ static void MathUnitTest() {
 	worldMatrix.Transpose();
 	DreamVector4 matrixMul= DreamVector4(1,1,1,1) * worldMatrix;
 
+	DreamQuaternion rotQuat = DreamQuaternion::MakeQuaternionEuler(45, 0, 0);
+	DreamVector3 newFoward = rotQuat.RotateVector(0,0,1).GetNormalizedVector();
+
+	DreamVector3 newFoward2 =  DreamVector3(0,0,1) * DreamMath::CreateRotationMatrix(45,0,0).Get3X3();
+
+	assert(newFoward == DreamVector3(0, 0, -1));
 
 	printf("\n%f" , DreamMath::sin(60));	// 0.8660254
 	printf("\n%f", DreamMath::cos(60));		// 0.5
