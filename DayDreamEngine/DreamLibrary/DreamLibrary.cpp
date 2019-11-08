@@ -148,12 +148,36 @@ static void MathUnitTest() {
 	worldMatrix.Transpose();
 	DreamVector4 matrixMul= DreamVector4(1,1,1,1) * worldMatrix;
 
-	DreamQuaternion rotQuat = DreamQuaternion::MakeQuaternionEuler(45, 0, 0);
+	DreamQuaternion rotQuat = DreamQuaternion::MakeQuaternionEuler(0, 20, 90);
 	DreamVector3 newFoward = rotQuat.RotateVector(0,0,1).GetNormalizedVector();
 
-	DreamVector3 newFoward2 =  DreamVector3(0,0,1) * DreamMath::CreateRotationMatrix(45,0,0).Get3X3();
+	DreamMatrix3X3 newRot = DreamMath::CreateRotationMatrix(0, 20, 90).Get3X3();
 
-	assert(newFoward == DreamVector3(0, 0, -1));
+	DreamVector3 newFoward2 =  DreamVector3(0,0,1) * newRot;
+
+	DreamMatrix3X3 newRot2 = rotQuat.GetMatrix();
+
+	DreamVector3 newFoward3 = DreamVector3(0, 0, 1) * newRot2;
+
+
+	DreamMatrix3X3 testMat = DreamMatrix3X3();
+	testMat.matrix[0][2] = 1;
+
+	testMat.matrix[1][0] = 2;
+	testMat.matrix[1][1] = -1;
+	testMat.matrix[1][2] = 3;
+
+	testMat.matrix[2][0] = 1; 
+	testMat.matrix[2][1] = 1;
+	testMat.matrix[2][2] = 4;
+
+	DreamMatrix3X3 storeMat = testMat;
+
+	float det = testMat.Determinate();
+
+	testMat.Inverse();
+
+	DreamMatrix3X3 finalMat =  testMat * storeMat;
 
 	printf("\n%f" , DreamMath::sin(60));	// 0.8660254
 	printf("\n%f", DreamMath::cos(60));		// 0.5

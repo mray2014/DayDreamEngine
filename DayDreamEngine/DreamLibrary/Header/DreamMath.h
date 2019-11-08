@@ -84,15 +84,64 @@ namespace DreamMath {
 				}
 			}
 		}
-		void Inverse() {
-
-		}
 
 		float Determinate() {
 
-			return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2])
-				- (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2])
-				- (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2]);
+			float det = 0;
+
+			for (int i = 0; i < 3; i++) {
+				int curRow = 0;
+				int curCol = i;
+
+				int top = 1;
+				int bot = 2;
+				int left = (curCol == 0) ? 1 : 0;
+				int right = (curCol == 2) ? 1 : 2;
+
+
+				float smallDet = (this->matrix[top][left] * this->matrix[bot][right]) - (this->matrix[bot][left] * this->matrix[top][right]);
+				
+				if (i == 1) {
+					det -= this->matrix[curRow][curCol] * smallDet;
+				}
+				else {
+					det += this->matrix[curRow][curCol] * smallDet;
+				}
+			}
+
+			return det;
+		}
+
+		void Inverse() {
+			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+			
+			float det = this->Determinate();
+			int sign = 1;
+
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+
+				int top = (curRow == 0) ? 1 : 0;
+				int bot = (curRow == 2) ? 1 : 2;
+				int left = (curCol == 0) ? 1 : 0;
+				int right = (curCol == 2) ? 1 : 2;
+
+
+				newMatrix.matrix[curRow][curCol] = (this->matrix[top][left] * this->matrix[bot][right]) - (this->matrix[bot][left] * this->matrix[top][right]);
+				newMatrix.matrix[curRow][curCol] *= sign;
+
+				sign *= -1;
+			}
+
+
+			newMatrix.Transpose();
+
+			newMatrix *= (1 / det);
+
+			newMatrix.FixFloatingPointError();
+
+			*this = newMatrix;
 		}
 
 		static DreamMatrix3X3 Identity() {
@@ -119,6 +168,7 @@ namespace DreamMath {
 					+ (this->matrix[curRow][2] * m.matrix[2][curCol]);
 
 			}
+
 			return newMatrix;
 		}
 		void operator*=(DreamMatrix3X3 m) {
@@ -1080,7 +1130,7 @@ static DreamMatrix4X4 CreateRotationMatrix(DreamVector3 rotation) {
 	rotMatrixZ.matrix[1][0] = -DreamMath::sin(rotation.z);
 	rotMatrixZ.matrix[1][1] = DreamMath::cos(rotation.z);
 
-	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
+ 	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
 
 	finalRotMatrix.FixFloatingPointError();
 
@@ -1138,6 +1188,10 @@ public:
 		this->wScalar = scalDegree;
 
 		//this->Normalize();
+	}
+	DreamQuaternion(DreamMatrix3X3 rotMatrix) {
+
+	
 	}
 	DreamQuaternion(const DreamQuaternion& quat) {
 		this->qVector = quat.qVector;
@@ -1198,7 +1252,24 @@ public:
 		return returnQuat;
 	}
 	DreamMatrix3X3 GetMatrix() {
+		DreamMatrix3X3 rotMatrix = DreamMatrix3X3();
 
+		rotMatrix.matrix[0][0] = 1 - (2 * (this->qVector.y *this->qVector.y)) - (2 * (this->qVector.z *this->qVector.z));
+		rotMatrix.matrix[1][1] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.z *this->qVector.z));
+		rotMatrix.matrix[2][2] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.y *this->qVector.y));
+
+		rotMatrix.matrix[0][1] = (2 * this->qVector.x * this->qVector.y) + (2 * this->qVector.z * this->wScalar);
+		rotMatrix.matrix[1][0] = (2 * this->qVector.x * this->qVector.y) - (2 * this->qVector.z * this->wScalar);
+
+		rotMatrix.matrix[0][2] = (2 * this->qVector.x * this->qVector.z) - (2 * this->qVector.y * this->wScalar);
+		rotMatrix.matrix[2][0] = (2 * this->qVector.x * this->qVector.z) + (2 * this->qVector.y * this->wScalar);
+
+		rotMatrix.matrix[1][2] = (2 * this->qVector.y * this->qVector.z) + (2 * this->qVector.x * this->wScalar);
+		rotMatrix.matrix[2][1] = (2 * this->qVector.y * this->qVector.z) - (2 * this->qVector.x * this->wScalar);
+
+		rotMatrix.FixFloatingPointError();
+
+		return rotMatrix;
 	}
 	DreamVector3 RotateVector(float x, float y, float z) {
 
@@ -1230,7 +1301,7 @@ public:
 		DreamQuaternion yQuat = DreamQuaternion(DreamVector3(0, 1, 0), y);
 		DreamQuaternion zQuat = DreamQuaternion(DreamVector3(0, 0, 1), z);
 
-		DreamQuaternion finalQuat = ((xQuat * yQuat) * zQuat);
+		DreamQuaternion finalQuat = ((zQuat * yQuat) * xQuat);
 
 		finalQuat.FixFloatingPointError();
 
@@ -1242,7 +1313,7 @@ public:
 		DreamQuaternion yQuat = DreamQuaternion(DreamVector3(0, 1, 0), rotation.y);
 		DreamQuaternion zQuat = DreamQuaternion(DreamVector3(0, 0, 1), rotation.z);
 
-		DreamQuaternion finalQuat = ((xQuat * yQuat) * zQuat);
+		DreamQuaternion finalQuat = ((zQuat * yQuat) * xQuat);
 
 		finalQuat.FixFloatingPointError();
 
