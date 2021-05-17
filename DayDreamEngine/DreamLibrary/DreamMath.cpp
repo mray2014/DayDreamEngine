@@ -87,6 +87,15 @@ float DreamMath::sqrtf(float num)
 	return std::sqrtf(num);
 }
 
+float DreamMath::round(float num, int decimal)
+{
+	float decimalMove = pow(10, decimal);
+
+	float store = (int)(num * decimalMove + .5f);
+
+	return (float)store/decimalMove;
+}
+
 float DreamMath::lerp(float A, float B, float time)
 {
 	return ((1 - time) * A) + (time * B);

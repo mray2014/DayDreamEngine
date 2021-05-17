@@ -12,6 +12,10 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+DebugRelease/
+DayDreamEngine/DebugRelease/
+DayDreamEngine/DayDreamEngine/DebugRelease/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
