@@ -64,9 +64,19 @@ public:
 	virtual void ClearScreen() = 0;
 	virtual void SwapBuffers(DreamPointer* window) = 0;
 	virtual void CheckInputs() = 0;
+	virtual void GenerateVertexArray(size_t numOfBuffers, size_t& VBO) = 0;
 	virtual void GenerateBuffer(size_t numOfBuffers, size_t& VBO) = 0;
+	virtual void BindVertexArray(size_t& VBO) = 0;
 	virtual void BindBuffer(BufferType type, size_t& VBO) = 0;
 	virtual void CopyVertexBufferData(size_t numOfVerts, void* verts, VertexDataUsage dataUsage) = 0;
+	virtual void AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
+	virtual void UnBindVertexArray() = 0;
+	virtual unsigned int LoadShader(const char* file, ShaderType shaderType) = 0;
+	virtual void StartShaderProgramCreation() = 0;
+	virtual void AttachShader(unsigned int shader) = 0;
+	virtual unsigned int FinishShaderProgramCreation() = 0;
+	virtual void SetShader(unsigned int shaderProg) = 0;
+	virtual void Draw() = 0;
 
 	virtual 
 

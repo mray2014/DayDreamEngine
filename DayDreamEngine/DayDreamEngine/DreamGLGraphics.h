@@ -20,9 +20,19 @@ public:
 	void ClearScreen() override;
 	void SwapBuffers(DreamPointer* window) override;
 	void CheckInputs() override;
+	void GenerateVertexArray(size_t numOfBuffers, size_t& VBO) override;
 	void GenerateBuffer(size_t numOfBuffers, size_t& VBO) override;
+	void BindVertexArray(size_t& VBO) override;
 	void BindBuffer(BufferType type, size_t& VBO) override;
 	void CopyVertexBufferData(size_t numOfVerts, void* verts, VertexDataUsage dataUsage) override;
+	void AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) override;
+	void UnBindVertexArray() override;
+	unsigned int LoadShader(const char* file, ShaderType shaderType) override;
+	void StartShaderProgramCreation() override;
+	void AttachShader(unsigned int shader) override;
+	unsigned int FinishShaderProgramCreation() override;
+	void SetShader(unsigned int shaderProg) override;
+	void Draw() override;
 
 	void TerminateGraphics() override;
 

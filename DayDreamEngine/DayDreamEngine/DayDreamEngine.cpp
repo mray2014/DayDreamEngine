@@ -85,22 +85,55 @@ int main()
 	graphics->SetWindowResizeCallBack(windowPtr);
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-	float vertices[] = {
-		-0.5, -0.5, 0.0f,
-		 0.5, -0.5, 0.0f,
-		-0.0, 0.5, 0.0f
+	unsigned int vertexProgram = graphics->LoadShader("Shaders/vertex.glsl", ShaderType::Vertex);
+	unsigned int pixelProgram = graphics->LoadShader("Shaders/pixel.glsl", ShaderType::Pixel);
+
+	graphics->StartShaderProgramCreation();
+	graphics->AttachShader(vertexProgram);
+	graphics->AttachShader(pixelProgram);
+	unsigned int shaderProg = graphics->FinishShaderProgramCreation();
+
+	graphics->SetShader(shaderProg);
+
+	struct Vertex {
+		DreamVector3 pos;
+
+		Vertex(DreamVector3 p) {
+			pos = p;
+		}
+		Vertex(float x, float y, float z) {
+			pos.x = x;
+			pos.y = y;
+			pos.z = z;
+		}
+	};
+
+	Vertex vertices[] = {
+		Vertex( -0.5, -0.5, 0.0f),
+		Vertex(0.0, 0.5, 0.0f),
+		Vertex( 0.5, -0.5, 0.0f)
+		
 	};
 
 	size_t VBO;
 
-	graphics->GenerateBuffer(1, VBO);
-	graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
-	graphics->CopyVertexBufferData( 9, &vertices, VertexDataUsage::StaticDraw);
+	size_t VAO;
 
+	graphics->GenerateVertexArray(1, VAO);
+	graphics->GenerateBuffer(1, VBO);
+
+	graphics->BindVertexArray(VAO);
+	graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
+	graphics->CopyVertexBufferData(sizeof(Vertex) * 3, &vertices, VertexDataUsage::StaticDraw);
+	graphics->AddVertexAttributePointer(3, 0, false, sizeof(Vertex));
+	graphics->UnBindVertexArray();
+
+	graphics->BindVertexArray(VAO);
 	while (!graphics->CheckWindowClose(windowPtr))
 	{
 		graphics->ClearScreen();
 
+		graphics->Draw();
 
 		graphics->SwapBuffers(windowPtr);
 		graphics->CheckInputs();

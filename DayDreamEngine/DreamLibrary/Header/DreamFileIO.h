@@ -10,6 +10,7 @@ class DreamFileIO
 public:
 	static bool OpenFileRead(const char* filePath);
 	static void OpenFileWrite(const char* filePath, FileWriteType type);
+	static const bool ReadFullFile(char** lineOut);
 	static const bool ReadLine(char** lineOut);
 	static void CloseFileRead();
 	static void CloseFileWrite();

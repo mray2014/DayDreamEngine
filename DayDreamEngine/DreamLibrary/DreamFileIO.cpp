@@ -55,6 +55,25 @@ void DreamFileIO::OpenFileWrite(const char * filePath, FileWriteType type)
 	}
 }
 
+const bool DreamFileIO::ReadFullFile(char** lineOut)
+{
+	if (readFileStream.is_open()) {
+		readFileStream.seekg(0, std::ios::end);
+		int lenght = (int)readFileStream.tellg();
+
+		readFileStream.seekg(0, std::ios::beg);
+		char* text = new char[lenght + 1];
+
+		readFileStream.read(text, lenght);
+		text[lenght] = 0;
+
+		*lineOut = text;
+		return true;
+	}
+
+	return false;
+}
+
 const bool DreamFileIO::ReadLine(char** lineOut)
 {
 	bool endOfFile = false;
