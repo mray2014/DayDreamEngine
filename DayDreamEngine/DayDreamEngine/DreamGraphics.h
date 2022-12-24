@@ -17,6 +17,8 @@ enum ShaderType {
 	Compute,
 };
 
+using namespace DreamMath;
+
 class DreamPointer {
 public:
 	DreamPointer(void* newPtr) {

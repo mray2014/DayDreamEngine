@@ -37,6 +37,7 @@ namespace DreamMath {
 	float deg2rad(float degrees);
 	float sqrtf(float num);
 	float truncf(float num);
+	float round(float num, int decimal = 2);
 	float lerp(float A, float B, float time);
 	float Dot(float* vec1, float* vec2, int size);
 	float Dot(float vec1[], float vec2[]);

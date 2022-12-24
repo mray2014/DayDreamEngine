@@ -7,9 +7,14 @@
 #define COL_MAJOR
 #endif
 
+#include <string>
+
+//TODO: Pass refence into functions and operator over loads
+//TODO: Somehow std math is being referenced in the unit test class somehow
+
 namespace DreamMath {
 
-#define EPSILON 0.000001
+#define EPSILON 0.00001
 
 #define PI 3.14159265358979323846
 
@@ -31,16 +36,12 @@ namespace DreamMath {
 	float rad2deg(float radians);
 	float deg2rad(float degrees);
 	float sqrtf(float num);
+	float truncf(float num);
+	float round(float num, int decimal = 2);
 	float lerp(float A, float B, float time);
 	float Dot(float* vec1, float* vec2, int size);
 	float Dot(float vec1[], float vec2[]);
 	float FixFloatingPointError(float num);
-
-
-
-
-
-
 
 	struct DreamMatrix3X3 {
 	public:
@@ -65,8 +66,9 @@ namespace DreamMath {
 			for (int i = 0; i < (3 * 3); i++) {
 				int curRow = i / 3;
 				int curCol = i % 3;
-				if (DreamMath::abs(this->matrix[curRow][curCol]) < EPSILON) {
-					this->matrix[curRow][curCol] = 0;
+				float truncatedNum = truncf(this->matrix[curRow][curCol]);
+				if (DreamMath::abs(this->matrix[curRow][curCol] - truncatedNum) < EPSILON) {
+					this->matrix[curRow][curCol] = truncatedNum;
 				}
 			}
 		}
@@ -157,6 +159,35 @@ namespace DreamMath {
 			newMatrix.matrix[2][2] = 1;
 
 			return newMatrix;
+		}
+
+		std::string ToString() {
+
+			std::string finalString = "";
+			int matrixSize = 3;
+
+			for (int i = 0; i < (matrixSize * matrixSize); i++) {
+				int curRow = i / matrixSize;
+				int curCol = i % matrixSize;
+
+				if (finalString != "" && curCol == 0) {
+					finalString += "\n";
+				}
+				if (curCol == 0) {
+					finalString += "[ ";
+				}
+
+				finalString += std::to_string(this->matrix[curRow][curCol]);
+
+				if (curCol == (matrixSize -1)) {
+					finalString += "]";
+				}
+				else {
+					finalString += ", ";
+				}
+			}
+
+			return finalString;
 		}
 
 #pragma region Operator Overload
@@ -255,9 +286,24 @@ namespace DreamMath {
 			}
 		}
 
+		bool operator==(DreamMatrix3X3 m) {
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				float num = this->matrix[curRow][curCol] - m.matrix[curRow][curCol];
+
+				if (abs(num) > EPSILON) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 #pragma endregion
 
 	};
+
+
 	struct DreamMatrix4X4 {
 	public:
 		float matrix[4][4] = { 0 };
@@ -287,8 +333,9 @@ namespace DreamMath {
 			for (int i = 0; i < (4 * 4); i++) {
 				int curRow = i / 4;
 				int curCol = i % 4;
-				if (DreamMath::abs(this->matrix[curRow][curCol]) < EPSILON) {
-					this->matrix[curRow][curCol] = 0;
+				float truncatedNum = truncf(this->matrix[curRow][curCol]);
+				if (DreamMath::abs(this->matrix[curRow][curCol] - truncatedNum) < EPSILON) {
+					this->matrix[curRow][curCol] = truncatedNum;
 				}
 			}
 		}
@@ -346,6 +393,7 @@ namespace DreamMath {
 
 			return newMatrix;
 		}
+
 #pragma region Operator Overloads
 
 
@@ -445,7 +493,49 @@ namespace DreamMath {
 			}
 		}
 
+		bool operator==(DreamMatrix4X4 m) {
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				float num = this->matrix[curRow][curCol] - m.matrix[curRow][curCol];
+
+				if (abs(num) > EPSILON) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 #pragma endregion
+
+		std::string ToString() {
+			std::string finalString = "";
+			int matrixSize = 4;
+
+			for (int i = 0; i < (matrixSize * matrixSize); i++) {
+				int curRow = i / matrixSize;
+				int curCol = i % matrixSize;
+
+				if (finalString != "" && curCol == 0) {
+					finalString += "\n";
+				}
+				if (curCol == 0) {
+					finalString += "[ ";
+				}
+
+				finalString += std::to_string(this->matrix[curRow][curCol]);
+
+				if (curCol == (matrixSize - 1)) {
+					finalString += "]";
+				}
+				else {
+					finalString += ", ";
+				}
+			}
+
+			return finalString;
+		}
+
 	};
 
 
@@ -473,11 +563,11 @@ public:
 	}
 
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x) < EPSILON) {
-			this->x = 0;
+		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y) < EPSILON) {
-			this->y = 0;
+		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+			this->y = truncf(this->y);
 		}
 	}
 
@@ -610,11 +700,14 @@ public:
 
 	}
 	bool operator==(DreamVector2 v) {
-		return (this->x == v.x) && (this->y == v.y);
+		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON);
 	}
 
 #pragma endregion
 
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->x) + ", y: " + std::to_string(this->y) + "]");
+	}
 };
 struct DreamVector3 {
 public:
@@ -635,14 +728,14 @@ public:
 		return DreamMath::sqrtf((x * x) + (y * y) + (z * z));
 	}
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x) < EPSILON) {
-			this->x = 0;
+		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y) < EPSILON) {
-			this->y = 0;
+		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+			this->y = truncf(this->y);
 		}
-		if (DreamMath::abs(this->z) < EPSILON) {
-			this->z = 0;
+		if (DreamMath::abs(this->z - truncf(this->z)) < EPSILON) {
+			this->z = truncf(this->z);
 		}
 	}
 	DreamVector3 GetNormalizedVector() {
@@ -804,7 +897,7 @@ public:
 		this->z /= num;
 	}
 	bool operator==(DreamVector3 v) {
-		return (this->x == v.x) && (this->y == v.y) && (this->z == v.z);
+		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON) && (abs(this->y - v.y) <= EPSILON);
 	}
 
 	DreamVector3 operator* (DreamMatrix3X3 m) {
@@ -828,6 +921,10 @@ public:
 
 #pragma endregion
 
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->x) + ", y: " + std::to_string(this->y) + ", z: " + std::to_string(this->z) + "]");
+	}
+
 };
 struct DreamVector4 {
 public:
@@ -850,17 +947,17 @@ public:
 		return DreamMath::sqrtf((x * x) + (y * y) + (z * z) + (w * w));
 	}
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x) < EPSILON) {
-			this->x = 0;
+		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y) < EPSILON) {
-			this->y = 0;
+		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+			this->y = truncf(this->y);
 		}
-		if (DreamMath::abs(this->z) < EPSILON) {
-			this->z = 0;
+		if (DreamMath::abs(this->z - truncf(this->z)) < EPSILON) {
+			this->z = truncf(this->z);
 		}
-		if (DreamMath::abs(this->w) < EPSILON) {
-			this->w = 0;
+		if (DreamMath::abs(this->w - truncf(this->w)) < EPSILON) {
+			this->w = truncf(this->w);
 		}
 	}
 	DreamVector4 GetNormalizedVector() {
@@ -1031,7 +1128,7 @@ public:
 	}
 
 	bool operator==(DreamVector4 v) {
-		return (this->x == v.x) && (this->y == v.y) && (this->z == v.z) && (this->w == v.w);
+		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON) && (abs(this->z - v.z) <= EPSILON) && (abs(this->w - v.w) <= EPSILON);
 	}
 
 	DreamVector4 operator* (DreamMatrix4X4 m) {
@@ -1056,6 +1153,10 @@ public:
 		*this = newVec;
 	}
 #pragma endregion
+
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->x) + ", y: " + std::to_string(this->y) + ", z: " + std::to_string(this->z) + ", w: " + std::to_string(this->w) + "]");
+	}
 
 };
 
@@ -1204,6 +1305,10 @@ public:
 		*this = returnQuat;
 	}
 
+	bool operator==(DreamQuaternion quat) {
+		return (this->qVector == quat.qVector) && (this->wScalar == quat.wScalar);
+	}
+
 #pragma endregion
 
 	void Inverse() {
@@ -1307,6 +1412,11 @@ public:
 
 		return slerpQuat;
 	}
+
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->qVector.x) + ", y: " + std::to_string(this->qVector.y) + ", z: " + std::to_string(this->qVector.z) + ", w: " + std::to_string(this->wScalar) + "]");
+	}
+
 };
 
 
@@ -1416,7 +1526,9 @@ static DreamMatrix4X4 CreateScaleMatrix(DreamVector3 scale) {
 }
 
 
+static DreamVector3 GetEulerFrom3X3Rot(DreamMatrix3X3 mat) {
 
+}
 
 
 struct DreamTransform {
@@ -1425,14 +1537,83 @@ public:
 	DreamVector3 rotation;
 	DreamVector3 scale;
 
-	DreamVector3 forward;
-	DreamVector3 up;
-	DreamVector3 right;
-
 	DreamMatrix4X4 GetWorldMatrix() {
 		return ((DreamMath::CreateScaleMatrix(scale)
 			* DreamMath::CreateRotationMatrix(rotation))
 			* DreamMath::CreateTranslationMatrix(position));
+	}
+
+	DreamVector3 GetForward() {
+		return forward;
+	}
+	DreamVector3 GetUp() {
+		return up;
+	}
+	DreamVector3 GetRight() {
+		return right;
+	}
+
+	void SetForward(DreamVector3 newForward) {
+
+		this->forward = newForward;
+		this->right = DreamVector3::Cross(this->forward, this->up);
+		this->up = DreamVector3::Cross(this->right, this->forward);
+
+		SetRotationFromDirections();
+	}
+	void SetUp(DreamVector3 newUp) {
+
+		this->up = newUp;
+		this->forward = DreamVector3::Cross(this->up, this->right);
+		this->right = DreamVector3::Cross(this->forward, this->up);
+
+		SetRotationFromDirections();
+	}
+	void SetRight(DreamVector3 newRight) {
+
+		this->right = newRight;
+		this->up = DreamVector3::Cross(this->right, this->forward);
+		this->forward = DreamVector3::Cross(this->up, this->right);
+
+		SetRotationFromDirections();
+	}
+
+	void LookAt(DreamVector3 target, DreamVector3 staticUp) {
+
+		this->forward = target - position;
+		this->right = DreamVector3::Cross(this->forward, staticUp);
+		this->up = DreamVector3::Cross(this->right, this->forward);
+
+		SetRotationFromDirections();
+
+	}
+
+private:
+	DreamVector3 forward;
+	DreamVector3 up;
+	DreamVector3 right;
+
+	void SetRotationFromDirections() {
+
+		this->forward.Normalize();
+		this->right.Normalize();
+		this->up.Normalize();
+
+		DreamMatrix3X3 newRot = DreamMatrix3X3();
+
+		newRot.matrix[0][0] = this->right.x;
+		newRot.matrix[0][1] = this->right.y;
+		newRot.matrix[0][2] = this->right.z;
+
+		newRot.matrix[1][0] = this->up.x;
+		newRot.matrix[1][1] = this->up.y;
+		newRot.matrix[1][2] = this->up.z;
+
+		newRot.matrix[2][0] = this->forward.x;
+		newRot.matrix[2][1] = this->forward.y;
+		newRot.matrix[2][2] = this->forward.z;
+
+		rotation = DreamMath::GetEulerFrom3X3Rot(newRot);
 	}
 };
 
