@@ -28,7 +28,7 @@ float DreamMath::tan(float degrees)
 float DreamMath::asin(float num)
 {
 	if (num < -1 || num > 1) {
-		printf("Not a valid number...");
+		printf("Not a valid number...\n");
 		return -9999;
 	}
 	return std::asinf(num);
@@ -37,7 +37,7 @@ float DreamMath::asin(float num)
 float DreamMath::acos(float num)
 {
 	if (num < -1 && num > 1) {
-		printf("Not a valid number...");
+		printf("Not a valid number...\n");
 		return -1;
 	}
 	return std::acosf(num);
@@ -46,7 +46,7 @@ float DreamMath::acos(float num)
 float DreamMath::atan(float num)
 {
 	if (num < -1 && num > 1) {
-		printf("Not a valid number...");
+		printf("Not a valid number...\n");
 		return -1;
 	}
 	return std::atanf(num);
@@ -87,6 +87,11 @@ float DreamMath::sqrtf(float num)
 	return std::sqrtf(num);
 }
 
+float DreamMath::truncf(float num)
+{
+	return std::truncf(num);
+}
+
 float DreamMath::lerp(float A, float B, float time)
 {
 	return ((1 - time) * A) + (time * B);
@@ -119,10 +124,12 @@ float DreamMath::Dot(float vec1[], float vec2[])
 
 float DreamMath::FixFloatingPointError(float num)
 {
-	if (DreamMath::abs(num) < EPSILON) {
-		num = 0;
+	float returnNum = num;
+	float truncatedNum = truncf(returnNum);
+	if (DreamMath::abs(returnNum - truncatedNum) < EPSILON) {
+		returnNum = truncatedNum;
 	}
-	return num;
+	return returnNum;
 }
 
 #endif

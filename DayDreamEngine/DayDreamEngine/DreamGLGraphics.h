@@ -15,11 +15,14 @@ public:
 	bool CheckWindowClose(DreamPointer* window) override;
 	void FindCorrectFunctionPointers() override;
 
-	void SetScreenClearColor(DreamVector4 color) override;
+	void SetScreenClearColor(DreamMath::DreamVector4 color) override;
 	void SetScreenClearColor(float r, float g, float b, float a) override;
 	void ClearScreen() override;
 	void SwapBuffers(DreamPointer* window) override;
 	void CheckInputs() override;
+	void GenerateBuffer(size_t numOfBuffers, size_t& VBO) override;
+	void BindBuffer(BufferType type, size_t& VBO) override;
+	void CopyVertexBufferData(size_t numOfVerts, void* verts, VertexDataUsage dataUsage) override;
 
 	void TerminateGraphics() override;
 

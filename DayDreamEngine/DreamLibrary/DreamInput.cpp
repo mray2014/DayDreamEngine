@@ -1,5 +1,6 @@
 #include "DreamInput.h"
-#include <Windows.h>
+#include "DreamMath.h"
+#include <Windows.h> // TODO: Add gaurds for different platforms
 #include <Xinput.h>
 
 using namespace DreamInput;
@@ -362,7 +363,7 @@ void DreamInput::UpdateRStick()
 
 
 	//determine how far the controller is pushed
-	RightStick.magnitude = std::sqrtf((RightStick.x  * RightStick.x) + (RightStick.y * RightStick.y));
+	RightStick.magnitude = DreamMath::sqrtf((RightStick.x  * RightStick.x) + (RightStick.y * RightStick.y));
 
 	//determine the direction the controller is pushed
 	RightStick.normalizedX = (RightStick.x / RightStick.magnitude);

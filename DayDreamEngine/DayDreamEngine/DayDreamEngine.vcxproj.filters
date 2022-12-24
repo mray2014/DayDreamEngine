@@ -22,6 +22,9 @@
     <Filter Include="PlatformDependent\Source">
       <UniqueIdentifier>{e7df1f34-fb09-4904-94bd-a7370c49abac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{226b91d9-5548-4bfc-ab91-ec36309529f9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DayDreamEngine.cpp">
@@ -62,5 +65,13 @@
     <ClInclude Include="DreamGLGraphics.h">
       <Filter>PlatformDependent\Header</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\pixel.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\vertex.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

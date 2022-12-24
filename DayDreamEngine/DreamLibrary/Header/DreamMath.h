@@ -7,9 +7,14 @@
 #define COL_MAJOR
 #endif
 
+#include <string>
+
+//TODO: Pass refence into functions and operator over loads
+//TODO: Somehow std math is being referenced in the unit test class somehow
+
 namespace DreamMath {
 
-#define EPSILON 0.000001
+#define EPSILON 0.00001
 
 #define PI 3.14159265358979323846
 
@@ -31,11 +36,11 @@ namespace DreamMath {
 	float rad2deg(float radians);
 	float deg2rad(float degrees);
 	float sqrtf(float num);
+	float truncf(float num);
 	float lerp(float A, float B, float time);
 	float Dot(float* vec1, float* vec2, int size);
 	float Dot(float vec1[], float vec2[]);
 	float FixFloatingPointError(float num);
-
 
 	struct DreamMatrix3X3 {
 	public:
@@ -60,8 +65,9 @@ namespace DreamMath {
 			for (int i = 0; i < (3 * 3); i++) {
 				int curRow = i / 3;
 				int curCol = i % 3;
-				if (DreamMath::abs(this->matrix[curRow][curCol]) < EPSILON) {
-					this->matrix[curRow][curCol] = 0;
+				float truncatedNum = truncf(this->matrix[curRow][curCol]);
+				if (DreamMath::abs(this->matrix[curRow][curCol] - truncatedNum) < EPSILON) {
+					this->matrix[curRow][curCol] = truncatedNum;
 				}
 			}
 		}
@@ -152,6 +158,35 @@ namespace DreamMath {
 			newMatrix.matrix[2][2] = 1;
 
 			return newMatrix;
+		}
+
+		std::string ToString() {
+
+			std::string finalString = "";
+			int matrixSize = 3;
+
+			for (int i = 0; i < (matrixSize * matrixSize); i++) {
+				int curRow = i / matrixSize;
+				int curCol = i % matrixSize;
+
+				if (finalString != "" && curCol == 0) {
+					finalString += "\n";
+				}
+				if (curCol == 0) {
+					finalString += "[ ";
+				}
+
+				finalString += std::to_string(this->matrix[curRow][curCol]);
+
+				if (curCol == (matrixSize -1)) {
+					finalString += "]";
+				}
+				else {
+					finalString += ", ";
+				}
+			}
+
+			return finalString;
 		}
 
 #pragma region Operator Overload
@@ -250,9 +285,24 @@ namespace DreamMath {
 			}
 		}
 
+		bool operator==(DreamMatrix3X3 m) {
+			for (int i = 0; i < (3 * 3); i++) {
+				int curRow = i / 3;
+				int curCol = i % 3;
+				float num = this->matrix[curRow][curCol] - m.matrix[curRow][curCol];
+
+				if (abs(num) > EPSILON) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 #pragma endregion
 
 	};
+
+
 	struct DreamMatrix4X4 {
 	public:
 		float matrix[4][4] = { 0 };
@@ -282,14 +332,11 @@ namespace DreamMath {
 			for (int i = 0; i < (4 * 4); i++) {
 				int curRow = i / 4;
 				int curCol = i % 4;
-				if (DreamMath::abs(this->matrix[curRow][curCol]) < EPSILON) {
-					this->matrix[curRow][curCol] = 0;
+				float truncatedNum = truncf(this->matrix[curRow][curCol]);
+				if (DreamMath::abs(this->matrix[curRow][curCol] - truncatedNum) < EPSILON) {
+					this->matrix[curRow][curCol] = truncatedNum;
 				}
 			}
-		}
-
-		void Inverse() {
-
 		}
 
 		void Transpose() {
@@ -314,10 +361,13 @@ namespace DreamMath {
 
 		float Determinate() {
 
-			return (this->matrix[0][0] * this->matrix[0][1] * this->matrix[0][2] * this->matrix[0][3])
-				- (this->matrix[1][0] * this->matrix[1][1] * this->matrix[1][2] * this->matrix[1][3])
-				- (this->matrix[2][0] * this->matrix[2][1] * this->matrix[2][2] * this->matrix[2][3])
-				- (this->matrix[3][0] * this->matrix[3][1] * this->matrix[3][2] * this->matrix[3][3]);
+			float det = 0;
+
+			return det;
+		}
+
+		void Inverse() {
+
 		}
 
 		DreamMatrix3X3 Get3X3() {
@@ -342,6 +392,7 @@ namespace DreamMath {
 
 			return newMatrix;
 		}
+
 #pragma region Operator Overloads
 
 
@@ -441,8 +492,55 @@ namespace DreamMath {
 			}
 		}
 
+		bool operator==(DreamMatrix4X4 m) {
+			for (int i = 0; i < (4 * 4); i++) {
+				int curRow = i / 4;
+				int curCol = i % 4;
+				float num = this->matrix[curRow][curCol] - m.matrix[curRow][curCol];
+
+				if (abs(num) > EPSILON) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 #pragma endregion
+
+		std::string ToString() {
+			std::string finalString = "";
+			int matrixSize = 4;
+
+			for (int i = 0; i < (matrixSize * matrixSize); i++) {
+				int curRow = i / matrixSize;
+				int curCol = i % matrixSize;
+
+				if (finalString != "" && curCol == 0) {
+					finalString += "\n";
+				}
+				if (curCol == 0) {
+					finalString += "[ ";
+				}
+
+				finalString += std::to_string(this->matrix[curRow][curCol]);
+
+				if (curCol == (matrixSize - 1)) {
+					finalString += "]";
+				}
+				else {
+					finalString += ", ";
+				}
+			}
+
+			return finalString;
+		}
+
 	};
+
+
+
+
+
 
 
 
@@ -464,11 +562,11 @@ public:
 	}
 
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x) < EPSILON) {
-			this->x = 0;
+		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y) < EPSILON) {
-			this->y = 0;
+		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+			this->y = truncf(this->y);
 		}
 	}
 
@@ -601,11 +699,14 @@ public:
 
 	}
 	bool operator==(DreamVector2 v) {
-		return (this->x == v.x) && (this->y == v.y);
+		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON);
 	}
 
 #pragma endregion
 
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->x) + ", y: " + std::to_string(this->y) + "]");
+	}
 };
 struct DreamVector3 {
 public:
@@ -626,14 +727,14 @@ public:
 		return DreamMath::sqrtf((x * x) + (y * y) + (z * z));
 	}
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x) < EPSILON) {
-			this->x = 0;
+		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y) < EPSILON) {
-			this->y = 0;
+		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+			this->y = truncf(this->y);
 		}
-		if (DreamMath::abs(this->z) < EPSILON) {
-			this->z = 0;
+		if (DreamMath::abs(this->z - truncf(this->z)) < EPSILON) {
+			this->z = truncf(this->z);
 		}
 	}
 	DreamVector3 GetNormalizedVector() {
@@ -795,7 +896,7 @@ public:
 		this->z /= num;
 	}
 	bool operator==(DreamVector3 v) {
-		return (this->x == v.x) && (this->y == v.y) && (this->z == v.z);
+		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON) && (abs(this->y - v.y) <= EPSILON);
 	}
 
 	DreamVector3 operator* (DreamMatrix3X3 m) {
@@ -819,6 +920,10 @@ public:
 
 #pragma endregion
 
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->x) + ", y: " + std::to_string(this->y) + ", z: " + std::to_string(this->z) + "]");
+	}
+
 };
 struct DreamVector4 {
 public:
@@ -841,17 +946,17 @@ public:
 		return DreamMath::sqrtf((x * x) + (y * y) + (z * z) + (w * w));
 	}
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x) < EPSILON) {
-			this->x = 0;
+		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y) < EPSILON) {
-			this->y = 0;
+		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+			this->y = truncf(this->y);
 		}
-		if (DreamMath::abs(this->z) < EPSILON) {
-			this->z = 0;
+		if (DreamMath::abs(this->z - truncf(this->z)) < EPSILON) {
+			this->z = truncf(this->z);
 		}
-		if (DreamMath::abs(this->w) < EPSILON) {
-			this->w = 0;
+		if (DreamMath::abs(this->w - truncf(this->w)) < EPSILON) {
+			this->w = truncf(this->w);
 		}
 	}
 	DreamVector4 GetNormalizedVector() {
@@ -1022,7 +1127,7 @@ public:
 	}
 
 	bool operator==(DreamVector4 v) {
-		return (this->x == v.x) && (this->y == v.y) && (this->z == v.z) && (this->w == v.w);
+		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON) && (abs(this->z - v.z) <= EPSILON) && (abs(this->w - v.w) <= EPSILON);
 	}
 
 	DreamVector4 operator* (DreamMatrix4X4 m) {
@@ -1048,9 +1153,280 @@ public:
 	}
 #pragma endregion
 
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->x) + ", y: " + std::to_string(this->y) + ", z: " + std::to_string(this->z) + ", w: " + std::to_string(this->w) + "]");
+	}
+
 };
 
 
+
+
+
+
+
+
+struct DreamQuaternion {
+public:
+	DreamVector3 qVector;
+	float wScalar;
+
+	DreamQuaternion() {
+		this->qVector = DreamVector3();
+		this->wScalar = 0;
+	}
+	DreamQuaternion(DreamVector3 axisOfRot, float degrees) {
+
+		float vecDegree = DreamMath::sin(degrees / 2);
+		float scalDegree = DreamMath::cos(degrees / 2);
+
+		this->qVector = axisOfRot * vecDegree;
+		this->wScalar = scalDegree;
+
+		//this->Normalize();
+	}
+	DreamQuaternion(DreamMatrix3X3 rotMatrix) {
+
+	
+	}
+	DreamQuaternion(const DreamQuaternion& quat) {
+		this->qVector = quat.qVector;
+		this->wScalar = quat.wScalar;
+	}
+	void FixFloatingPointError() {
+		this->qVector.FixFloatingPointError();
+		this->wScalar = DreamMath::FixFloatingPointError(this->wScalar);
+	}
+	float GetMagnitude() {
+		return DreamMath::sqrtf(this->qVector.GetSqrMagnitude() + (this->wScalar * this->wScalar));
+	}
+	void Normalize() {
+		float mag = this->GetMagnitude();
+
+		if (mag == 0) {
+			return;
+		}
+
+		this->qVector /= mag;
+		this->wScalar /= mag;
+
+		this->FixFloatingPointError();
+	}
+#pragma region Operator Overloads
+
+
+	DreamQuaternion operator* (DreamQuaternion quat) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = (this->qVector * quat.wScalar) + (quat.qVector * this->wScalar) + DreamVector3::Cross(this->qVector, quat.qVector);
+		returnQuat.wScalar = (this->wScalar * quat.wScalar) - DreamVector3::Dot(this->qVector, quat.qVector);
+
+		//returnQuat.Normalize();
+
+		returnQuat.FixFloatingPointError();
+
+		return returnQuat;
+	}
+
+	void operator*=(DreamQuaternion quat) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = (this->qVector * quat.wScalar) + (quat.qVector * this->wScalar) + DreamVector3::Cross(this->qVector, quat.qVector);
+		returnQuat.wScalar = (this->wScalar * quat.wScalar) - DreamVector3::Dot(this->qVector, quat.qVector);
+
+		//returnQuat.Normalize();
+
+		returnQuat.FixFloatingPointError();
+
+		*this = returnQuat;
+	}
+
+	DreamQuaternion operator* (float num) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = this->qVector * num;
+		returnQuat.wScalar = this->wScalar * num;
+
+		returnQuat.FixFloatingPointError();
+
+		return returnQuat;
+	}
+
+	void operator*=(float num) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = this->qVector * num;
+		returnQuat.wScalar = this->wScalar * num;
+
+		returnQuat.FixFloatingPointError();
+
+		*this = returnQuat;
+	}
+
+	DreamQuaternion operator/ (float num) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = this->qVector / num;
+		returnQuat.wScalar = this->wScalar / num;
+
+		returnQuat.FixFloatingPointError();
+
+		return returnQuat;
+	}
+
+	void operator/=(float num) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = this->qVector / num;
+		returnQuat.wScalar = this->wScalar / num;
+
+		returnQuat.FixFloatingPointError();
+
+		*this = returnQuat;
+	}
+
+
+	DreamQuaternion operator+ (DreamQuaternion quat) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = this->qVector + quat.qVector;
+		returnQuat.wScalar = this->wScalar + quat.wScalar;
+
+		return returnQuat;
+	}
+
+	void operator+=(DreamQuaternion quat) {
+		DreamQuaternion returnQuat = DreamQuaternion();
+
+		returnQuat.qVector = this->qVector + quat.qVector;
+		returnQuat.wScalar = this->wScalar + quat.wScalar;
+
+		*this = returnQuat;
+	}
+
+	bool operator==(DreamQuaternion quat) {
+		return (this->qVector == quat.qVector) && (this->wScalar == quat.wScalar);
+	}
+
+#pragma endregion
+
+	void Inverse() {
+		this->qVector *= -1;
+	}
+	DreamQuaternion GetInverse() {
+		DreamQuaternion returnQuat = *this;
+		returnQuat.qVector *= -1;
+
+		return returnQuat;
+	}
+	DreamMatrix3X3 GetMatrix() {
+		DreamMatrix3X3 rotMatrix = DreamMatrix3X3();
+
+		rotMatrix.matrix[0][0] = 1 - (2 * (this->qVector.y *this->qVector.y)) - (2 * (this->qVector.z *this->qVector.z));
+		rotMatrix.matrix[1][1] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.z *this->qVector.z));
+		rotMatrix.matrix[2][2] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.y *this->qVector.y));
+
+		rotMatrix.matrix[0][1] = (2 * this->qVector.x * this->qVector.y) + (2 * this->qVector.z * this->wScalar);
+		rotMatrix.matrix[1][0] = (2 * this->qVector.x * this->qVector.y) - (2 * this->qVector.z * this->wScalar);
+
+		rotMatrix.matrix[0][2] = (2 * this->qVector.x * this->qVector.z) - (2 * this->qVector.y * this->wScalar);
+		rotMatrix.matrix[2][0] = (2 * this->qVector.x * this->qVector.z) + (2 * this->qVector.y * this->wScalar);
+
+		rotMatrix.matrix[1][2] = (2 * this->qVector.y * this->qVector.z) + (2 * this->qVector.x * this->wScalar);
+		rotMatrix.matrix[2][1] = (2 * this->qVector.y * this->qVector.z) - (2 * this->qVector.x * this->wScalar);
+
+		rotMatrix.FixFloatingPointError();
+
+		return rotMatrix;
+	}
+	DreamVector3 RotateVector(float x, float y, float z) {
+
+		DreamQuaternion vecToQuat = DreamQuaternion();
+		vecToQuat.qVector = DreamVector3(x, y, z).GetNormalizedVector();
+		vecToQuat.wScalar = 0;
+
+		DreamQuaternion finalRot = ((*this * vecToQuat)* this->GetInverse());
+
+		finalRot.FixFloatingPointError();
+
+		return finalRot.qVector;
+	}
+	DreamVector3 RotateVector(DreamVector3 vec) {
+
+		DreamQuaternion vecToQuat = DreamQuaternion();
+		vecToQuat.qVector = vec.GetNormalizedVector();
+		vecToQuat.wScalar = 0;
+
+		DreamQuaternion finalRot = ((*this * vecToQuat)* this->GetInverse());
+
+		finalRot.FixFloatingPointError();
+
+		return finalRot.qVector;
+	}
+	static float Dot(DreamQuaternion A, DreamQuaternion B) {
+		return (A.qVector.x * B.qVector.x) + (A.qVector.y * B.qVector.y) + (A.qVector.z * B.qVector.z) + (A.wScalar * B.wScalar);
+	}
+	static DreamQuaternion MakeQuaternionEuler(float x, float y, float z) {
+
+		DreamQuaternion xQuat = DreamQuaternion(DreamVector3(1, 0, 0), x);
+		DreamQuaternion yQuat = DreamQuaternion(DreamVector3(0, 1, 0), y);
+		DreamQuaternion zQuat = DreamQuaternion(DreamVector3(0, 0, 1), z);
+
+		DreamQuaternion finalQuat = ((zQuat * yQuat) * xQuat);
+
+		finalQuat.FixFloatingPointError();
+
+		return finalQuat;
+	}
+	static DreamQuaternion MakeQuaternionEuler(DreamVector3 rotation) {
+
+		DreamQuaternion xQuat = DreamQuaternion(DreamVector3(1, 0, 0), rotation.x);
+		DreamQuaternion yQuat = DreamQuaternion(DreamVector3(0, 1, 0), rotation.y);
+		DreamQuaternion zQuat = DreamQuaternion(DreamVector3(0, 0, 1), rotation.z);
+
+		DreamQuaternion finalQuat = ((zQuat * yQuat) * xQuat);
+
+		finalQuat.FixFloatingPointError();
+
+		return finalQuat;
+	}
+	static DreamQuaternion lerp(DreamQuaternion A, DreamQuaternion B, float time) {
+		DreamQuaternion lerpQuat = (A * (1-time)) + (B * time);
+
+		lerpQuat.Normalize();
+
+		return lerpQuat / lerpQuat.GetMagnitude();
+	}
+	static DreamQuaternion slerp(DreamQuaternion A, DreamQuaternion B, float time) {
+
+		float cosAngle = DreamQuaternion::Dot(A, B);
+		float angle = DreamMath::acos(cosAngle);
+
+		float wA = DreamMath::sin((1 - time) * angle) / DreamMath::sin(angle);
+		float wB = DreamMath::sin(time * angle) / DreamMath::sin(angle);
+
+		DreamQuaternion slerpQuat = (A * wA) + (B * wB);
+
+		slerpQuat.Normalize();
+
+		return slerpQuat;
+	}
+
+	std::string ToString() {
+		return std::string("[x: " + std::to_string(this->qVector.x) + ", y: " + std::to_string(this->qVector.y) + ", z: " + std::to_string(this->qVector.z) + ", w: " + std::to_string(this->wScalar) + "]");
+	}
+
+};
+
+
+
+
+
+
+
+
+
+// More Static functions
 
 static DreamMatrix4X4 CreateTranslationMatrix(float x, float y, float z) {
 	DreamMatrix4X4 translationMatrix = DreamMatrix4X4::Identity();
@@ -1130,7 +1506,7 @@ static DreamMatrix4X4 CreateRotationMatrix(DreamVector3 rotation) {
 	rotMatrixZ.matrix[1][0] = -DreamMath::sin(rotation.z);
 	rotMatrixZ.matrix[1][1] = DreamMath::cos(rotation.z);
 
- 	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
+	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
 
 	finalRotMatrix.FixFloatingPointError();
 
@@ -1149,7 +1525,9 @@ static DreamMatrix4X4 CreateScaleMatrix(DreamVector3 scale) {
 }
 
 
+static DreamVector3 GetEulerFrom3X3Rot(DreamMatrix3X3 mat) {
 
+}
 
 
 struct DreamTransform {
@@ -1158,168 +1536,86 @@ public:
 	DreamVector3 rotation;
 	DreamVector3 scale;
 
-	DreamVector3 forward;
-	DreamVector3 up;
-	DreamVector3 right;
-
 	DreamMatrix4X4 GetWorldMatrix() {
 		return ((DreamMath::CreateScaleMatrix(scale)
 			* DreamMath::CreateRotationMatrix(rotation))
 			* DreamMath::CreateTranslationMatrix(position));
 	}
-};
 
-
-struct DreamQuaternion {
-public:
-	DreamVector3 qVector;
-	float wScalar;
-
-	DreamQuaternion() {
-		this->qVector = DreamVector3();
-		this->wScalar = 0;
+	DreamVector3 GetForward() {
+		return forward;
 	}
-	DreamQuaternion(DreamVector3 axisOfRot, float degrees) {
-
-		float vecDegree = DreamMath::sin(degrees / 2);
-		float scalDegree = DreamMath::cos(degrees / 2);
-
-		this->qVector = axisOfRot * vecDegree;
-		this->wScalar = scalDegree;
-
-		//this->Normalize();
+	DreamVector3 GetUp() {
+		return up;
 	}
-	DreamQuaternion(DreamMatrix3X3 rotMatrix) {
-
-	
-	}
-	DreamQuaternion(const DreamQuaternion& quat) {
-		this->qVector = quat.qVector;
-		this->wScalar = quat.wScalar;
-	}
-	void FixFloatingPointError() {
-		this->qVector.FixFloatingPointError();
-		this->wScalar = DreamMath::FixFloatingPointError(this->wScalar);
-	}
-	float GetMagnitude() {
-		return DreamMath::sqrtf(this->qVector.GetSqrMagnitude() + (this->wScalar * this->wScalar));
-	}
-	void Normalize() {
-		float mag = this->GetMagnitude();
-
-		if (mag == 0) {
-			return;
-		}
-
-		this->qVector /= mag;
-		this->wScalar /= mag;
-
-		this->FixFloatingPointError();
+	DreamVector3 GetRight() {
+		return right;
 	}
 
-	DreamQuaternion operator* (DreamQuaternion quat) {
-		DreamQuaternion returnQuat = DreamQuaternion();
+	void SetForward(DreamVector3 newForward) {
 
-		returnQuat.qVector = (this->qVector * quat.wScalar) + (quat.qVector * this->wScalar) + DreamVector3::Cross(this->qVector, quat.qVector);
-		returnQuat.wScalar = (this->wScalar * quat.wScalar) - DreamVector3::Dot(this->qVector, quat.qVector);
+		this->forward = newForward;
+		this->right = DreamVector3::Cross(this->forward, this->up);
+		this->up = DreamVector3::Cross(this->right, this->forward);
 
-		//returnQuat.Normalize();
+		SetRotationFromDirections();
+	}
+	void SetUp(DreamVector3 newUp) {
 
-		returnQuat.FixFloatingPointError();
+		this->up = newUp;
+		this->forward = DreamVector3::Cross(this->up, this->right);
+		this->right = DreamVector3::Cross(this->forward, this->up);
 
-		return returnQuat;
+		SetRotationFromDirections();
+	}
+	void SetRight(DreamVector3 newRight) {
+
+		this->right = newRight;
+		this->up = DreamVector3::Cross(this->right, this->forward);
+		this->forward = DreamVector3::Cross(this->up, this->right);
+
+		SetRotationFromDirections();
 	}
 
-	void operator*=(DreamQuaternion quat) {
-		DreamQuaternion returnQuat = DreamQuaternion();
+	void LookAt(DreamVector3 target, DreamVector3 staticUp) {
 
-		returnQuat.qVector = (this->qVector * quat.wScalar) + (quat.qVector * this->wScalar) + DreamVector3::Cross(this->qVector, quat.qVector);
-		returnQuat.wScalar = (this->wScalar * quat.wScalar) - DreamVector3::Dot(this->qVector, quat.qVector);
+		this->forward = target - position;
+		this->right = DreamVector3::Cross(this->forward, staticUp);
+		this->up = DreamVector3::Cross(this->right, this->forward);
 
-		//returnQuat.Normalize();
+		SetRotationFromDirections();
 
-		returnQuat.FixFloatingPointError();
-
-		*this = returnQuat;
 	}
-	void Inverse() {
-		this->qVector *= -1;
-	}
-	DreamQuaternion GetInverse() {
-		DreamQuaternion returnQuat = *this;
-		returnQuat.qVector *= -1;
 
-		return returnQuat;
-	}
-	DreamMatrix3X3 GetMatrix() {
-		DreamMatrix3X3 rotMatrix = DreamMatrix3X3();
+private:
+	DreamVector3 forward;
+	DreamVector3 up;
+	DreamVector3 right;
 
-		rotMatrix.matrix[0][0] = 1 - (2 * (this->qVector.y *this->qVector.y)) - (2 * (this->qVector.z *this->qVector.z));
-		rotMatrix.matrix[1][1] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.z *this->qVector.z));
-		rotMatrix.matrix[2][2] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.y *this->qVector.y));
+	void SetRotationFromDirections() {
 
-		rotMatrix.matrix[0][1] = (2 * this->qVector.x * this->qVector.y) + (2 * this->qVector.z * this->wScalar);
-		rotMatrix.matrix[1][0] = (2 * this->qVector.x * this->qVector.y) - (2 * this->qVector.z * this->wScalar);
+		this->forward.Normalize();
+		this->right.Normalize();
+		this->up.Normalize();
 
-		rotMatrix.matrix[0][2] = (2 * this->qVector.x * this->qVector.z) - (2 * this->qVector.y * this->wScalar);
-		rotMatrix.matrix[2][0] = (2 * this->qVector.x * this->qVector.z) + (2 * this->qVector.y * this->wScalar);
+		DreamMatrix3X3 newRot = DreamMatrix3X3();
 
-		rotMatrix.matrix[1][2] = (2 * this->qVector.y * this->qVector.z) + (2 * this->qVector.x * this->wScalar);
-		rotMatrix.matrix[2][1] = (2 * this->qVector.y * this->qVector.z) - (2 * this->qVector.x * this->wScalar);
+		newRot.matrix[0][0] = this->right.x;
+		newRot.matrix[0][1] = this->right.y;
+		newRot.matrix[0][2] = this->right.z;
 
-		rotMatrix.FixFloatingPointError();
+		newRot.matrix[1][0] = this->up.x;
+		newRot.matrix[1][1] = this->up.y;
+		newRot.matrix[1][2] = this->up.z;
 
-		return rotMatrix;
-	}
-	DreamVector3 RotateVector(float x, float y, float z) {
+		newRot.matrix[2][0] = this->forward.x;
+		newRot.matrix[2][1] = this->forward.y;
+		newRot.matrix[2][2] = this->forward.z;
 
-		DreamQuaternion vecToQuat = DreamQuaternion();
-		vecToQuat.qVector = DreamVector3(x, y, z).GetNormalizedVector();
-		vecToQuat.wScalar = 0;
-
-		DreamQuaternion finalRot = ((*this * vecToQuat)* this->GetInverse());
-
-		finalRot.FixFloatingPointError();
-
-		return finalRot.qVector;
-	}
-	DreamVector3 RotateVector(DreamVector3 vec) {
-
-		DreamQuaternion vecToQuat = DreamQuaternion();
-		vecToQuat.qVector = vec.GetNormalizedVector();
-		vecToQuat.wScalar = 0;
-
-		DreamQuaternion finalRot = ((*this * vecToQuat)* this->GetInverse());
-
-		finalRot.FixFloatingPointError();
-
-		return finalRot.qVector;
-	}
-	static DreamQuaternion MakeQuaternionEuler(float x, float y, float z) {
-
-		DreamQuaternion xQuat = DreamQuaternion(DreamVector3(1, 0, 0), x);
-		DreamQuaternion yQuat = DreamQuaternion(DreamVector3(0, 1, 0), y);
-		DreamQuaternion zQuat = DreamQuaternion(DreamVector3(0, 0, 1), z);
-
-		DreamQuaternion finalQuat = ((zQuat * yQuat) * xQuat);
-
-		finalQuat.FixFloatingPointError();
-
-		return finalQuat;
-	}
-	static DreamQuaternion MakeQuaternionEuler(DreamVector3 rotation) {
-
-		DreamQuaternion xQuat = DreamQuaternion(DreamVector3(1, 0, 0), rotation.x);
-		DreamQuaternion yQuat = DreamQuaternion(DreamVector3(0, 1, 0), rotation.y);
-		DreamQuaternion zQuat = DreamQuaternion(DreamVector3(0, 0, 1), rotation.z);
-
-		DreamQuaternion finalQuat = ((zQuat * yQuat) * xQuat);
-
-		finalQuat.FixFloatingPointError();
-
-		return finalQuat;
+		rotation = DreamMath::GetEulerFrom3X3Rot(newRot);
 	}
 };
+
 
 };
 

@@ -58,7 +58,7 @@ void DreamGLGraphics::FindCorrectFunctionPointers()
 	InitGlad();
 }
 
-void DreamGLGraphics::SetScreenClearColor(DreamVector4 color)
+void DreamGLGraphics::SetScreenClearColor(DreamMath::DreamVector4 color)
 {
 	glClearColor(color.x, color.y, color.z, color.w);
 }
@@ -81,6 +81,37 @@ void DreamGLGraphics::SwapBuffers(DreamPointer * window)
 void DreamGLGraphics::CheckInputs()
 {
 	glfwPollEvents();
+}
+
+void DreamGLGraphics::GenerateBuffer(size_t numOfBuffers, size_t& VBO)
+{
+	glGenBuffers(numOfBuffers, &VBO);
+}
+
+void DreamGLGraphics::BindBuffer(BufferType type, size_t& VBO)
+{
+	switch (type) {
+	case BufferType::ArrayBuffer:
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		break;
+	}
+	
+}
+
+void DreamGLGraphics::CopyVertexBufferData(size_t numOfVerts, void* verts, VertexDataUsage dataUsage)
+{
+	switch (dataUsage) {
+	case VertexDataUsage::StreamDraw:
+		glBufferData(GL_ARRAY_BUFFER, numOfVerts, verts, GL_STREAM_DRAW);
+		break;
+	case VertexDataUsage::StaticDraw:
+		glBufferData(GL_ARRAY_BUFFER, numOfVerts, verts, GL_STATIC_DRAW);
+		break;
+	case VertexDataUsage::DynamicDraw:
+		glBufferData(GL_ARRAY_BUFFER, numOfVerts, verts, GL_DYNAMIC_DRAW);
+		break;
+	}
+	
 }
 
 void DreamGLGraphics::TerminateGraphics()

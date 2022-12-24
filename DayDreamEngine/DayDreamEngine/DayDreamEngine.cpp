@@ -27,7 +27,7 @@ int main()
 	printf("%f", DreamMath::tan(89));
 
 	DreamAllocatorManager::InitMainStackAllocator();
-	DreamVector3* newPosition = DreamAllocatorManager::AllocateOnMainSA<DreamVector3>();
+	DreamMath::DreamVector3* newPosition = DreamAllocatorManager::AllocateOnMainSA<DreamMath::DreamVector3>();
 
 	printf("x: %f, y: %f, z: %f", newPosition->x, newPosition->y, newPosition->z);
 
@@ -36,13 +36,25 @@ int main()
 	DreamGraphics* graphics = DreamGraphics::GetInstance();
 
 	graphics->InitGraphics();
-	DreamPointer* windowPtr = graphics->CreateWindow(800, 600, "Bitch Niggas");
+	DreamPointer* windowPtr = graphics->CreateWindow(800, 600, "Bitch Boiss");
 	graphics->CreateContext(windowPtr);
 	graphics->FindCorrectFunctionPointers();
 
 	graphics->SetViewPort(0, 0, 800, 600);
 	graphics->SetWindowResizeCallBack(windowPtr);
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+	float vertices[] = {
+		-0.5, -0.5, 0.0f,
+		 0.5, -0.5, 0.0f,
+		-0.0, 0.5, 0.0f
+	};
+
+	size_t VBO;
+
+	graphics->GenerateBuffer(1, VBO);
+	graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
+	graphics->CopyVertexBufferData( 9, &vertices, VertexDataUsage::StaticDraw);
 
 	while (!graphics->CheckWindowClose(windowPtr))
 	{

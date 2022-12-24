@@ -7,8 +7,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DayDreamEngine", "DayDreamE
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DreamLibrary", "DreamLibrary\DreamLibrary.vcxproj", "{401327E5-7C19-4436-B7D9-9C8E07622A1B}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "DayDreamEngineInstaller", "DayDreamEngineInstaller\DayDreamEngineInstaller.vdproj", "{6D77A25A-2521-477E-97FC-6E6347893E05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		DebugRelease|x64 = DebugRelease|x64
 		DebugRelease|x86 = DebugRelease|x86
 		DebugRun|x64 = DebugRun|x64
@@ -17,6 +21,10 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.Debug|x64.ActiveCfg = Debug|x64
+		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.Debug|x64.Build.0 = Debug|x64
+		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.Debug|x86.ActiveCfg = Debug|Win32
+		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.Debug|x86.Build.0 = Debug|Win32
 		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.DebugRelease|x64.ActiveCfg = DebugRelease|x64
 		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.DebugRelease|x64.Build.0 = DebugRelease|x64
 		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.DebugRelease|x86.ActiveCfg = DebugRelease|Win32
@@ -29,6 +37,10 @@ Global
 		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.Release|x64.Build.0 = Release|x64
 		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.Release|x86.ActiveCfg = Release|Win32
 		{371897CD-F7F1-4C60-A82C-9DF2343270D6}.Release|x86.Build.0 = Release|Win32
+		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.Debug|x64.ActiveCfg = Debug|x64
+		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.Debug|x64.Build.0 = Debug|x64
+		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.Debug|x86.ActiveCfg = Debug|Win32
+		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.Debug|x86.Build.0 = Debug|Win32
 		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.DebugRelease|x64.ActiveCfg = DebugRelease|x64
 		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.DebugRelease|x64.Build.0 = DebugRelease|x64
 		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.DebugRelease|x86.ActiveCfg = DebugRelease|Win32
@@ -41,6 +53,14 @@ Global
 		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.Release|x64.Build.0 = Release|x64
 		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.Release|x86.ActiveCfg = Release|Win32
 		{401327E5-7C19-4436-B7D9-9C8E07622A1B}.Release|x86.Build.0 = Release|Win32
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.Debug|x64.ActiveCfg = Debug
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.Debug|x86.ActiveCfg = Debug
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.DebugRelease|x64.ActiveCfg = Release
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.DebugRelease|x86.ActiveCfg = Release
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.DebugRun|x64.ActiveCfg = Debug
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.DebugRun|x86.ActiveCfg = Debug
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.Release|x64.ActiveCfg = Release
+		{6D77A25A-2521-477E-97FC-6E6347893E05}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
