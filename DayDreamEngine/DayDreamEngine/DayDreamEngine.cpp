@@ -108,27 +108,48 @@ int main()
 		}
 	};
 
-	Vertex vertices[] = {
-		Vertex( -0.5, -0.5, 0.0f),
-		Vertex(0.0, 0.5, 0.0f),
-		Vertex( 0.5, -0.5, 0.0f)
-		
-	};
+	std::vector<Vertex> mesh = std::vector<Vertex>();
+	std::vector<unsigned int> indices = std::vector<unsigned int>();
 
-	size_t VBO;
+	mesh.push_back(Vertex(-0.5, -0.5, 0.0f));
+	mesh.push_back(Vertex(0.0, 0.5, 0.0f));
+	mesh.push_back(Vertex(0.5, -0.5, 0.0f));
+	mesh.push_back(Vertex(1.0, 0.5, 0.0f));
 
-	size_t VAO;
+	indices.push_back(0);
+	indices.push_back(1);
+	indices.push_back(2);
+	indices.push_back(2);
+	indices.push_back(1);
+	indices.push_back(3);
+
+	int vertCount = mesh.size();
+	int indicesCount = indices.size();
+
+	size_t VBO; // Vertex Buffer
+	size_t IBO; // Index Buffer
+	size_t VAO; // Vertex Array
 
 	graphics->GenerateVertexArray(1, VAO);
 	graphics->GenerateBuffer(1, VBO);
-
-	graphics->BindVertexArray(VAO);
+	graphics->GenerateBuffer(1, IBO);
+	
+	// Copying vertices
 	graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
-	graphics->CopyVertexBufferData(sizeof(Vertex) * 3, &vertices, VertexDataUsage::StaticDraw);
-	graphics->AddVertexAttributePointer(3, 0, false, sizeof(Vertex));
+	graphics->CopyBufferData(BufferType::ArrayBuffer, sizeof(Vertex)* vertCount, &mesh[0], VertexDataUsage::StaticDraw);
+
+	// Copying indices
+	graphics->BindBuffer(BufferType::ElementArrayBuffer, IBO);
+	graphics->CopyBufferData(BufferType::ElementArrayBuffer, sizeof(unsigned int)* indicesCount, &indices[0], VertexDataUsage::StaticDraw);
+
+	// Setting up how to read vertice data
+	graphics->BindVertexArray(VAO);
+	graphics->AddVertexAttributePointer(3, 0, false, sizeof(DreamVector3));
 	graphics->UnBindVertexArray();
 
+	// Binding mesh to draw
 	graphics->BindVertexArray(VAO);
+	graphics->BindBuffer(BufferType::ElementArrayBuffer, IBO);
 	while (!graphics->CheckWindowClose(windowPtr))
 	{
 		graphics->ClearScreen();

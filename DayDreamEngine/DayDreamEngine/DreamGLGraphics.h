@@ -24,7 +24,7 @@ public:
 	void GenerateBuffer(size_t numOfBuffers, size_t& VBO) override;
 	void BindVertexArray(size_t& VBO) override;
 	void BindBuffer(BufferType type, size_t& VBO) override;
-	void CopyVertexBufferData(size_t numOfVerts, void* verts, VertexDataUsage dataUsage) override;
+	void CopyBufferData(BufferType type, size_t numOfElements, void* buffer, VertexDataUsage dataUsage) override;
 	void AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) override;
 	void UnBindVertexArray() override;
 	unsigned int LoadShader(const char* file, ShaderType shaderType) override;

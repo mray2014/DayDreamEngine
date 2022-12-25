@@ -3,7 +3,8 @@
 #include <vector>
 
 enum BufferType {
-	ArrayBuffer
+	ArrayBuffer,
+	ElementArrayBuffer
 };
 enum VertexDataUsage {
 	StreamDraw, // the data is set only once and used by the GPU at most a few times.
@@ -68,7 +69,7 @@ public:
 	virtual void GenerateBuffer(size_t numOfBuffers, size_t& VBO) = 0;
 	virtual void BindVertexArray(size_t& VBO) = 0;
 	virtual void BindBuffer(BufferType type, size_t& VBO) = 0;
-	virtual void CopyVertexBufferData(size_t numOfVerts, void* verts, VertexDataUsage dataUsage) = 0;
+	virtual void CopyBufferData(BufferType type, size_t numOfElements, void* buffer, VertexDataUsage dataUsage) = 0;
 	virtual void AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
 	virtual void UnBindVertexArray() = 0;
 	virtual unsigned int LoadShader(const char* file, ShaderType shaderType) = 0;

@@ -102,25 +102,53 @@ void DreamGLGraphics::BindVertexArray(size_t& VBO)
 
 void DreamGLGraphics::BindBuffer(BufferType type, size_t& VBO)
 {
+	unsigned int buffType = -1;
+
 	switch (type) {
 	case BufferType::ArrayBuffer:
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		buffType = GL_ARRAY_BUFFER;
 		break;
+	case BufferType::ElementArrayBuffer:
+		buffType = GL_ELEMENT_ARRAY_BUFFER;
+		break;
+	}
+
+	if (buffType != -1) {
+		glBindBuffer(buffType, VBO);
+	}
+	else {
+		printf("ERROR: Invalid Buffer Type");
 	}
 	
 }
 
-void DreamGLGraphics::CopyVertexBufferData(size_t numOfVerts, void* verts, VertexDataUsage dataUsage)
+void DreamGLGraphics::CopyBufferData(BufferType type, size_t numOfElements, void* buffer, VertexDataUsage dataUsage)
 {
+	unsigned int buffType = -1;
+
+	switch (type) {
+	case BufferType::ArrayBuffer:
+		buffType = GL_ARRAY_BUFFER;
+		break;
+	case BufferType::ElementArrayBuffer:
+		buffType = GL_ELEMENT_ARRAY_BUFFER;
+		break;
+	}
+
+	if (buffType == -1) {
+		printf("ERROR: Invalid Buffer Type");
+	}
+
+
 	switch (dataUsage) {
 	case VertexDataUsage::StreamDraw:
-		glBufferData(GL_ARRAY_BUFFER, numOfVerts, verts, GL_STREAM_DRAW);
+		glBufferData(buffType, numOfElements, buffer, GL_STREAM_DRAW);
 		break;
 	case VertexDataUsage::StaticDraw:
-		glBufferData(GL_ARRAY_BUFFER, numOfVerts, verts, GL_STATIC_DRAW);
+		glBufferData(buffType, numOfElements, buffer, GL_STATIC_DRAW);
 		break;
 	case VertexDataUsage::DynamicDraw:
-		glBufferData(GL_ARRAY_BUFFER, numOfVerts, verts, GL_DYNAMIC_DRAW);
+		glBufferData(buffType, numOfElements, buffer, GL_DYNAMIC_DRAW);
 		break;
 	}
 	
@@ -171,7 +199,11 @@ void DreamGLGraphics::Draw() {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//}
 	//glBindVertexArray(obj->GetVertArr());
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	
+	//TODO: Need to figure out how to know when to draw using indices or not
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+
 	//glBindVertexArray(0);
 	//glBindTexture(GL_TEXTURE_2D, 0);
 	//if (obj->GetTag() == "Light")
