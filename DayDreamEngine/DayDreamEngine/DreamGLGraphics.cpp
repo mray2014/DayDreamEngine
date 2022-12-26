@@ -182,6 +182,16 @@ void DreamGLGraphics::InitGlad()
 	}
 }
 
+void DreamGLGraphics::DrawWithIndex(size_t size) {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, (void*)0);
+}
+
+void DreamGLGraphics::DrawWithVertex(size_t size) {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDrawArrays(GL_TRIANGLES, 0, size);
+}
+
 void DreamGLGraphics::Draw() {
 	//glUniformMatrix4fv(0, 1, GL_FALSE, &obj->worldPos[0][0]);
 	///glUniformMatrix4fv(1, 1, GL_FALSE, &cam->viewMatrix[0][0]);
@@ -196,13 +206,13 @@ void DreamGLGraphics::Draw() {
 	//}
 	//if (obj->GetTag() == "Light")
 	//{
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//}
 	//glBindVertexArray(obj->GetVertArr());
 	
 	//TODO: Need to figure out how to know when to draw using indices or not
 	//glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 
 	//glBindVertexArray(0);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -226,19 +236,19 @@ unsigned int DreamGLGraphics::LoadShader(const char* file, ShaderType shaderType
 		if (DreamFileIO::ReadFullFile(&fileContent)) {
 
 			switch (shaderType) {
-			case ShaderType::Vertex: {
+			case ShaderType::VertexShader: {
 				prog = glCreateShader(GL_VERTEX_SHADER);
 				break;
 			}
-			case ShaderType::Pixel: {
+			case ShaderType::PixelShader: {
 				prog = glCreateShader(GL_FRAGMENT_SHADER);
 				break;
 			}
-			case ShaderType::Geometry: {
+			case ShaderType::GeometryShader: {
 				prog = glCreateShader(GL_GEOMETRY_SHADER);
 				break;
 			}
-			case ShaderType::Compute: {
+			case ShaderType::ComputeShader: {
 				//prog = glCreateShader(GL_COMPUTE_SHADER);
 				break;
 			}

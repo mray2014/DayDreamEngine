@@ -48,6 +48,9 @@
     <ClCompile Include="Libraries\glad.c">
       <Filter>PlatformDependent\Source</Filter>
     </ClCompile>
+    <ClCompile Include="DreamMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h">
@@ -64,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="DreamGLGraphics.h">
       <Filter>PlatformDependent\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamMesh.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

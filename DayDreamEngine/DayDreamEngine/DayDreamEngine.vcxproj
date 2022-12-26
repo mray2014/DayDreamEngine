@@ -228,6 +228,7 @@
     <ClCompile Include="DreamDXGraphics.cpp" />
     <ClCompile Include="DreamGLGraphics.cpp" />
     <ClCompile Include="DreamGraphics.cpp" />
+    <ClCompile Include="DreamMesh.cpp" />
     <ClCompile Include="DreamVulkanGraphics.cpp" />
     <ClCompile Include="Libraries\glad.c" />
   </ItemGroup>
@@ -236,6 +237,7 @@
     <ClInclude Include="DreamDXGraphics.h" />
     <ClInclude Include="DreamGLGraphics.h" />
     <ClInclude Include="DreamGraphics.h" />
+    <ClInclude Include="DreamMesh.h" />
     <ClInclude Include="DreamVulkanGraphics.h" />
   </ItemGroup>
   <ItemGroup>

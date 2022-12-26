@@ -2,6 +2,7 @@
 #include<assert.h>
 #include <iostream>
 #include "DreamGraphics.h"
+#include "DreamMesh.h"
 #include <DreamAllocatorManager.h>
 #include <DreamFileIO.h>
 
@@ -85,8 +86,8 @@ int main()
 	graphics->SetWindowResizeCallBack(windowPtr);
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-	unsigned int vertexProgram = graphics->LoadShader("Shaders/vertex.glsl", ShaderType::Vertex);
-	unsigned int pixelProgram = graphics->LoadShader("Shaders/pixel.glsl", ShaderType::Pixel);
+	unsigned int vertexProgram = graphics->LoadShader("Shaders/vertex.glsl", ShaderType::VertexShader);
+	unsigned int pixelProgram = graphics->LoadShader("Shaders/pixel.glsl", ShaderType::PixelShader);
 
 	graphics->StartShaderProgramCreation();
 	graphics->AttachShader(vertexProgram);
@@ -95,26 +96,15 @@ int main()
 
 	graphics->SetShader(shaderProg);
 
-	struct Vertex {
-		DreamVector3 pos;
+	
 
-		Vertex(DreamVector3 p) {
-			pos = p;
-		}
-		Vertex(float x, float y, float z) {
-			pos.x = x;
-			pos.y = y;
-			pos.z = z;
-		}
-	};
+	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
+	std::vector<size_t> indices = std::vector<size_t>();
 
-	std::vector<Vertex> mesh = std::vector<Vertex>();
-	std::vector<unsigned int> indices = std::vector<unsigned int>();
-
-	mesh.push_back(Vertex(-0.5, -0.5, 0.0f));
-	mesh.push_back(Vertex(0.0, 0.5, 0.0f));
-	mesh.push_back(Vertex(0.5, -0.5, 0.0f));
-	mesh.push_back(Vertex(1.0, 0.5, 0.0f));
+	vert.push_back(DreamVertex(-0.5, -0.5, 0.0f));
+	vert.push_back(DreamVertex(0.0, 0.5, 0.0f));
+	vert.push_back(DreamVertex(0.5, -0.5, 0.0f));
+	vert.push_back(DreamVertex(1.0, 0.5, 0.0f));
 
 	indices.push_back(0);
 	indices.push_back(1);
@@ -123,38 +113,14 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	int vertCount = mesh.size();
-	int indicesCount = indices.size();
+	DreamMesh mesh = DreamMesh(vert, indices);
 
-	size_t VBO; // Vertex Buffer
-	size_t IBO; // Index Buffer
-	size_t VAO; // Vertex Array
-
-	graphics->GenerateVertexArray(1, VAO);
-	graphics->GenerateBuffer(1, VBO);
-	graphics->GenerateBuffer(1, IBO);
-	
-	// Copying vertices
-	graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
-	graphics->CopyBufferData(BufferType::ArrayBuffer, sizeof(Vertex)* vertCount, &mesh[0], VertexDataUsage::StaticDraw);
-
-	// Copying indices
-	graphics->BindBuffer(BufferType::ElementArrayBuffer, IBO);
-	graphics->CopyBufferData(BufferType::ElementArrayBuffer, sizeof(unsigned int)* indicesCount, &indices[0], VertexDataUsage::StaticDraw);
-
-	// Setting up how to read vertice data
-	graphics->BindVertexArray(VAO);
-	graphics->AddVertexAttributePointer(3, 0, false, sizeof(DreamVector3));
-	graphics->UnBindVertexArray();
-
-	// Binding mesh to draw
-	graphics->BindVertexArray(VAO);
-	graphics->BindBuffer(BufferType::ElementArrayBuffer, IBO);
 	while (!graphics->CheckWindowClose(windowPtr))
 	{
 		graphics->ClearScreen();
 
 		graphics->Draw();
+		mesh.DrawOpaque();
 
 		graphics->SwapBuffers(windowPtr);
 		graphics->CheckInputs();

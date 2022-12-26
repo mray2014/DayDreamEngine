@@ -32,6 +32,8 @@ public:
 	void AttachShader(unsigned int shader) override;
 	unsigned int FinishShaderProgramCreation() override;
 	void SetShader(unsigned int shaderProg) override;
+	void DrawWithIndex(size_t size) override;
+	void DrawWithVertex(size_t size) override;
 	void Draw() override;
 
 	void TerminateGraphics() override;

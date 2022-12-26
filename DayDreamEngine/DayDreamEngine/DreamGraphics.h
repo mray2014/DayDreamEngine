@@ -12,10 +12,10 @@ enum VertexDataUsage {
 	DynamicDraw // the data is changed a lot and used many times.
 };
 enum ShaderType {
-	Vertex,
-	Pixel,
-	Geometry,
-	Compute,
+	VertexShader,
+	PixelShader,
+	GeometryShader,
+	ComputeShader,
 };
 
 using namespace DreamMath;
@@ -77,6 +77,8 @@ public:
 	virtual void AttachShader(unsigned int shader) = 0;
 	virtual unsigned int FinishShaderProgramCreation() = 0;
 	virtual void SetShader(unsigned int shaderProg) = 0;
+	virtual void DrawWithIndex(size_t size) = 0;
+	virtual void DrawWithVertex(size_t size) = 0;
 	virtual void Draw() = 0;
 
 	virtual 
