@@ -22,6 +22,9 @@ using namespace DreamMath;
 
 class DreamPointer {
 public:
+	DreamPointer() {
+		ptr = nullptr;
+	}
 	DreamPointer(void* newPtr) {
 		ptr = newPtr;
 	}
@@ -52,18 +55,16 @@ public:
 	static DreamGraphics* GetInstance();
 	~DreamGraphics();
 
-	virtual void InitGraphics() = 0;
-	virtual DreamPointer* CreateWindow(int width, int height, const char* title) = 0;
-	virtual void CreateContext(DreamPointer* window) = 0;
+	virtual long InitWindow(int w, int h, const char* title) = 0;
+	virtual long InitGraphics() = 0;
 	virtual void SetViewPort(int posX, int posY, int width, int height) = 0;
-	virtual void SetWindowResizeCallBack(DreamPointer* window) = 0;
-	virtual bool CheckWindowClose(DreamPointer* window) = 0;
-	virtual void FindCorrectFunctionPointers() = 0;
+	virtual void SetWindowResizeCallBack() = 0;
+	virtual bool CheckWindowClose() = 0;
 
 	virtual void SetScreenClearColor(DreamMath::DreamVector4 color) = 0;
 	virtual void SetScreenClearColor(float r, float g, float b, float a) = 0;
 	virtual void ClearScreen() = 0;
-	virtual void SwapBuffers(DreamPointer* window) = 0;
+	virtual void SwapBuffers() = 0;
 	virtual void CheckInputs() = 0;
 	virtual void GenerateVertexArray(size_t numOfBuffers, size_t& VBO) = 0;
 	virtual void GenerateBuffer(size_t numOfBuffers, size_t& VBO) = 0;
@@ -81,13 +82,12 @@ public:
 	virtual void DrawWithVertex(size_t size) = 0;
 	virtual void Draw() = 0;
 
-	virtual 
-
-
 	virtual void TerminateGraphics() = 0;
+	virtual void DestroyWindow() = 0;
 protected:
 	DreamGraphics();
 private:
+	
 	static DreamGraphics* myGrpahics;
 	
 };

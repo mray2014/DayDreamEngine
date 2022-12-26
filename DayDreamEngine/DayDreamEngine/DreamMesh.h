@@ -24,6 +24,7 @@ class DreamMesh {
 
 public:
 
+	DreamMesh(std::vector<DreamVertex>& verts);
 	DreamMesh(std::vector<DreamVertex>& verts, std::vector<size_t>& indices);
 	void DrawOpaque();
 };

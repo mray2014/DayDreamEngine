@@ -77,13 +77,10 @@ int main()
 
 	DreamGraphics* graphics = DreamGraphics::GetInstance();
 
+	graphics->InitWindow(800, 600, "Hey It's a window!");
 	graphics->InitGraphics();
-	DreamPointer* windowPtr = graphics->CreateWindow(800, 600, "Hey It's a window!");
-	graphics->CreateContext(windowPtr);
-	graphics->FindCorrectFunctionPointers();
-
 	graphics->SetViewPort(0, 0, 800, 600);
-	graphics->SetWindowResizeCallBack(windowPtr);
+	graphics->SetWindowResizeCallBack();
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
 	unsigned int vertexProgram = graphics->LoadShader("Shaders/vertex.glsl", ShaderType::VertexShader);
@@ -104,29 +101,31 @@ int main()
 	vert.push_back(DreamVertex(-0.5, -0.5, 0.0f));
 	vert.push_back(DreamVertex(0.0, 0.5, 0.0f));
 	vert.push_back(DreamVertex(0.5, -0.5, 0.0f));
-	vert.push_back(DreamVertex(1.0, 0.5, 0.0f));
+	//vert.push_back(DreamVertex(1.0, 0.5, 0.0f));
 
 	indices.push_back(0);
 	indices.push_back(1);
 	indices.push_back(2);
-	indices.push_back(2);
-	indices.push_back(1);
-	indices.push_back(3);
+	//indices.push_back(2);
+	//indices.push_back(1);
+	//indices.push_back(3);
 
-	DreamMesh mesh = DreamMesh(vert, indices);
+	DreamMesh mesh = DreamMesh(vert);
+	//DreamMesh mesh = DreamMesh(vert, indices);
 
-	while (!graphics->CheckWindowClose(windowPtr))
+	while (!graphics->CheckWindowClose())
 	{
 		graphics->ClearScreen();
 
 		graphics->Draw();
 		mesh.DrawOpaque();
 
-		graphics->SwapBuffers(windowPtr);
+		graphics->SwapBuffers();
 		graphics->CheckInputs();
 	}
 
+	graphics->DestroyWindow();
 	graphics->TerminateGraphics();
-	delete windowPtr;
+	//delete windowPtr;
 	return 0;
 }

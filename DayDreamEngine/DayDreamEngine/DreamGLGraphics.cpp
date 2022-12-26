@@ -3,6 +3,8 @@
 #include <glad\glad.h>
 #include <GLFW\glfw3.h>
 
+GLFWwindow* window = nullptr;
+
 void WindowResizeCallBack(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
@@ -16,46 +18,44 @@ DreamGLGraphics::DreamGLGraphics()
 DreamGLGraphics::~DreamGLGraphics()
 {
 }
-void DreamGLGraphics::InitGraphics()
-{
+
+long DreamGLGraphics::InitWindow(int w, int h, const char* title) {
 	// Init
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-}
-DreamPointer* DreamGLGraphics::CreateWindow(int width, int height, const char* title) {
-	GLFWwindow* window = glfwCreateWindow(width, height, title, NULL, NULL);
+	window = glfwCreateWindow(w, h, title, NULL, NULL);
 
 	if (window == NULL)
 	{
 		printf("Failed to create a window");
 		glfwTerminate();
-		return nullptr;
+		return -1;
 	}
-	return new DreamPointer(window);
+	InitGraphics();
+	return 0;
 }
-void DreamGLGraphics::CreateContext(DreamPointer* window) {
-	// Creat Context
-	glfwMakeContextCurrent((GLFWwindow*)window->GetStoredPointer());
+
+long DreamGLGraphics::InitGraphics()
+{
+	glfwMakeContextCurrent(window);
+	InitGlad();
+	return 0;
 }
+
 void DreamGLGraphics::SetViewPort(int posX, int posY, int width, int height) {
 	glViewport(posX, posY, width, height);
 }
 
-void DreamGLGraphics::SetWindowResizeCallBack(DreamPointer* window)
+void DreamGLGraphics::SetWindowResizeCallBack()
 {
-	glfwSetWindowSizeCallback((GLFWwindow*)window->GetStoredPointer(), WindowResizeCallBack);
+	glfwSetWindowSizeCallback(window, WindowResizeCallBack);
 }
 
-bool DreamGLGraphics::CheckWindowClose(DreamPointer * window)
+bool DreamGLGraphics::CheckWindowClose()
 {
-	return glfwWindowShouldClose((GLFWwindow*)window->GetStoredPointer());
-}
-
-void DreamGLGraphics::FindCorrectFunctionPointers()
-{
-	InitGlad();
+	return glfwWindowShouldClose(window);
 }
 
 void DreamGLGraphics::SetScreenClearColor(DreamMath::DreamVector4 color)
@@ -73,9 +73,9 @@ void DreamGLGraphics::ClearScreen()
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void DreamGLGraphics::SwapBuffers(DreamPointer * window)
+void DreamGLGraphics::SwapBuffers()
 {
-	glfwSwapBuffers((GLFWwindow*)window->GetStoredPointer());
+	glfwSwapBuffers(window);
 }
 
 void DreamGLGraphics::CheckInputs()
@@ -173,6 +173,14 @@ void DreamGLGraphics::UnBindVertexArray()
 void DreamGLGraphics::TerminateGraphics()
 {
 	glfwTerminate();
+}
+
+void DreamGLGraphics::DestroyWindow()
+{
+	if (window) {
+		delete window;
+		window = nullptr;
+	}
 }
 
 void DreamGLGraphics::InitGlad()

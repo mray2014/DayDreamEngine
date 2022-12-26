@@ -3,6 +3,29 @@
 
 DreamGraphics* graphics = nullptr;
 
+DreamMesh::DreamMesh(std::vector<DreamVertex>& verts) {
+	graphics = DreamGraphics::GetInstance();
+
+	if (graphics) {
+		vertCount = verts.size();
+
+		size_t VBO; // Vertex Buffer
+
+		graphics->GenerateVertexArray(1, vertexArray);
+		graphics->GenerateBuffer(1, VBO);
+
+		// Copying vertices
+		graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
+		graphics->CopyBufferData(BufferType::ArrayBuffer, sizeof(DreamVertex) * vertCount, &verts[0], VertexDataUsage::StaticDraw);
+
+		// Setting up how to read vertice data
+		graphics->BindVertexArray(vertexArray);
+		graphics->AddVertexAttributePointer(3, 0, false, sizeof(DreamVector3));
+		graphics->UnBindVertexArray();
+	}
+}
+
+
 DreamMesh::DreamMesh(std::vector<DreamVertex>& verts, std::vector<size_t>& indices) {
 	graphics = DreamGraphics::GetInstance();
 	
