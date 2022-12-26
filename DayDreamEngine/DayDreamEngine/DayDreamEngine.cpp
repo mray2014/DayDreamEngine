@@ -79,8 +79,6 @@ int main()
 
 	graphics->InitWindow(800, 600, "Hey It's a window!");
 	graphics->InitGraphics();
-	graphics->SetViewPort(0, 0, 800, 600);
-	graphics->SetWindowResizeCallBack();
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
 	unsigned int vertexProgram = graphics->LoadShader("Shaders/vertex.glsl", ShaderType::VertexShader);
@@ -101,17 +99,26 @@ int main()
 	vert.push_back(DreamVertex(-0.5, -0.5, 0.0f));
 	vert.push_back(DreamVertex(0.0, 0.5, 0.0f));
 	vert.push_back(DreamVertex(0.5, -0.5, 0.0f));
-	//vert.push_back(DreamVertex(1.0, 0.5, 0.0f));
+	vert.push_back(DreamVertex(1.0, 0.5, 0.0f));
 
 	indices.push_back(0);
 	indices.push_back(1);
 	indices.push_back(2);
-	//indices.push_back(2);
-	//indices.push_back(1);
-	//indices.push_back(3);
+	indices.push_back(2);
+	indices.push_back(1);
+	indices.push_back(3);
 
 	DreamMesh mesh = DreamMesh(vert);
 	//DreamMesh mesh = DreamMesh(vert, indices);
+
+	// Perspective matrix
+	// Update our projection matrix since the window size changed
+	//XMMATRIX P = XMMatrixPerspectiveFovLH(
+	//	0.25f * 3.1415926535f,	// Field of View Angle
+	//	(float)width / height,	// Aspect ratio
+	//	0.1f,				  	// Near clip plane distance
+	//	100.0f);			  	// Far clip plane distance
+	//XMStoreFloat4x4(&cam->projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
 
 	while (!graphics->CheckWindowClose())
 	{
@@ -126,6 +133,6 @@ int main()
 
 	graphics->DestroyWindow();
 	graphics->TerminateGraphics();
-	//delete windowPtr;
+
 	return 0;
 }

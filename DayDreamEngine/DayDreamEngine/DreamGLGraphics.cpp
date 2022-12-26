@@ -5,7 +5,7 @@
 
 GLFWwindow* window = nullptr;
 
-void WindowResizeCallBack(GLFWwindow* window, int width, int height) {
+void OnWindowResize(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
@@ -21,11 +21,13 @@ DreamGLGraphics::~DreamGLGraphics()
 
 long DreamGLGraphics::InitWindow(int w, int h, const char* title) {
 	// Init
+	width = w;
+	height = h;
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	window = glfwCreateWindow(w, h, title, NULL, NULL);
+	window = glfwCreateWindow(width, height, title, NULL, NULL);
 
 	if (window == NULL)
 	{
@@ -33,7 +35,7 @@ long DreamGLGraphics::InitWindow(int w, int h, const char* title) {
 		glfwTerminate();
 		return -1;
 	}
-	InitGraphics();
+	glfwSetWindowSizeCallback(window, OnWindowResize);
 	return 0;
 }
 
@@ -44,13 +46,10 @@ long DreamGLGraphics::InitGraphics()
 	return 0;
 }
 
-void DreamGLGraphics::SetViewPort(int posX, int posY, int width, int height) {
+void DreamGLGraphics::SetViewPort(int posX, int posY, int w, int h) {
+	width = w;
+	height = h;
 	glViewport(posX, posY, width, height);
-}
-
-void DreamGLGraphics::SetWindowResizeCallBack()
-{
-	glfwSetWindowSizeCallback(window, WindowResizeCallBack);
 }
 
 bool DreamGLGraphics::CheckWindowClose()
@@ -58,18 +57,9 @@ bool DreamGLGraphics::CheckWindowClose()
 	return glfwWindowShouldClose(window);
 }
 
-void DreamGLGraphics::SetScreenClearColor(DreamMath::DreamVector4 color)
-{
-	glClearColor(color.x, color.y, color.z, color.w);
-}
-
-void DreamGLGraphics::SetScreenClearColor(float r, float g, float b, float a)
-{
-	glClearColor(r, g, b, a);
-}
-
 void DreamGLGraphics::ClearScreen()
 {
+	glClearColor(clearScreenColor.x, clearScreenColor.y, clearScreenColor.z, clearScreenColor.w);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
@@ -177,10 +167,7 @@ void DreamGLGraphics::TerminateGraphics()
 
 void DreamGLGraphics::DestroyWindow()
 {
-	if (window) {
-		delete window;
-		window = nullptr;
-	}
+	glfwDestroyWindow(window);
 }
 
 void DreamGLGraphics::InitGlad()

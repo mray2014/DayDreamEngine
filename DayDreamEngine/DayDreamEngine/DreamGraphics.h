@@ -57,12 +57,8 @@ public:
 
 	virtual long InitWindow(int w, int h, const char* title) = 0;
 	virtual long InitGraphics() = 0;
-	virtual void SetViewPort(int posX, int posY, int width, int height) = 0;
-	virtual void SetWindowResizeCallBack() = 0;
+	virtual void SetViewPort(int posX, int posY, int w, int h) = 0;
 	virtual bool CheckWindowClose() = 0;
-
-	virtual void SetScreenClearColor(DreamMath::DreamVector4 color) = 0;
-	virtual void SetScreenClearColor(float r, float g, float b, float a) = 0;
 	virtual void ClearScreen() = 0;
 	virtual void SwapBuffers() = 0;
 	virtual void CheckInputs() = 0;
@@ -84,10 +80,28 @@ public:
 
 	virtual void TerminateGraphics() = 0;
 	virtual void DestroyWindow() = 0;
+
+	void SetScreenClearColor(DreamMath::DreamVector4 color)
+	{
+		clearScreenColor = color;
+	}
+	void SetScreenClearColor(float r, float g, float b, float a)
+	{
+		clearScreenColor.x = r;
+		clearScreenColor.y = g;
+		clearScreenColor.z = b;
+		clearScreenColor.w = a;
+	}
+
+	// Size of the window's client area
+	unsigned int width = 800;
+	unsigned int height = 600;
+
 protected:
 	DreamGraphics();
+	DreamVector4 clearScreenColor;
+
 private:
-	
 	static DreamGraphics* myGrpahics;
 	
 };

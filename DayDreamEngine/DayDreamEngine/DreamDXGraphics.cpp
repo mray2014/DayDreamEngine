@@ -11,6 +11,7 @@ LRESULT DreamDXGraphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 
 DreamDXGraphics::DreamDXGraphics()
 {
+	clearScreenColor = DreamVector4(0.4f, 0.6f, 0.75f, 0.0f);
 	if (!instance) {
 		instance = this;
 	}	
@@ -19,6 +20,12 @@ DreamDXGraphics::DreamDXGraphics()
 
 DreamDXGraphics::~DreamDXGraphics()
 {
+	if (depthStencilView) { depthStencilView->Release(); }
+	if (backBufferRTV) { backBufferRTV->Release(); }
+
+	if (swapChain) { swapChain->Release(); }
+	if (context) { context->Release(); }
+	if (device) { device->Release(); }
 }
 
 long DreamDXGraphics::InitWindow(int w, int h, const char* title)
@@ -207,12 +214,11 @@ long DreamDXGraphics::InitGraphics()
 	return S_OK;
 }
 
-void DreamDXGraphics::SetViewPort(int posX, int posY, int width, int height)
+void DreamDXGraphics::SetViewPort(int posX, int posY, int w, int h)
 {
-}
+	width = w;
+	height = h;
 
-void DreamDXGraphics::SetWindowResizeCallBack()
-{
 	// Release existing DirectX views and buffers
 	if (depthStencilView) { depthStencilView->Release(); }
 	if (backBufferRTV) { backBufferRTV->Release(); }
@@ -271,23 +277,42 @@ void DreamDXGraphics::SetWindowResizeCallBack()
 
 bool DreamDXGraphics::CheckWindowClose()
 {
-	return false;
-}
+	MSG msg = {};
+	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+	{
+		// Translate and dispatch the message
+		// to our custom WindowProc function
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 
-void DreamDXGraphics::SetScreenClearColor(DreamMath::DreamVector4 color)
-{
-}
+	// Our overall game and message loop
 
-void DreamDXGraphics::SetScreenClearColor(float r, float g, float b, float a)
-{
+	if (msg.message != WM_QUIT)
+	{
+		return false;
+	}
+
+	// We'll end up here once we get a WM_QUIT message,
+	// which usually comes from the user closing the window
+	return true;
 }
 
 void DreamDXGraphics::ClearScreen()
 {
+	const float color[4] = { clearScreenColor.x, clearScreenColor.y, clearScreenColor.z, clearScreenColor.w };
+
+	context->ClearRenderTargetView(backBufferRTV, color);
+	context->ClearDepthStencilView(
+		depthStencilView,
+		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+		1.0f,
+		0);
 }
 
 void DreamDXGraphics::SwapBuffers()
 {
+	swapChain->Present(0, 0);
 }
 
 void DreamDXGraphics::CheckInputs()
@@ -362,7 +387,7 @@ void DreamDXGraphics::TerminateGraphics()
 
 void DreamDXGraphics::DestroyWindow()
 {
-
+	PostMessage(this->hWnd, WM_CLOSE, NULL, NULL);
 }
 
 // --------------------------------------------------------
@@ -397,13 +422,13 @@ LRESULT DreamDXGraphics::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 		// Sent when the window size changes
 	case WM_SIZE:
 		// Save the new client area dimensions.
-		width = LOWORD(lParam);
-		height = HIWORD(lParam);
+		//width = LOWORD(lParam);
+		//height = HIWORD(lParam);
 
 		// If DX is initialized, resize 
 		// our required buffers
 		if (device)
-			//OnResize();
+			SetViewPort(0,0, LOWORD(lParam), HIWORD(lParam));
 
 		return 0;
 

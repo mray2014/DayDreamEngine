@@ -13,12 +13,9 @@ public:
 
 	long InitWindow(int w, int h, const char* title) override;
 	long InitGraphics() override;
-	void SetViewPort(int posX, int posY, int width, int height) override;
-	void SetWindowResizeCallBack() override;
+	void SetViewPort(int posX, int posY, int w, int h) override;
 	bool CheckWindowClose() override;
 
-	void SetScreenClearColor(DreamMath::DreamVector4 color) override;
-	void SetScreenClearColor(float r, float g, float b, float a) override;
 	void ClearScreen() override;
 	void SwapBuffers() override;
 	void CheckInputs() override;
@@ -55,10 +52,6 @@ protected:
 	HWND		hWnd;			// The handle to the window itself
 	std::string titleBarText;	// Custom text in window's title bar
 	bool		titleBarStats;	// Show extra stats in title bar?
-
-	// Size of the window's client area
-	unsigned int width;
-	unsigned int height;
 
 	// DirectX related objects and variables
 	D3D_FEATURE_LEVEL		dxFeatureLevel;

@@ -9,12 +9,9 @@ public:
 
 	long InitWindow(int w, int h, const char* title) override;
 	long InitGraphics() override;
-	void SetViewPort(int posX, int posY, int width, int height) override;
-	void SetWindowResizeCallBack() override;
+	void SetViewPort(int posX, int posY, int w, int h) override;
 	bool CheckWindowClose() override;
 
-	void SetScreenClearColor(DreamMath::DreamVector4 color) override;
-	void SetScreenClearColor(float r, float g, float b, float a) override;
 	void ClearScreen() override;
 	void SwapBuffers() override;
 	void CheckInputs() override;
