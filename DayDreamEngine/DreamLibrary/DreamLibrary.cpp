@@ -1,7 +1,7 @@
 
 #include "pch.h"
 #include <assert.h>
-#include <iostream>
+#include "DreamUnitTest.h"
 #include "DreamFileIO.h"
 #include "DreamMath.h"
 #include "DreamPhysics.h"
@@ -10,65 +10,6 @@
 #include <stack>
 
 using namespace DreamMath;
-
-template<typename T>
-static void ClassUnitTest(const char* testName, T answer, T result, bool shouldSucceed = true) {
-	printf("=========================\n");
-	printf(testName);
-	printf("\n=========================\n");
-
-	if (!shouldSucceed) {
-		printf("[SHOULD FAIL!!!]\n");
-	}
-
-	printf("ANSWER:\n");
-	printf(answer.ToString().c_str()); printf("\n\n");
-
-	printf("RESULT:\n");
-	printf(result.ToString().c_str()); printf("\n\n");
-
-	if ((answer == result) == shouldSucceed) {
-		printf("---------------------------[SUCCEEDED!]");
-	}
-	else {
-		printf("---------------------------[FAILED!]");
-	}
-
-	printf("\n\n");
-}
-static void FloatUnitTest(const char* testName, float answer, float result, bool shouldSucceed = true) {
-	printf("=========================\n");
-	printf(testName);
-	printf("\n=========================\n");
-
-	if (!shouldSucceed) {
-		printf("[SHOULD FAIL!!!]\n");
-	}
-
-	printf("ANSWER:\n");
-	printf("%f", answer); printf("\n\n");
-
-	printf("RESULT:\n");
-	printf("%f", result); printf("\n");
-
-	if ((DreamMath::abs(answer - result) <= EPSILON) == shouldSucceed) {
-		printf("---------------------------[SUCCEEDED!]");
-	}
-	else {
-		printf("---------------------------[FAILED!]");
-	}
-
-	printf("\n\n");
-
-	//assert(answer == result);
-}
-static void PrintUnitTestRunName(const char* testRunName) {
-	printf("\n\n=======================================================================\n");
-	printf("///////////////////////////////////////////////////////////////////////\n");
-	printf(testRunName);
-	printf("\n///////////////////////////////////////////////////////////////////////\n");
-	printf("=======================================================================\n\n");
-}
 
 static void ChunkUnitTestRun() 
 {
@@ -92,7 +33,7 @@ static void ChunkUnitTestRun()
 }
 static void StackAllocatorUnitTestRun() {
 
-	PrintUnitTestRunName("STACK ALLOCATOR UNIT TEST");
+	DreamUnitTest::PrintUnitTestRunName("STACK ALLOCATOR UNIT TEST");
 
 	DreamAllocatorManager::InitMainStackAllocator();
 
@@ -125,7 +66,7 @@ static void VectorUnitTestRun() {
 }
 static void FileIOUnitTestRun() {
 
-	PrintUnitTestRunName("FILE IO UNIT TEST");
+	DreamUnitTest::PrintUnitTestRunName("FILE IO UNIT TEST");
 
 	DreamFileIO::OpenFileWrite("word.txt", FileWriteType::OverWrite);
 	DreamFileIO::WriteLine("Yahh");
@@ -155,7 +96,7 @@ static void FileIOUnitTestRun() {
 }
 static void MathUnitTestRun() { 
 
-	PrintUnitTestRunName("MATH UNIT TEST");
+	DreamUnitTest::PrintUnitTestRunName("MATH UNIT TEST");
 
 	VectorUnitTestRun();
 
@@ -214,11 +155,11 @@ static void MathUnitTestRun() {
 
 	position1 += DreamVector3();
 
-	ClassUnitTest<DreamVector3>("Vector3 Unit Test 1", position1, DreamVector3());
-	ClassUnitTest<DreamVector3>("Vector3 Unit Test 2", position2, DreamVector3(0.4f, 2.0f, 4.8f));
-	ClassUnitTest<DreamVector3>("Vector3 Unit Test 3", position3, DreamVector3(0.5f, 2.5f, 6.0f));
-	ClassUnitTest<DreamVector3>("Vector3 Unit Test 4", position4, DreamVector3(0.7f, 3.5f, 8.4f));
-	ClassUnitTest<DreamVector3>("Vector3 Unit Test 5", position5, DreamVector3(1, 5, 12));
+	DreamUnitTest::ClassUnitTest<DreamVector3>("Vector3 Unit Test 1", position1, DreamVector3());
+	DreamUnitTest::ClassUnitTest<DreamVector3>("Vector3 Unit Test 2", position2, DreamVector3(0.4f, 2.0f, 4.8f));
+	DreamUnitTest::ClassUnitTest<DreamVector3>("Vector3 Unit Test 3", position3, DreamVector3(0.5f, 2.5f, 6.0f));
+	DreamUnitTest::ClassUnitTest<DreamVector3>("Vector3 Unit Test 4", position4, DreamVector3(0.7f, 3.5f, 8.4f));
+	DreamUnitTest::ClassUnitTest<DreamVector3>("Vector3 Unit Test 5", position5, DreamVector3(1, 5, 12));
 
 	worldMatrix.Transpose();
 	DreamVector4 matrixMul = DreamVector4(1,1,1,1) * worldMatrix;
@@ -257,16 +198,16 @@ static void MathUnitTestRun() {
 
 	DreamMatrix3X3 finalMat =  testMat * storeMat;
 
-	FloatUnitTest("Math Library Unit Test 1", 0.8660254f, DreamMath::sin(60));
-	FloatUnitTest("Math Library Unit Test 2", 0.5f, DreamMath::cos(60));
-	FloatUnitTest("Math Library Unit Test 3", 1.732050f, DreamMath::tan(60));
-	FloatUnitTest("Math Library Unit Test 4", -1.0f, DreamMath::asin(60), false);
-	FloatUnitTest("Math Library Unit Test 5", 1.18100003f, DreamMath::acos(0.38f));
-	FloatUnitTest("Math Library Unit Test 6", 0.363147009f, DreamMath::atan(0.38f));
-	FloatUnitTest("Math Library Unit Test 7", 1.0f, DreamMath::ceiling(0.5f));
-	FloatUnitTest("Math Library Unit Test 8", 64.0f, DreamMath::pow(4,3));
-	FloatUnitTest("Math Library Unit Test 9", 0.0f, DreamMath::floor(0.2f));
-	FloatUnitTest("Math Library Unit Test 10", 4.0f, DreamMath::sqrtf(16));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 1", 0.8660254f, DreamMath::sin(60));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 2", 0.5f, DreamMath::cos(60));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 3", 1.732050f, DreamMath::tan(60));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 4", -1.0f, DreamMath::asin(60), false);
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 5", 1.18100003f, DreamMath::acos(0.38f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 6", 0.363147009f, DreamMath::atan(0.38f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 7", 1.0f, DreamMath::ceiling(0.5f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 8", 64.0f, DreamMath::pow(4,3));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 9", 0.0f, DreamMath::floor(0.2f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 10", 4.0f, DreamMath::sqrtf(16));
 }
 
 static void UnitTest() {

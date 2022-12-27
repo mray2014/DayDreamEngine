@@ -5,6 +5,7 @@
 #include "DreamMesh.h"
 #include <DreamAllocatorManager.h>
 #include <DreamFileIO.h>
+#include <DreamUnitTest.h>
 
 void UnitTestFileIO() {
 
@@ -37,6 +38,8 @@ void UnitTestFileIO() {
 
 void UnitTestMath() {
 
+	DreamUnitTest::PrintUnitTestRunName("MATH TEST");
+
 	int num = 89; // result: 0.86006940581
 
 	float sinCalc = DreamMath::round(DreamMath::sin(num));
@@ -47,9 +50,9 @@ void UnitTestMath() {
 	float cosResult = 0.02;
 	float tanResult = 57.29;
 
-	printf("%f\n", sinCalc);
-	printf("%f\n", cosCalc);
-	printf("%f\n", tanCalc);
+	DreamUnitTest::FloatUnitTest("Sin Math Unit Test", sinResult, sinCalc);
+	DreamUnitTest::FloatUnitTest("Cos Math Unit Test", cosResult, cosCalc);
+	DreamUnitTest::FloatUnitTest("Tan Math Unit Test", tanResult, tanCalc);
 
 	assert(sinResult == sinCalc);
 	assert(cosResult == cosCalc);

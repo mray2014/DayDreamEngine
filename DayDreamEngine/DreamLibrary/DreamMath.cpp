@@ -94,11 +94,11 @@ float DreamMath::truncf(float num)
 
 float DreamMath::round(float num, int decimal)
 {
-	float decimalMove = pow(10, decimal);
+	float decimalMove = pow(10.0f, (float)decimal);
 
-	float store = (int)(num * decimalMove + .5f);
+	int store = (int)(num * decimalMove + .5f);
 
-	return (float)store/decimalMove;
+	return ((float)store)/decimalMove;
 }
 
 float DreamMath::lerp(float A, float B, float time)
