@@ -73,28 +73,67 @@ void DreamGLGraphics::CheckInputs()
 	glfwPollEvents();
 }
 
-void DreamGLGraphics::GenerateVertexArray(size_t numOfBuffers, size_t& VBO)
+void DreamGLGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfBuffers, void* bufferData, size_t numOfElements, VertexDataUsage dataUsage)
 {
-	glGenVertexArrays(numOfBuffers, &VBO);
-}
+	unsigned int buffType = -1;
+	unsigned int drawType = -1;
 
-void DreamGLGraphics::GenerateBuffer(size_t numOfBuffers, size_t& VBO)
-{
-	glGenBuffers(numOfBuffers, &VBO);
+	switch (type) {
+	case BufferType::VertexArray: {
+		glGenVertexArrays(numOfBuffers, &VBO);
+		return;
+	}
+	case BufferType::ArrayBuffer: {
+		glGenBuffers(numOfBuffers, &VBO);
+		buffType = GL_ARRAY_BUFFER;
+		break;
+	}
+	case BufferType::ElementArrayBuffer: {
+		glGenBuffers(numOfBuffers, &VBO);
+		buffType = GL_ELEMENT_ARRAY_BUFFER;
+		break;
+	}
+	}
+
+	if (buffType == -1) {
+		printf("ERROR: Invalid Buffer Type");
+		return;
+	}
+
+	switch (dataUsage) {
+	case VertexDataUsage::StreamDraw:
+		drawType = GL_STREAM_DRAW;
+		break;
+	case VertexDataUsage::StaticDraw:
+		drawType = GL_STATIC_DRAW;
+		break;
+	case VertexDataUsage::DynamicDraw:
+		drawType = GL_DYNAMIC_DRAW;		
+		break;
+	}
+
+	if (buffType == -1) {
+		printf("ERROR: Invalid Vertex Usage Type");
+		return;
+	}
+
+	glBindBuffer(buffType, VBO);
+	glBufferData(buffType, numOfElements, bufferData, drawType);
+	
 }
 
 int vertexArrayIndex = -1;
 int vertexArrayStrideCount = 0;
-void DreamGLGraphics::BindVertexArray(size_t& VBO)
-{
-	glBindVertexArray(VBO);
-}
 
 void DreamGLGraphics::BindBuffer(BufferType type, size_t& VBO)
 {
 	unsigned int buffType = -1;
 
 	switch (type) {
+	case BufferType::VertexArray: {
+		glBindVertexArray(VBO);
+		return;
+	}
 	case BufferType::ArrayBuffer:
 		buffType = GL_ARRAY_BUFFER;
 		break;
@@ -112,38 +151,6 @@ void DreamGLGraphics::BindBuffer(BufferType type, size_t& VBO)
 	
 }
 
-void DreamGLGraphics::CopyBufferData(BufferType type, size_t numOfElements, void* buffer, VertexDataUsage dataUsage)
-{
-	unsigned int buffType = -1;
-
-	switch (type) {
-	case BufferType::ArrayBuffer:
-		buffType = GL_ARRAY_BUFFER;
-		break;
-	case BufferType::ElementArrayBuffer:
-		buffType = GL_ELEMENT_ARRAY_BUFFER;
-		break;
-	}
-
-	if (buffType == -1) {
-		printf("ERROR: Invalid Buffer Type");
-	}
-
-
-	switch (dataUsage) {
-	case VertexDataUsage::StreamDraw:
-		glBufferData(buffType, numOfElements, buffer, GL_STREAM_DRAW);
-		break;
-	case VertexDataUsage::StaticDraw:
-		glBufferData(buffType, numOfElements, buffer, GL_STATIC_DRAW);
-		break;
-	case VertexDataUsage::DynamicDraw:
-		glBufferData(buffType, numOfElements, buffer, GL_DYNAMIC_DRAW);
-		break;
-	}
-	
-}
-
 void DreamGLGraphics::AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
 {
 	vertexArrayIndex++;
@@ -153,11 +160,23 @@ void DreamGLGraphics::AddVertexAttributePointer(int size, unsigned int dataType,
 	vertexArrayStrideCount += sizeOf;
 }
 
-void DreamGLGraphics::UnBindVertexArray()
+void DreamGLGraphics::UnBindBuffer(BufferType type)
 {
-	glBindVertexArray(0);
-	vertexArrayIndex = -1;
-	vertexArrayStrideCount = 0;
+	switch (type) {
+	case BufferType::VertexArray: {
+		glBindVertexArray(0);
+		vertexArrayIndex = -1;
+		vertexArrayStrideCount = 0;
+		return;
+	}
+	case BufferType::ArrayBuffer:
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		break;
+	case BufferType::ElementArrayBuffer:
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		break;
+	}
+	
 }
 
 void DreamGLGraphics::TerminateGraphics()
@@ -309,6 +328,7 @@ unsigned int DreamGLGraphics::FinishShaderProgramCreation()
 	}
 	else {
 		printf("ERROR: No Shader Program created!");
+		return -1;
 	}
 }
 

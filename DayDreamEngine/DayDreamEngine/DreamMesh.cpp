@@ -11,17 +11,15 @@ DreamMesh::DreamMesh(std::vector<DreamVertex>& verts) {
 
 		size_t VBO; // Vertex Buffer
 
-		graphics->GenerateVertexArray(1, vertexArray);
-		graphics->GenerateBuffer(1, VBO);
+		graphics->GenerateBuffer(BufferType::VertexArray, vertexArray);
+		graphics->GenerateBuffer(BufferType::ArrayBuffer, VBO, 1, &verts[0], sizeof(DreamVertex) * vertCount);
 
 		// Copying vertices
-		graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
-		graphics->CopyBufferData(BufferType::ArrayBuffer, sizeof(DreamVertex) * vertCount, &verts[0], VertexDataUsage::StaticDraw);
 
 		// Setting up how to read vertice data
-		graphics->BindVertexArray(vertexArray);
+		graphics->BindBuffer(BufferType::VertexArray, vertexArray);
 		graphics->AddVertexAttributePointer(3, 0, false, sizeof(DreamVector3));
-		graphics->UnBindVertexArray();
+		graphics->UnBindBuffer(BufferType::VertexArray);
 	}
 }
 
@@ -35,28 +33,27 @@ DreamMesh::DreamMesh(std::vector<DreamVertex>& verts, std::vector<size_t>& indic
 
 		size_t VBO; // Vertex Buffer
 
-		graphics->GenerateVertexArray(1, vertexArray);
-		graphics->GenerateBuffer(1, indexBuffer);
-		graphics->GenerateBuffer(1, VBO);
+		graphics->GenerateBuffer(BufferType::VertexArray, vertexArray);
+		graphics->GenerateBuffer(BufferType::ElementArrayBuffer, indexBuffer, 1, &indices[0], sizeof(size_t) * indicesCount);
+		graphics->GenerateBuffer(BufferType::ArrayBuffer, VBO, 1, &verts[0], sizeof(DreamVertex) * vertCount);
 
 		// Copying vertices
-		graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
-		graphics->CopyBufferData(BufferType::ArrayBuffer, sizeof(DreamVertex) * vertCount, &verts[0], VertexDataUsage::StaticDraw);
+		//graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
 
 		// Copying indices
-		graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
-		graphics->CopyBufferData(BufferType::ElementArrayBuffer, sizeof(size_t) * indicesCount, &indices[0], VertexDataUsage::StaticDraw);
+		//graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
+		//graphics->CopyBufferData(BufferType::ElementArrayBuffer, , , VertexDataUsage::StaticDraw);
 
 		// Setting up how to read vertice data
-		graphics->BindVertexArray(vertexArray);
+		graphics->BindBuffer(BufferType::VertexArray, vertexArray);
 		graphics->AddVertexAttributePointer(3, 0, false, sizeof(DreamVector3));
-		graphics->UnBindVertexArray();
+		graphics->UnBindBuffer(BufferType::VertexArray);
 	}
 }
 
 void DreamMesh::DrawOpaque()
 {
-	graphics->BindVertexArray(vertexArray);
+	graphics->BindBuffer(BufferType::VertexArray, vertexArray);
 
 	if (indexBuffer != -1) {
 		graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
@@ -66,5 +63,5 @@ void DreamMesh::DrawOpaque()
 		graphics->DrawWithVertex(vertCount);
 	}
 	
-	graphics->UnBindVertexArray();
+	graphics->UnBindBuffer(BufferType::VertexArray);
 }

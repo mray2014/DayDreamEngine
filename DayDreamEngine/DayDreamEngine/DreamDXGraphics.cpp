@@ -319,32 +319,87 @@ void DreamDXGraphics::CheckInputs()
 {
 }
 
-void DreamDXGraphics::GenerateVertexArray(size_t numOfBuffers, size_t& VBO)
+void DreamDXGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfBuffers, void* bufferData, size_t numOfElements, VertexDataUsage dataUsage)
 {
-}
+	ID3D11Buffer* arr;
 
-void DreamDXGraphics::GenerateBuffer(size_t numOfBuffers, size_t& VBO)
-{
-}
+	// Create the proper struct to hold the initial vertex data
+	// - This is how we put the initial data into the buffer
+	D3D11_SUBRESOURCE_DATA initialBufferData;
+	initialBufferData.pSysMem = bufferData;
 
-void DreamDXGraphics::BindVertexArray(size_t& VBO)
-{
+
+	switch (type) {
+	case BufferType::VertexArray: {
+		D3D11_BUFFER_DESC vbd;
+
+		vbd.Usage = D3D11_USAGE_IMMUTABLE;
+		vbd.ByteWidth = numOfElements;       // 3 = number of vertices in the buffer
+		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells DirectX this is a vertex buffer
+		vbd.CPUAccessFlags = 0;
+		vbd.MiscFlags = 0;
+		vbd.StructureByteStride = 0;
+
+		// Actually create the buffer with the initial data
+		// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
+		device->CreateBuffer(&vbd, &initialBufferData, &arr);
+		break;
+	}
+	case BufferType::ArrayBuffer: {
+		break;
+	}
+	case BufferType::ElementArrayBuffer: {
+		D3D11_BUFFER_DESC vbd;
+
+		vbd.Usage = D3D11_USAGE_IMMUTABLE;
+		vbd.ByteWidth = numOfElements;       // 3 = number of vertices in the buffer
+		vbd.BindFlags = D3D11_BIND_INDEX_BUFFER; // Tells DirectX this is a vertex buffer
+		vbd.CPUAccessFlags = 0;
+		vbd.MiscFlags = 0;
+		vbd.StructureByteStride = 0;
+
+		// Actually create the buffer with the initial data
+		// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
+		device->CreateBuffer(&vbd, &initialBufferData, &arr);
+		break;
+	}
+	}
 }
 
 void DreamDXGraphics::BindBuffer(BufferType type, size_t& VBO)
 {
-}
-
-void DreamDXGraphics::CopyBufferData(BufferType type, size_t numOfElements, void* buffer, VertexDataUsage dataUsage)
-{
+	switch (type) {
+	case BufferType::VertexArray: {
+		//context->IASetVertexBuffers(0, 2, vbs, strides, offsets);
+		break;
+	}
+	case BufferType::ArrayBuffer: {
+		break;
+	}
+	case BufferType::ElementArrayBuffer: {
+		//context->IASetIndexBuffer(indArr, DXGI_FORMAT_R32_UINT, 0);
+		break;
+	}
+	}
 }
 
 void DreamDXGraphics::AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
 {
 }
 
-void DreamDXGraphics::UnBindVertexArray()
+void DreamDXGraphics::UnBindBuffer(BufferType type)
 {
+	switch (type) {
+	case BufferType::VertexArray: {
+		break;
+	}
+	case BufferType::ArrayBuffer: {
+		break;
+	}
+	case BufferType::ElementArrayBuffer: {
+		break;
+	}
+	}
 }
 
 unsigned int DreamDXGraphics::LoadShader(const char* file, ShaderType shaderType)
@@ -379,6 +434,50 @@ void DreamDXGraphics::DrawWithVertex(size_t size)
 
 void DreamDXGraphics::Draw()
 {
+	//D3D11_MAPPED_SUBRESOURCE mapped = {};
+	//context->Map(instanceWorldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+
+	//// Copy to the resource
+
+
+	//memcpy(mapped.pData, components, sizeof(InstanceData) * numInstances);
+
+	//// Unmap so the GPU can use it again
+	//context->Unmap(instanceWorldMatrixBuffer, 0);
+
+	//ID3D11Buffer* vbs[2] = {
+	//	assets->meshStorage[meshName]->vertArr,	// Per-vertex data
+	//	instanceWorldMatrixBuffer			// Per-instance data
+	//};
+
+	//// Two buffers means two strides and two offsets!
+	//UINT strides[2] = { sizeof(Vertex), sizeof(InstanceData) };
+	//UINT offsets[2] = { 0, 0 };
+
+	//// Set both vertex buffers
+	//context->IASetVertexBuffers(0, 2, vbs, strides, offsets);
+	//context->IASetIndexBuffer(assets->meshStorage[meshName]->indArr, DXGI_FORMAT_R32_UINT, 0);
+
+	//instanceFVShader->SetMatrix4x4("view", cam->viewMatrix);
+	//instanceFVShader->SetMatrix4x4("projection", cam->projectionMatrix);
+
+	//instanceFVShader->SetFloat3("camPosition", cam->transform.position);
+
+	//instanceFVShader->CopyAllBufferData();
+
+	//SetLights(pixelFShader);
+	//pixelFShader->SetSamplerState("basicSampler", textureSample);
+	//pixelFShader->SetShaderResourceView("skyTexture", skyBoxSVR);
+	//pixelFShader->SetFloat("reflectance", 0.0f);
+	//pixelFShader->CopyAllBufferData();
+
+	//instanceFVShader->SetShader();
+	//pixelFShader->SetShader();
+
+	//context->DrawIndexedInstanced(
+	//	assets->meshStorage[meshName]->indCount, // Number of indices from index buffer
+	//	count,					// Number of instances to actually draw
+	//	0, 0, 0);
 }
 
 void DreamDXGraphics::TerminateGraphics()

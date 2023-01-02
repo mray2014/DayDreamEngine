@@ -3,6 +3,7 @@
 #include <vector>
 
 enum BufferType {
+	VertexArray,
 	ArrayBuffer,
 	ElementArrayBuffer
 };
@@ -62,13 +63,13 @@ public:
 	virtual void ClearScreen() = 0;
 	virtual void SwapBuffers() = 0;
 	virtual void CheckInputs() = 0;
-	virtual void GenerateVertexArray(size_t numOfBuffers, size_t& VBO) = 0;
-	virtual void GenerateBuffer(size_t numOfBuffers, size_t& VBO) = 0;
-	virtual void BindVertexArray(size_t& VBO) = 0;
+	//virtual void GenerateVertexArray(size_t numOfBuffers, size_t& VBO) = 0;
+	virtual void GenerateBuffer(BufferType type, size_t& VBO, size_t numOfBuffers = 1, void* bufferData = nullptr, size_t numOfElements = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
+	//virtual void BindVertexArray(size_t& VBO) = 0;
 	virtual void BindBuffer(BufferType type, size_t& VBO) = 0;
-	virtual void CopyBufferData(BufferType type, size_t numOfElements, void* buffer, VertexDataUsage dataUsage) = 0;
+	//virtual void CopyBufferData() = 0;
 	virtual void AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
-	virtual void UnBindVertexArray() = 0;
+	virtual void UnBindBuffer(BufferType type) = 0;
 	virtual unsigned int LoadShader(const char* file, ShaderType shaderType) = 0;
 	virtual void StartShaderProgramCreation() = 0;
 	virtual void AttachShader(unsigned int shader) = 0;
