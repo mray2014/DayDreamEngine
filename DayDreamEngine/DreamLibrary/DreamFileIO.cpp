@@ -1,5 +1,4 @@
 #include "DreamFileIO.h"
-#include <string>
 #include <iostream>
 #include <fstream>
 
@@ -40,8 +39,8 @@ void DreamFileIO::OpenFileWrite(const char * filePath, FileWriteType type)
 	{
 		std::string fileContents = "";
 		if (DreamFileIO::OpenFileRead(filePath)) {
-			char* line;
-			while (DreamFileIO::ReadLine(&line)) {
+			std::string line;
+			while (DreamFileIO::ReadLine(line)) {
 				fileContents += line;
 				fileContents += "\n";
 			}
@@ -55,7 +54,7 @@ void DreamFileIO::OpenFileWrite(const char * filePath, FileWriteType type)
 	}
 }
 
-const bool DreamFileIO::ReadFullFile(char** lineOut)
+const bool DreamFileIO::ReadFullFileQuick(std::string& lineOut)
 {
 	if (readFileStream.is_open()) {
 		readFileStream.seekg(0, std::ios::end);
@@ -65,22 +64,41 @@ const bool DreamFileIO::ReadFullFile(char** lineOut)
 		char* text = new char[lenght + 1];
 
 		readFileStream.read(text, lenght);
-		text[lenght] = 0;
+		text[lenght] = '\0';
 
-		*lineOut = text;
+		lineOut = text;
 		return true;
 	}
 
 	return false;
 }
 
-const bool DreamFileIO::ReadLine(char** lineOut)
+const bool DreamFileIO::ReadFullFile(std::string& lineOut)
+{
+	lineOut = "";
+
+	if (readFileStream.is_open()) {
+
+		std::string text = "";
+
+		while (!readFileStream.eof()) {
+			std::getline(readFileStream, text);
+			lineOut.append(text + "\n");
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+const bool DreamFileIO::ReadLine(std::string& lineOut)
 {
 	bool endOfFile = false;
 	if (readFileStream.is_open()) {
 		std::getline(readFileStream, *line);
 	}
-	*lineOut = &(*line)[0];
+	lineOut = *line;
 	return !readFileStream.eof();
 }
 

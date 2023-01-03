@@ -86,9 +86,9 @@ static void FileIOUnitTestRun() {
 		printf("HOW THE FUCK DID GET IN HERE???!!!!!???");
 	}
 	if (DreamFileIO::OpenFileRead("word.txt")) {
-		char* line;
-		while (DreamFileIO::ReadLine(&line)) {
-			printf("%s", &line[0]);
+		std::string line;
+		while (DreamFileIO::ReadLine(line)) {
+			printf("%s", line.c_str());
 		}
 		DreamFileIO::CloseFileRead();
 	}

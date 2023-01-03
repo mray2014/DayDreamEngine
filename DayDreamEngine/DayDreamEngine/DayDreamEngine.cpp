@@ -25,11 +25,11 @@ void UnitTestFileIO() {
 
 	if (DreamFileIO::OpenFileRead("word.txt")) {
 		int i = 0;
-		char* line;
-		while (DreamFileIO::ReadLine(&line)) {
+		std::string line;
+		while (DreamFileIO::ReadLine(line)) {
 
 			assert(line == testLines[i]);
-			printf("%s\n", line);
+			printf("%s\n", line.c_str());
 			i++;
 		}
 		DreamFileIO::CloseFileRead();

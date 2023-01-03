@@ -245,9 +245,9 @@ unsigned int DreamGLGraphics::LoadShader(const char* file, ShaderType shaderType
 
 	if (DreamFileIO::OpenFileRead(file))
 	{
-		char* fileContent = nullptr;
+		string fileContent;
 
-		if (DreamFileIO::ReadFullFile(&fileContent)) {
+		if (DreamFileIO::ReadFullFile(fileContent)) {
 
 			switch (shaderType) {
 			case ShaderType::VertexShader: {
@@ -269,7 +269,8 @@ unsigned int DreamGLGraphics::LoadShader(const char* file, ShaderType shaderType
 			}
 			
 			if (prog != 0) {
-				glShaderSource(prog, 1, &fileContent, 0);
+				const char* content = fileContent.c_str();
+				glShaderSource(prog, 1, (const GLchar**)&content, 0);
 
 				glCompileShader(prog);
 
@@ -289,7 +290,6 @@ unsigned int DreamGLGraphics::LoadShader(const char* file, ShaderType shaderType
 				}
 			}
 		}
-		if (fileContent) { delete fileContent; fileContent = nullptr; }
 
 		DreamFileIO::CloseFileRead();
 	}
