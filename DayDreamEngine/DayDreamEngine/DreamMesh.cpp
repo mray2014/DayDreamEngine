@@ -3,65 +3,57 @@
 
 DreamGraphics* graphics = nullptr;
 
-DreamMesh::DreamMesh(std::vector<DreamVertex>& verts) {
+DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts) {
 	graphics = DreamGraphics::GetInstance();
+	shaderLink = shader;
 
 	if (graphics) {
 		vertCount = verts.size();
 
-		size_t VBO; // Vertex Buffer
-
-		graphics->GenerateBuffer(BufferType::VertexArray, vertexArray);
-		graphics->GenerateBuffer(BufferType::ArrayBuffer, VBO, 1, &verts[0], sizeof(DreamVertex) * vertCount);
-
-		// Copying vertices
-
-		// Setting up how to read vertice data
-		graphics->BindBuffer(BufferType::VertexArray, vertexArray);
-		graphics->AddVertexAttributePointer(3, 0, false, sizeof(DreamVector3));
-		graphics->UnBindBuffer(BufferType::VertexArray);
+		DreamBuffer* vertBuffer = graphics->GenerateBuffer(BufferType::ArrayBuffer, &verts[0], vertCount, { sizeof(DreamVertex) });
+		
+		vertArray = graphics->GenerateVertexArray(vertBuffer);
 	}
 }
 
 
-DreamMesh::DreamMesh(std::vector<DreamVertex>& verts, std::vector<size_t>& indices) {
+DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts, std::vector<size_t>& indices) {
 	graphics = DreamGraphics::GetInstance();
-	
+	shaderLink = shader;
+
 	if (graphics) {
 		vertCount = verts.size();
 		indicesCount = indices.size();
 
-		size_t VBO; // Vertex Buffer
+		DreamBuffer* vertBuffer = graphics->GenerateBuffer(BufferType::ArrayBuffer, &verts[0], vertCount, { sizeof(DreamVertex) });
+		DreamBuffer* indexBuffer = graphics->GenerateBuffer(BufferType::ElementArrayBuffer, &indices[0], indicesCount, { sizeof(size_t) });
+		
+		vertArray = graphics->GenerateVertexArray(vertBuffer, indexBuffer);
+	}
+}
 
-		graphics->GenerateBuffer(BufferType::VertexArray, vertexArray);
-		graphics->GenerateBuffer(BufferType::ElementArrayBuffer, indexBuffer, 1, &indices[0], sizeof(size_t) * indicesCount);
-		graphics->GenerateBuffer(BufferType::ArrayBuffer, VBO, 1, &verts[0], sizeof(DreamVertex) * vertCount);
-
-		// Copying vertices
-		//graphics->BindBuffer(BufferType::ArrayBuffer, VBO);
-
-		// Copying indices
-		//graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
-		//graphics->CopyBufferData(BufferType::ElementArrayBuffer, , , VertexDataUsage::StaticDraw);
-
-		// Setting up how to read vertice data
-		graphics->BindBuffer(BufferType::VertexArray, vertexArray);
-		graphics->AddVertexAttributePointer(3, 0, false, sizeof(DreamVector3));
-		graphics->UnBindBuffer(BufferType::VertexArray);
+DreamMesh::~DreamMesh()
+{
+	if (vertArray) {
+		delete vertArray;
+		vertArray = nullptr;
 	}
 }
 
 void DreamMesh::DrawOpaque()
 {
-	graphics->BindBuffer(BufferType::VertexArray, vertexArray);
+	if (shaderLink) {
+		shaderLink->BindShaderLink();
+		vertArray->Bind();
 
-	if (indexBuffer != -1) {
-		graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
-		graphics->DrawWithIndex(indicesCount);
+		if (vertArray->indexBuffer) {
+			graphics->DrawWithIndex(indicesCount);
+		}
+		else {
+			graphics->DrawWithVertex(vertCount);
+		}
+
+		vertArray->UnBind();
+		shaderLink->UnBindShaderLink();
 	}
-	else {
-		graphics->DrawWithVertex(vertCount);
-	}
-	
-	graphics->UnBindBuffer(BufferType::VertexArray);
 }

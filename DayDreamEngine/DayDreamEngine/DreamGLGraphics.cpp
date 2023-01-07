@@ -2,6 +2,7 @@
 #include <DreamFileIO.h>
 #include <glad\glad.h>
 #include <GLFW\glfw3.h>
+#include <vector>
 
 GLFWwindow* window = nullptr;
 
@@ -73,23 +74,28 @@ void DreamGLGraphics::CheckInputs()
 	glfwPollEvents();
 }
 
-void DreamGLGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfBuffers, void* bufferData, size_t numOfElements, VertexDataUsage dataUsage)
+DreamVertexArray* DreamGLGraphics::GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind)
 {
-	unsigned int buffType = -1;
-	unsigned int drawType = -1;
+	return  new DreamGLVertexArray(vert, ind);
+}
+
+DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, void* bufferData, size_t numOfElements, std::vector<size_t> strides, std::vector<size_t> offests, VertexDataUsage dataUsage)
+{
+	size_t buffType = -1;
+	size_t drawType = -1;
+
+	size_t numOfBuffers = strides.size();
+
+	size_t handle;
+
+	glGenBuffers(numOfBuffers, &handle);
 
 	switch (type) {
-	case BufferType::VertexArray: {
-		glGenVertexArrays(numOfBuffers, &VBO);
-		return;
-	}
 	case BufferType::ArrayBuffer: {
-		glGenBuffers(numOfBuffers, &VBO);
 		buffType = GL_ARRAY_BUFFER;
 		break;
 	}
 	case BufferType::ElementArrayBuffer: {
-		glGenBuffers(numOfBuffers, &VBO);
 		buffType = GL_ELEMENT_ARRAY_BUFFER;
 		break;
 	}
@@ -97,8 +103,19 @@ void DreamGLGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfB
 
 	if (buffType == -1) {
 		printf("ERROR: Invalid Buffer Type");
-		return;
+		return nullptr;
 	}
+
+
+	if (numOfBuffers <= 0) {
+		printf("ERROR: 0 Buffer strides input");
+		return nullptr;
+	}
+	if (numOfBuffers != offests.size()) {
+		printf("ERROR: Stride and offset buffer do not match!");
+		return nullptr;
+	}
+
 
 	switch (dataUsage) {
 	case VertexDataUsage::StreamDraw:
@@ -114,26 +131,29 @@ void DreamGLGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfB
 
 	if (buffType == -1) {
 		printf("ERROR: Invalid Vertex Usage Type");
-		return;
+		return nullptr;
 	}
 
-	glBindBuffer(buffType, VBO);
-	glBufferData(buffType, numOfElements, bufferData, drawType);
-	
+	size_t dataSize = 0;
+
+	for (int i = 0; i < numOfBuffers; i++) {
+		dataSize += strides[i];
+	}
+
+	glBindBuffer(buffType, handle);
+	glBufferData(buffType, numOfElements * dataSize, bufferData, drawType);
+	glBindBuffer(buffType, 0);
+
+	return new DreamBuffer(handle, numOfBuffers, &strides[0], &offests[0]);
 }
 
-int vertexArrayIndex = -1;
-int vertexArrayStrideCount = 0;
-
-void DreamGLGraphics::BindBuffer(BufferType type, size_t& VBO)
+void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 {
 	unsigned int buffType = -1;
 
+	size_t storedHandle = buffer->GetBufferPointer().GetStoredHandle();
+
 	switch (type) {
-	case BufferType::VertexArray: {
-		glBindVertexArray(VBO);
-		return;
-	}
 	case BufferType::ArrayBuffer:
 		buffType = GL_ARRAY_BUFFER;
 		break;
@@ -143,7 +163,7 @@ void DreamGLGraphics::BindBuffer(BufferType type, size_t& VBO)
 	}
 
 	if (buffType != -1) {
-		glBindBuffer(buffType, VBO);
+		glBindBuffer(buffType, storedHandle);
 	}
 	else {
 		printf("ERROR: Invalid Buffer Type");
@@ -151,24 +171,62 @@ void DreamGLGraphics::BindBuffer(BufferType type, size_t& VBO)
 	
 }
 
-void DreamGLGraphics::AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+size_t vertLayoutHandle = -1;
+
+size_t vertexArrayIndex = -1;
+size_t vertexArrayStrideCount = 0;
+
+void DreamGLGraphics::BeginVertexLayout()
 {
-	vertexArrayIndex++;
-	glEnableVertexAttribArray(vertexArrayIndex);
-	//TODO: Take out GL_FLOAT
-	glVertexAttribPointer(vertexArrayIndex, size, GL_FLOAT, shouldNormalize ? GL_FALSE:GL_TRUE, sizeOf, (void*)vertexArrayStrideCount);
-	vertexArrayStrideCount += sizeOf;
+	if (vertLayoutHandle == -1)
+	{
+		glGenVertexArrays(1, &vertLayoutHandle);
+
+		glBindVertexArray(vertLayoutHandle);
+	}
+	else {
+		printf("ERROR: Vertex Layout creation process has started already!\nCall FinalizeVertexLayout to end the current operation and start a new one");
+	}
+	
+}
+
+void DreamGLGraphics::AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+{
+	if (vertLayoutHandle != -1) {
+		vertexArrayIndex++;
+		glEnableVertexAttribArray(vertexArrayIndex);
+		//TODO: Take out GL_FLOAT
+		glVertexAttribPointer(vertexArrayIndex, size, GL_FLOAT, shouldNormalize ? GL_FALSE : GL_TRUE, sizeOf, (void*)vertexArrayStrideCount);
+		vertexArrayStrideCount += sizeOf;
+	}
+	else {
+		printf("ERROR: No Vertex Layout creation process has started! Can't Add Data");
+	}
+}
+
+DreamBuffer* DreamGLGraphics::FinalizeVertexLayout()
+{
+	if (vertLayoutHandle != -1)
+	{
+		glBindVertexArray(0);
+		DreamBuffer* buff = new DreamBuffer(vertLayoutHandle);
+
+
+		vertLayoutHandle = -1;
+		vertexArrayIndex = -1;
+		vertexArrayStrideCount = 0;
+
+		return buff;
+	}
+	else {
+		printf("ERROR: No Vertex Layout creation process has started! Can't Finalize");
+		return nullptr;
+	}
 }
 
 void DreamGLGraphics::UnBindBuffer(BufferType type)
 {
 	switch (type) {
-	case BufferType::VertexArray: {
-		glBindVertexArray(0);
-		vertexArrayIndex = -1;
-		vertexArrayStrideCount = 0;
-		return;
-	}
 	case BufferType::ArrayBuffer:
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		break;
@@ -238,14 +296,19 @@ void DreamGLGraphics::Draw() {
 
 
 
-unsigned int DreamGLGraphics::LoadShader(const char* file, ShaderType shaderType) {
+bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) {
 	using namespace std;
 
-	GLuint prog = 0;
+	bool success = false;
+	GLuint prog = -1;
 
-	if (DreamFileIO::OpenFileRead(file))
+	std::wstring path = L"Shaders/";
+	path.append(file);
+	path.append(L".glsl");
+
+	if (DreamFileIO::OpenFileRead(path.c_str()))
 	{
-		string fileContent;
+		wstring fileContent;
 
 		if (DreamFileIO::ReadFullFile(fileContent)) {
 
@@ -268,8 +331,9 @@ unsigned int DreamGLGraphics::LoadShader(const char* file, ShaderType shaderType
 			}
 			}
 			
-			if (prog != 0) {
-				const char* content = fileContent.c_str();
+			if (prog != -1) {
+				std::string str(fileContent.begin(), fileContent.end());
+				const char* content = str.c_str();
 				glShaderSource(prog, 1, (const GLchar**)&content, 0);
 
 				glCompileShader(prog);
@@ -288,51 +352,119 @@ unsigned int DreamGLGraphics::LoadShader(const char* file, ShaderType shaderType
 					glDeleteShader(prog);
 					delete[] debug; debug = nullptr;
 				}
+				else {
+					ptr = DreamPointer(prog);
+					success = true;
+				}
 			}
 		}
-
 		DreamFileIO::CloseFileRead();
 	}
-	return prog;
+
+	
+	return success;
 }
 
-GLuint shaderProgramCreation = -1;
-void DreamGLGraphics::StartShaderProgramCreation()
+void DreamGLGraphics::ReleaseShader(DreamShader* shader)
 {
-	if (shaderProgramCreation == -1) {
-		shaderProgramCreation = glCreateProgram();
+}
+
+void DreamGLGraphics::DestroyBuffer(DreamBuffer* buffer)
+{
+	if (buffer) {
+		glDeleteBuffers(1, &buffer->GetBufferPointer().GetStoredHandle());
+
+		delete buffer;
+		buffer = nullptr;
+	}
+}
+
+DreamGLShaderLinker::DreamGLShaderLinker()
+{
+	if (prog == 0) {
+		prog = glCreateProgram();
 	}
 	else {
 		printf("ERROR: Shader Program creation in progress!");
 	}
 }
 
-void DreamGLGraphics::AttachShader(unsigned int shader)
+void DreamGLShaderLinker::AttachShader(DreamShader* shader)
 {
-	if (shaderProgramCreation != -1) {
-		glAttachShader(shaderProgramCreation, shader);
+	linkedShaders.push_back(shader);
+
+	if (prog != 0) {
+		glAttachShader(prog, shader->GetShaderPtr().GetStoredHandle());
+	}
+	else {
+		printf("ERROR: No Shader created!");
+	}
+}
+
+void DreamGLShaderLinker::Finalize()
+{
+	if (prog != 0) {
+		glLinkProgram(prog);
+
+		GLint result;
+		glGetProgramiv(prog, GL_LINK_STATUS, &result);
+		if (result == 0)
+		{
+			glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &result);
+			GLchar* debug = new GLchar[result];
+
+			glGetProgramInfoLog(prog, result, 0, debug);
+			printf(debug);
+			glDeleteProgram(prog);
+			delete[] debug; debug = nullptr;
+
+		}
 	}
 	else {
 		printf("ERROR: No Shader Program created!");
 	}
 }
 
-unsigned int DreamGLGraphics::FinishShaderProgramCreation()
+void DreamGLShaderLinker::BindShaderLink()
 {
-	if (shaderProgramCreation != -1) {
-		glLinkProgram(shaderProgramCreation);
-		unsigned int store = shaderProgramCreation;
-		shaderProgramCreation = -1;
-
-		return store;
+	for (size_t i = 0; i < linkedShaders.size(); i++) {
+		linkedShaders[i]->BindShaderData();
 	}
-	else {
-		printf("ERROR: No Shader Program created!");
-		return -1;
+	
+	glUseProgram(prog);
+}
+
+void DreamGLShaderLinker::UnBindShaderLink()
+{
+	glUseProgram(0);
+}
+
+
+
+DreamGLVertexArray::DreamGLVertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)
+{
+	graphics->BindBuffer(ArrayBuffer, vertexBuffer);
+	graphics->BeginVertexLayout();
+	graphics->AddVertexLayoutData("POSITION", 3, 0, false, sizeof(DreamVector3));
+	VAO = graphics->FinalizeVertexLayout();
+}
+
+DreamGLVertexArray::~DreamGLVertexArray()
+{
+	DreamVertexArray::~DreamVertexArray();
+	graphics->DestroyBuffer(VAO);
+}
+
+void DreamGLVertexArray::Bind()
+{
+	glBindVertexArray(VAO->GetBufferPointer().GetStoredHandle());
+	if (indexBuffer) {
+		graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
 	}
 }
 
-void DreamGLGraphics::SetShader(unsigned int shaderProg)
+void DreamGLVertexArray::UnBind()
 {
-	glUseProgram(shaderProg);
+	glBindVertexArray(0);
+	graphics->UnBindBuffer(BufferType::ElementArrayBuffer);
 }

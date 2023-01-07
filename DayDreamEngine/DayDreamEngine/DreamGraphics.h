@@ -1,59 +1,36 @@
 #pragma once
 #include <DreamMath.h>
 #include <vector>
+#include "DreamShader.h"
 
-enum BufferType {
-	VertexArray,
-	ArrayBuffer,
-	ElementArrayBuffer
-};
+class DreamVertexArray;
+
 enum VertexDataUsage {
 	StreamDraw, // the data is set only once and used by the GPU at most a few times.
 	StaticDraw, // the data is set only once and used many times.
 	DynamicDraw // the data is changed a lot and used many times.
 };
-enum ShaderType {
-	VertexShader,
-	PixelShader,
-	GeometryShader,
-	ComputeShader,
-};
 
 using namespace DreamMath;
 
-class DreamPointer {
+class DreamShaderLinker {
+protected:
+	DreamShaderLinker();
+	std::vector<DreamShader*> linkedShaders;
 public:
-	DreamPointer() {
-		ptr = nullptr;
-	}
-	DreamPointer(void* newPtr) {
-		ptr = newPtr;
-	}
-	~DreamPointer() {
-
-	}
-	void* GetStoredPointer() {
-		return ptr;
-	}
+	virtual void AttachShader(DreamShader* shader) = 0;
+	virtual void Finalize() = 0;
+	virtual void BindShaderLink() = 0;
+	virtual void UnBindShaderLink() = 0;
 private:
-	void* ptr;
-};
-
-struct DreamShader {
-	const ShaderType type;
-	const char* filePath;
-
-	DreamShader(ShaderType pType, const char* pFilePath) : type(pType), filePath (pFilePath) {}
-};
-
-struct DreamShaderLinker {
-	std::vector<DreamShader> shaderLinks;
+	//friend class DreamGraphics;
 };
 
 class DreamGraphics
 {
 public:
 	static DreamGraphics* GetInstance();
+	static DreamShaderLinker* GenerateShaderLinker();
 	~DreamGraphics();
 
 	virtual long InitWindow(int w, int h, const char* title) = 0;
@@ -63,24 +40,22 @@ public:
 	virtual void ClearScreen() = 0;
 	virtual void SwapBuffers() = 0;
 	virtual void CheckInputs() = 0;
-	//virtual void GenerateVertexArray(size_t numOfBuffers, size_t& VBO) = 0;
-	virtual void GenerateBuffer(BufferType type, size_t& VBO, size_t numOfBuffers = 1, void* bufferData = nullptr, size_t numOfElements = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
-	//virtual void BindVertexArray(size_t& VBO) = 0;
-	virtual void BindBuffer(BufferType type, size_t& VBO) = 0;
-	//virtual void CopyBufferData() = 0;
-	virtual void AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
+	virtual DreamVertexArray* GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr) = 0;
+	virtual DreamBuffer* GenerateBuffer(BufferType type, void* bufferData = nullptr, size_t numOfElements = 0, std::vector<size_t> strides = { 0 }, std::vector<size_t> offests = { 0 }, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
+	virtual void BindBuffer(BufferType type, DreamBuffer* buffer) = 0;
+	virtual void BeginVertexLayout() = 0;
+	virtual void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
+	virtual DreamBuffer* FinalizeVertexLayout() = 0;
 	virtual void UnBindBuffer(BufferType type) = 0;
-	virtual unsigned int LoadShader(const char* file, ShaderType shaderType) = 0;
-	virtual void StartShaderProgramCreation() = 0;
-	virtual void AttachShader(unsigned int shader) = 0;
-	virtual unsigned int FinishShaderProgramCreation() = 0;
-	virtual void SetShader(unsigned int shaderProg) = 0;
+	virtual bool LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) = 0;
+	virtual void ReleaseShader(DreamShader* shader) = 0;
 	virtual void DrawWithIndex(size_t size) = 0;
 	virtual void DrawWithVertex(size_t size) = 0;
 	virtual void Draw() = 0;
 
 	virtual void TerminateGraphics() = 0;
 	virtual void DestroyWindow() = 0;
+	virtual void DestroyBuffer(DreamBuffer* buffer) = 0;
 
 	void SetScreenClearColor(DreamMath::DreamVector4 color)
 	{
@@ -107,3 +82,36 @@ private:
 	
 };
 
+class DreamVertexArray {
+protected:
+	DreamVertexArray() {
+		vertexBuffer = nullptr;
+		indexBuffer = nullptr;
+	}
+	DreamVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr)
+	{
+		graphics = DreamGraphics::GetInstance();
+		vertexBuffer = vert;
+		indexBuffer = ind;
+	}
+
+public:
+	~DreamVertexArray()
+	{
+		if (graphics) {
+			graphics->DestroyBuffer(vertexBuffer);
+			graphics->DestroyBuffer(indexBuffer);
+		}
+		else {
+			printf("WARNING: Mesh does not have refd to graphics while deleting itself, possible memory leak");
+		}
+	}
+
+	DreamBuffer* vertexBuffer;
+	DreamBuffer* indexBuffer;
+
+	virtual void Bind() = 0;
+	virtual void UnBind() = 0;
+protected:
+	DreamGraphics* graphics;
+};

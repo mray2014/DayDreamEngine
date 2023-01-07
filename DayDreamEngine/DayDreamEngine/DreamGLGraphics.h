@@ -1,6 +1,31 @@
 #pragma once
 #include "DreamGraphics.h"
 
+class DreamGLShaderLinker : public DreamShaderLinker {
+protected:
+	DreamGLShaderLinker();
+public:
+	void AttachShader(DreamShader* shader) override;
+	void Finalize() override;
+	void BindShaderLink() override;
+	void UnBindShaderLink() override;
+
+private:
+	size_t prog;
+	friend class DreamGraphics;
+};
+
+class DreamGLVertexArray : public DreamVertexArray {
+public:
+	DreamGLVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr);
+	~DreamGLVertexArray();
+
+	void Bind() override;
+	void UnBind() override;
+
+	DreamBuffer* VAO;
+};
+
 class DreamGLGraphics : public DreamGraphics
 {
 public:
@@ -15,25 +40,22 @@ public:
 	void ClearScreen() override;
 	void SwapBuffers() override;
 	void CheckInputs() override;
-	//void GenerateVertexArray(size_t numOfBuffers, size_t& VBO) override;
-	void GenerateBuffer(BufferType type, size_t& VBO, size_t numOfBuffers = 1, void* bufferData = nullptr, size_t numOfElements = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) override;
-	//void BindVertexArray(size_t& VBO) override;
-	void BindBuffer(BufferType type, size_t& VBO) override;
-	//void CopyBufferData(BufferType type, size_t numOfElements, void* buffer, VertexDataUsage dataUsage) override;
-	void AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) override;
+	DreamVertexArray* GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr);
+	DreamBuffer* GenerateBuffer(BufferType type, void* bufferData = nullptr, size_t numOfElements = 0, std::vector<size_t> strides = { 0 }, std::vector<size_t> offests = { 0 }, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) override;
+	void BindBuffer(BufferType type, DreamBuffer* buffer) override;
+	void BeginVertexLayout() override;
+	void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) override;
+	DreamBuffer* FinalizeVertexLayout() override;
 	void UnBindBuffer(BufferType type) override;
-	unsigned int LoadShader(const char* file, ShaderType shaderType) override;
-	void StartShaderProgramCreation() override;
-	void AttachShader(unsigned int shader) override;
-	unsigned int FinishShaderProgramCreation() override;
-	void SetShader(unsigned int shaderProg) override;
+	bool LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) override;
+	void ReleaseShader(DreamShader* shader) override;
 	void DrawWithIndex(size_t size) override;
 	void DrawWithVertex(size_t size) override;
 	void Draw() override;
 
 	void TerminateGraphics() override;
-
 	void DestroyWindow() override;
+	void DestroyBuffer(DreamBuffer* buffer) override;
 
 	void InitGlad();
 

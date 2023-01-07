@@ -9,23 +9,23 @@
 
 void UnitTestFileIO() {
 
-	std::string testLines[]{
-	"Yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahh",
-	"Yoooooooo",
-	"Yaeeeeeeeeeee",
-	"Yweeeeeeeeeeeeeee",
+	std::wstring testLines[]{
+	L"Yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahh",
+	L"Yoooooooo",
+	L"Yaeeeeeeeeeee",
+	L"Yweeeeeeeeeeeeeee",
 	};
 
-	DreamFileIO::OpenFileWrite("word.txt", FileWriteType::OverWrite);
+	DreamFileIO::OpenFileWrite(L"word.txt", FileWriteType::OverWrite);
 
 	for (int i = 0; i < sizeof(testLines) / sizeof(std::string); i++) {
 		DreamFileIO::WriteLine(testLines[i].c_str());
 	}
 	DreamFileIO::CloseFileWrite();
 
-	if (DreamFileIO::OpenFileRead("word.txt")) {
+	if (DreamFileIO::OpenFileRead(L"word.txt")) {
 		int i = 0;
-		std::string line;
+		std::wstring line;
 		while (DreamFileIO::ReadLine(line)) {
 
 			assert(line == testLines[i]);
@@ -40,15 +40,15 @@ void UnitTestMath() {
 
 	DreamUnitTest::PrintUnitTestRunName("MATH TEST");
 
-	int num = 89; // result: 0.86006940581
+	float num = 89.0f; // result: 0.86006940581
 
 	float sinCalc = DreamMath::round(DreamMath::sin(num));
 	float cosCalc = DreamMath::round(DreamMath::cos(num));
 	float tanCalc = DreamMath::round(DreamMath::tan(num));
 
-	float sinResult = 1.00;
-	float cosResult = 0.02;
-	float tanResult = 57.29;
+	float sinResult = 1.00f;
+	float cosResult = 0.02f;
+	float tanResult = 57.29f;
 
 	DreamUnitTest::FloatUnitTest("Sin Math Unit Test", sinResult, sinCalc);
 	DreamUnitTest::FloatUnitTest("Cos Math Unit Test", cosResult, cosCalc);
@@ -74,6 +74,7 @@ void UnitTest() {
 	UnitTestAllocators();
 }
 
+// NOTE: Dont run on a Samsung Fridge
 int main()
 {
 	UnitTest();
@@ -84,17 +85,13 @@ int main()
 	graphics->InitGraphics();
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-	unsigned int vertexProgram = graphics->LoadShader("Shaders/vertex.glsl", ShaderType::VertexShader);
-	unsigned int pixelProgram = graphics->LoadShader("Shaders/pixel.glsl", ShaderType::PixelShader);
+	DreamShader* vertexShader = new VertexDreamShader(L"vertex");
+	DreamShader* pixelShader = new PixelDreamShader(L"pixel");
 
-	graphics->StartShaderProgramCreation();
-	graphics->AttachShader(vertexProgram);
-	graphics->AttachShader(pixelProgram);
-	unsigned int shaderProg = graphics->FinishShaderProgramCreation();
-
-	graphics->SetShader(shaderProg);
-
-	
+	DreamShaderLinker* mainLink = DreamGraphics::GenerateShaderLinker();
+	mainLink->AttachShader(vertexShader);
+	mainLink->AttachShader(pixelShader);
+	mainLink->Finalize();
 
 	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
 	std::vector<size_t> indices = std::vector<size_t>();
@@ -111,9 +108,9 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	DreamMesh mesh = DreamMesh(vert);
-	//DreamMesh mesh = DreamMesh(vert, indices);
-
+	DreamMesh mesh = DreamMesh(mainLink, vert);
+	//DreamMesh mesh = DreamMesh(mainLink, vert, indices);
+	
 	// Perspective matrix
 	// Update our projection matrix since the window size changed
 	//XMMATRIX P = XMMatrixPerspectiveFovLH(
@@ -127,6 +124,7 @@ int main()
 	{
 		graphics->ClearScreen();
 
+		//NOTE: there is a black line on the side of the drawn triangle, halp
 		graphics->Draw();
 		mesh.DrawOpaque();
 

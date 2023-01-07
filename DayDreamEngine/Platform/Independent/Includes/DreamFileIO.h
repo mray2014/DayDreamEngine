@@ -9,14 +9,14 @@ enum FileWriteType {
 class DreamFileIO
 {
 public:
-	static bool OpenFileRead(const char* filePath);
-	static void OpenFileWrite(const char* filePath, FileWriteType type);
-	static const bool ReadFullFileQuick(std::string& lineOut);
-	static const bool ReadFullFile(std::string& lineOut);
-	static const bool ReadLine(std::string& lineOut);
+	static bool OpenFileRead(const wchar_t* filePath);
+	static void OpenFileWrite(const wchar_t* filePath, FileWriteType type);
+	static const bool ReadFullFileQuick(std::wstring& lineOut);
+	static const bool ReadFullFile(std::wstring& lineOut);
+	static const bool ReadLine(std::wstring& lineOut);
 	static void CloseFileRead();
 	static void CloseFileWrite();
-	static void WriteLine(const char* lineToWrite);
+	static void WriteLine(const wchar_t* lineToWrite);
 	static void Write(const char* lineToWrite);
 
 };

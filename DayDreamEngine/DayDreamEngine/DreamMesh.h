@@ -1,7 +1,10 @@
 #pragma once
-#include <DreamMath.h>
 #include <vector>
+#include <DreamMath.h>
+#include "DreamShader.h"
 
+class DreamShaderLinker;
+class DreamVertexArray;
 using namespace DreamMath;
 
 struct DreamVertex {
@@ -19,12 +22,16 @@ struct DreamVertex {
 class DreamMesh {
 	int vertCount = 0;
 	int indicesCount = 0;
-	size_t indexBuffer = -1; // Index Buffer
-	size_t vertexArray = -1; // Vertex Array
+
+	DreamVertexArray* vertArray;
+
+	DreamShaderLinker* shaderLink = nullptr;
 
 public:
 
-	DreamMesh(std::vector<DreamVertex>& verts);
-	DreamMesh(std::vector<DreamVertex>& verts, std::vector<size_t>& indices);
+	DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts);
+	DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts, std::vector<size_t>& indices);
+	~DreamMesh();
+
 	void DrawOpaque();
 };

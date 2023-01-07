@@ -1,6 +1,9 @@
 #include "DreamDXGraphics.h"
 #include <iostream>
+#include <d3dcompiler.h>
 
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 DreamDXGraphics* instance = nullptr;
 
@@ -159,7 +162,7 @@ long DreamDXGraphics::InitGraphics()
 
 	// The above function created the back buffer render target
 	// for us, but we need a reference to it
-	ID3D11Texture2D* backBufferTexture;
+	ID3D11Texture2D* backBufferTexture = {};
 	swapChain->GetBuffer(
 		0,
 		__uuidof(ID3D11Texture2D),
@@ -168,11 +171,13 @@ long DreamDXGraphics::InitGraphics()
 	// Now that we have the texture, create a render target view
 	// for the back buffer so we can render into it.  Then release
 	// our local reference to the texture, since we have the view.
-	device->CreateRenderTargetView(
-		backBufferTexture,
-		0,
-		&backBufferRTV);
-	backBufferTexture->Release();
+	if (backBufferTexture) {
+		device->CreateRenderTargetView(
+			backBufferTexture,
+			0,
+			&backBufferRTV);
+		backBufferTexture->Release();
+	}
 
 	// Set up the description of the texture to use for the depth buffer
 	D3D11_TEXTURE2D_DESC depthStencilDesc = {};
@@ -190,10 +195,12 @@ long DreamDXGraphics::InitGraphics()
 
 	// Create the depth buffer and its view, then 
 	// release our reference to the texture
-	ID3D11Texture2D* depthBufferTexture;
+	ID3D11Texture2D* depthBufferTexture = {};
 	device->CreateTexture2D(&depthStencilDesc, 0, &depthBufferTexture);
-	device->CreateDepthStencilView(depthBufferTexture, 0, &depthStencilView);
-	depthBufferTexture->Release();
+	if (depthBufferTexture) {
+		device->CreateDepthStencilView(depthBufferTexture, 0, &depthStencilView);
+		depthBufferTexture->Release();
+	}
 
 	// Bind the views to the pipeline, so rendering properly 
 	// uses their underlying textures
@@ -233,10 +240,13 @@ void DreamDXGraphics::SetViewPort(int posX, int posY, int w, int h)
 
 	// Recreate the render target view for the back buffer
 	// texture, then release our local texture reference
-	ID3D11Texture2D* backBufferTexture;
+	ID3D11Texture2D* backBufferTexture = {};
 	swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBufferTexture));
-	device->CreateRenderTargetView(backBufferTexture, 0, &backBufferRTV);
-	backBufferTexture->Release();
+
+	if (backBufferTexture) {
+		device->CreateRenderTargetView(backBufferTexture, 0, &backBufferRTV);
+		backBufferTexture->Release();
+	}
 
 	// Set up the description of the texture to use for the depth buffer
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
@@ -254,10 +264,13 @@ void DreamDXGraphics::SetViewPort(int posX, int posY, int w, int h)
 
 	// Create the depth buffer and its view, then 
 	// release our reference to the texture
-	ID3D11Texture2D* depthBufferTexture;
+	ID3D11Texture2D* depthBufferTexture = {};
 	device->CreateTexture2D(&depthStencilDesc, 0, &depthBufferTexture);
-	device->CreateDepthStencilView(depthBufferTexture, 0, &depthStencilView);
-	depthBufferTexture->Release();
+	if (depthBufferTexture) {
+		device->CreateDepthStencilView(depthBufferTexture, 0, &depthStencilView);
+		depthBufferTexture->Release();
+	}
+	
 
 	// Bind the views to the pipeline, so rendering properly 
 	// uses their underlying textures
@@ -319,22 +332,33 @@ void DreamDXGraphics::CheckInputs()
 {
 }
 
-void DreamDXGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfBuffers, void* bufferData, size_t numOfElements, VertexDataUsage dataUsage)
+DreamVertexArray* DreamDXGraphics::GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind)
 {
-	ID3D11Buffer* arr;
+	return new DreamDXVertexArray(vert, ind);
+}
+
+DreamBuffer* DreamDXGraphics::GenerateBuffer(BufferType type, void* bufferData, size_t numOfElements, std::vector<size_t> strides, std::vector<size_t> offests, VertexDataUsage dataUsage)
+{
+	ID3D11Buffer* buffer = nullptr;
+
+	size_t numOfBuffers = strides.size();
+
+	size_t dataSize = 0;
+	for (size_t i = 0; i < numOfBuffers; i++) {
+		dataSize += strides[i];
+	}
 
 	// Create the proper struct to hold the initial vertex data
 	// - This is how we put the initial data into the buffer
 	D3D11_SUBRESOURCE_DATA initialBufferData;
 	initialBufferData.pSysMem = bufferData;
 
-
 	switch (type) {
-	case BufferType::VertexArray: {
+	case BufferType::ArrayBuffer: {
 		D3D11_BUFFER_DESC vbd;
 
 		vbd.Usage = D3D11_USAGE_IMMUTABLE;
-		vbd.ByteWidth = numOfElements;       // 3 = number of vertices in the buffer
+		vbd.ByteWidth = numOfElements * dataSize;       // 3 = number of vertices in the buffer
 		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells DirectX this is a vertex buffer
 		vbd.CPUAccessFlags = 0;
 		vbd.MiscFlags = 0;
@@ -342,17 +366,14 @@ void DreamDXGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfB
 
 		// Actually create the buffer with the initial data
 		// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-		device->CreateBuffer(&vbd, &initialBufferData, &arr);
-		break;
-	}
-	case BufferType::ArrayBuffer: {
+		device->CreateBuffer(&vbd, &initialBufferData, &buffer);
 		break;
 	}
 	case BufferType::ElementArrayBuffer: {
 		D3D11_BUFFER_DESC vbd;
 
 		vbd.Usage = D3D11_USAGE_IMMUTABLE;
-		vbd.ByteWidth = numOfElements;       // 3 = number of vertices in the buffer
+		vbd.ByteWidth = numOfElements * sizeof(size_t);       // 3 = number of vertices in the buffer
 		vbd.BindFlags = D3D11_BIND_INDEX_BUFFER; // Tells DirectX this is a vertex buffer
 		vbd.CPUAccessFlags = 0;
 		vbd.MiscFlags = 0;
@@ -360,39 +381,131 @@ void DreamDXGraphics::GenerateBuffer(BufferType type, size_t& VBO, size_t numOfB
 
 		// Actually create the buffer with the initial data
 		// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-		device->CreateBuffer(&vbd, &initialBufferData, &arr);
+		device->CreateBuffer(&vbd, &initialBufferData, &buffer);
 		break;
 	}
 	}
+
+	return new DreamBuffer((void*)buffer, numOfBuffers, &strides[0], &offests[0]);
 }
 
-void DreamDXGraphics::BindBuffer(BufferType type, size_t& VBO)
+//void DreamDXGraphics::BindVertexLayout(DreamBuffer* layout)
+//{
+//	context->IASetInputLayout((ID3D11InputLayout*)layout->GetBufferPointer().GetStoredPointer());
+//}
+
+void DreamDXGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 {
+	ID3D11Buffer* buff = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
 	switch (type) {
-	case BufferType::VertexArray: {
-		//context->IASetVertexBuffers(0, 2, vbs, strides, offsets);
-		break;
-	}
 	case BufferType::ArrayBuffer: {
+		context->IASetVertexBuffers(0,
+			buffer->GetNumOfBuffers(),
+			&buff,
+			buffer->GetBufferStrides(),
+			buffer->GetBufferOffsets());
 		break;
 	}
 	case BufferType::ElementArrayBuffer: {
-		//context->IASetIndexBuffer(indArr, DXGI_FORMAT_R32_UINT, 0);
+		context->IASetIndexBuffer(buff, DXGI_FORMAT_R32_UINT, 0);
 		break;
 	}
 	}
 }
 
-void DreamDXGraphics::AddVertexAttributePointer(int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+
+ID3DBlob* shaderBlob;
+
+bool layoutStarted = false;
+std::vector<D3D11_INPUT_ELEMENT_DESC> vertDesc;
+size_t vertexStrideCount = 0;
+
+void DreamDXGraphics::BeginVertexLayout()
 {
+	if (layoutStarted) {
+		printf("ERROR: Vertex Layout creation process has started already!\nCall FinalizeVertexLayout to end the current operation and start a new one");
+	}
+	else {
+		layoutStarted = true;
+	}
+
+}
+
+void DreamDXGraphics::AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+{
+	if (layoutStarted) {
+
+		size_t format = -1;
+
+		switch (size) {
+		case 2: {
+			format = DXGI_FORMAT_R32G32_FLOAT;
+			break;
+		}
+		case 3: {
+			format = DXGI_FORMAT_R32G32B32_FLOAT;
+			break;
+		}
+		case 4: {
+			format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			break;
+		}
+		}
+		//D3D11_APPEND_ALIGNED_ELEMENT;
+		vertDesc.push_back({"", 0, (DXGI_FORMAT)format, 0, vertexStrideCount, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+
+		vertDesc[vertDesc.size() - 1].SemanticName = new char[dataName.size() + 1];
+		memcpy((void*)(vertDesc[vertDesc.size() - 1].SemanticName), dataName.c_str(), sizeof(char) * (dataName.size() + 1));
+
+		vertexStrideCount += sizeOf;
+	}
+	else {
+		printf("ERROR: No Vertex Layout creation process has started! Can't Add Data");
+	}
+}
+
+DreamBuffer* DreamDXGraphics::FinalizeVertexLayout()
+{
+	if (layoutStarted && shaderBlob) {
+		ID3D11InputLayout* vInputLayout;
+
+		//ID3D11ShaderReflection* refl;
+		//D3DReflect(
+		//	shaderBlob->GetBufferPointer(),
+		//	shaderBlob->GetBufferSize(),
+		//	IID_ID3D11ShaderReflection,
+		//	(void**)&refl);
+
+		//// Get shader info
+		//D3D11_SHADER_DESC shaderDesc;
+		//refl->GetDesc(&shaderDesc);
+
+		const void* blobPtr = shaderBlob->GetBufferPointer();
+		size_t blobSize = shaderBlob->GetBufferSize();
+
+		HRESULT result = device->CreateInputLayout(&vertDesc[0], vertDesc.size(), blobPtr, blobSize, &vInputLayout);
+
+		if (result != S_OK) {
+			printf("ERROR: Could not create Input Layout!");
+		}
+
+		vertDesc.clear();
+		vertexStrideCount = 0;
+
+		shaderBlob->Release();
+
+		return new DreamBuffer(vInputLayout);
+	}
+	else {
+		printf("ERROR: No Vertex Layout creation process has started! Can't Finalize Data");
+	}
+
+	return nullptr;
 }
 
 void DreamDXGraphics::UnBindBuffer(BufferType type)
 {
 	switch (type) {
-	case BufferType::VertexArray: {
-		break;
-	}
 	case BufferType::ArrayBuffer: {
 		break;
 	}
@@ -402,34 +515,161 @@ void DreamDXGraphics::UnBindBuffer(BufferType type)
 	}
 }
 
-unsigned int DreamDXGraphics::LoadShader(const char* file, ShaderType shaderType)
+
+bool DreamDXGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr)
 {
-	return 0;
+	//$(OutDir)
+	std::string outputDir = OUTPUT_DIR;
+	std::wstring path(outputDir.begin(), outputDir.end());
+	path.append(file);
+	path.append(L".cso");
+
+	HRESULT hr = D3DReadFileToBlob(path.c_str(), &shaderBlob);
+	if (hr != S_OK)
+	{
+		printf("Failed to open/read Shader file");
+
+	}
+
+	// Create the shader - Calls an overloaded version of this abstract
+	// method in the appropriate child class
+
+	/*void* stuff = shaderBlob->GetBufferPointer();
+	SIZE_T stuff2 = shaderBlob->GetBufferSize();
+	void* stuff3 = &vShader;*/
+	HRESULT result;
+
+	void* blobPtr = shaderBlob->GetBufferPointer();
+	size_t blobSize = shaderBlob->GetBufferSize();
+
+	switch (shaderType) {
+	case ShaderType::VertexShader: {
+		ID3D11VertexShader* newShader;
+		result = device->CreateVertexShader(
+			blobPtr,
+			blobSize,
+			0,
+			&newShader);
+		ptr = DreamPointer(newShader);
+		break;
+	}
+	case ShaderType::PixelShader: {
+		ID3D11PixelShader* newShader;
+		result = device->CreatePixelShader(
+			blobPtr,
+			blobSize,
+			0,
+			&newShader);
+		ptr = DreamPointer(newShader);
+		break;
+	}
+	case ShaderType::GeometryShader: {
+		ID3D11GeometryShader* newShader;
+		result = device->CreateGeometryShader(
+			blobPtr,
+			blobSize,
+			0,
+			&newShader);
+		ptr = DreamPointer(newShader);
+		break;
+	}
+	case ShaderType::ComputeShader: {
+		ID3D11ComputeShader* newShader;
+		result = device->CreateComputeShader(
+			blobPtr,
+			blobSize,
+			0,
+			&newShader);
+		ptr = DreamPointer(newShader);
+		break;
+	}
+	}
+	 
+
+	if (result != S_OK)
+	{
+		printf("Failed to create Shader");
+	}
+
+	if (shaderType != ShaderType::VertexShader) {
+		shaderBlob->Release();
+	}
+	
+	return true;
 }
 
-void DreamDXGraphics::StartShaderProgramCreation()
+void DreamDXGraphics::ReleaseShader(DreamShader* shader)
 {
+	const void* ptr = shader->GetShaderPtr().GetStoredPointer();
+
+	if (ptr) {
+		switch (shader->GetShaderType()) {
+		case ShaderType::VertexShader: {
+			ID3D11VertexShader* vShader = (ID3D11VertexShader*)ptr;
+			vShader->Release();
+			vShader = nullptr;
+			break;
+		}
+		case ShaderType::PixelShader: {
+			ID3D11PixelShader* pShader = (ID3D11PixelShader*)ptr;
+			pShader->Release();
+			pShader = nullptr;
+			break;
+		}
+		case ShaderType::GeometryShader: {
+			ID3D11GeometryShader* gShader = (ID3D11GeometryShader*)ptr;
+			gShader->Release();
+			gShader = nullptr;
+			break;
+		}
+		case ShaderType::ComputeShader: {
+			ID3D11ComputeShader* cShader = (ID3D11ComputeShader*)ptr;
+			cShader->Release();
+			cShader = nullptr;
+			break;
+		}
+		}
+	}
 }
 
-void DreamDXGraphics::AttachShader(unsigned int shader)
+void DreamDXGraphics::SetShader(DreamShader* shader)
 {
-}
-
-unsigned int DreamDXGraphics::FinishShaderProgramCreation()
-{
-	return 0;
-}
-
-void DreamDXGraphics::SetShader(unsigned int shaderProg)
-{
+	
+	switch (shader->GetShaderType()) {
+	case ShaderType::VertexShader: {
+		ID3D11VertexShader* vPtr = (ID3D11VertexShader*)shader->GetShaderPtr().GetStoredPointer();
+		context->VSSetShader(vPtr, 0, 0);
+		break;
+	}
+	case ShaderType::PixelShader: {
+		ID3D11PixelShader* pPtr = (ID3D11PixelShader*)shader->GetShaderPtr().GetStoredPointer();
+		context->PSSetShader(pPtr, 0, 0);
+		break;
+	}
+	case ShaderType::GeometryShader: {
+		ID3D11GeometryShader* gPtr = (ID3D11GeometryShader*)shader->GetShaderPtr().GetStoredPointer();
+		context->GSSetShader(gPtr, 0, 0);
+		break;
+	}
+	case ShaderType::ComputeShader: {
+		ID3D11ComputeShader* cPtr = (ID3D11ComputeShader*)shader->GetShaderPtr().GetStoredPointer();
+		context->CSSetShader(cPtr, 0, 0);
+		break;
+	}
+	}
+	
 }
 
 void DreamDXGraphics::DrawWithIndex(size_t size)
 {
+	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->DrawIndexed(size, 0, 0);
 }
 
 void DreamDXGraphics::DrawWithVertex(size_t size)
 {
+	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->Draw(size, 0);
 }
 
 void DreamDXGraphics::Draw()
@@ -487,6 +727,17 @@ void DreamDXGraphics::TerminateGraphics()
 void DreamDXGraphics::DestroyWindow()
 {
 	PostMessage(this->hWnd, WM_CLOSE, NULL, NULL);
+}
+
+void DreamDXGraphics::DestroyBuffer(DreamBuffer* buffer)
+{
+	if (buffer) {
+		ID3D11Buffer* dxBuffer = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
+		dxBuffer->Release();
+
+		delete buffer;
+		buffer = nullptr;
+	}
 }
 
 // --------------------------------------------------------
@@ -591,4 +842,74 @@ LRESULT DreamDXGraphics::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
 	// Let Windows handle any messages we're not touching
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+void DreamDXGraphics::BindVertexLayout(DreamBuffer* layout)
+{
+	context->IASetInputLayout((ID3D11InputLayout*)layout->GetBufferPointer().GetStoredPointer());
+}
+
+void DreamDXGraphics::UnBindVertexLayout()
+{
+}
+
+DreamDXShaderLinker::DreamDXShaderLinker()
+{
+	graphics = DreamGraphics::GetInstance();
+}
+
+DreamDXShaderLinker::~DreamDXShaderLinker()
+{
+	for (size_t i = 0; i < linkedShaders.size(); i++) {
+		graphics->ReleaseShader(linkedShaders[i]);
+	}
+}
+
+void DreamDXShaderLinker::AttachShader(DreamShader* shader)
+{
+	linkedShaders.push_back(shader);
+}
+
+void DreamDXShaderLinker::Finalize()
+{
+}
+
+void DreamDXShaderLinker::BindShaderLink()
+{
+	DreamDXGraphics* dxGraphics = (DreamDXGraphics*)graphics;
+
+	for (size_t i = 0; i < linkedShaders.size(); i++) {
+		if (linkedShaders[i]->GetShaderType() == VertexShader) {
+			DreamBuffer* layout = ((VertexDreamShader*)linkedShaders[i])->GetInputLayout();
+			dxGraphics->BindVertexLayout(layout);
+		}
+		linkedShaders[i]->BindShaderData();
+		dxGraphics->SetShader(linkedShaders[i]);
+	}
+}
+
+void DreamDXShaderLinker::UnBindShaderLink()
+{
+}
+
+DreamDXVertexArray::DreamDXVertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)
+{
+}
+
+DreamDXVertexArray::~DreamDXVertexArray()
+{
+	graphics->DestroyBuffer(vertexBuffer);
+	graphics->DestroyBuffer(indexBuffer);
+}
+void DreamDXVertexArray::Bind()
+{
+	graphics->BindBuffer(ArrayBuffer, vertexBuffer);
+	if (indexBuffer) {
+		graphics->BindBuffer(ElementArrayBuffer, indexBuffer);
+	}
+}
+void DreamDXVertexArray::UnBind()
+{
+	graphics->UnBindBuffer(ArrayBuffer);
+	graphics->UnBindBuffer(ElementArrayBuffer);
 }

@@ -41,6 +41,30 @@ DreamGraphics * DreamGraphics::GetInstance()
 	return myGrpahics;
 }
 
+DreamShaderLinker* DreamGraphics::GenerateShaderLinker()
+{
+	DreamShaderLinker* link = nullptr;
+	if (link == nullptr)
+	{
+#ifdef DREAM_OPENGL
+		link = new DreamGLShaderLinker();
+#endif
+
+#ifdef DREAM_DX
+		link = new DreamDXShaderLinker();
+#endif
+
+#ifdef DREAM_VULKAN
+		link = new DreamVulkanShaderLinker();
+#endif
+	}
+	return link;
+}
+
 DreamGraphics::~DreamGraphics()
+{
+}
+
+DreamShaderLinker::DreamShaderLinker()
 {
 }
