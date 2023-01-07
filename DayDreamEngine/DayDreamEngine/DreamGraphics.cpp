@@ -6,8 +6,12 @@
 #include "DreamGLGraphics.h"
 #endif
 
-#ifdef DREAM_DX
-#include "DreamDXGraphics.h"
+#ifdef DREAM_DX11
+#include "DreamDX11Graphics.h"
+#endif
+
+#ifdef DREAM_DX12
+#include "DreamDX12Graphics.h"
 #endif
 
 #ifdef DREAM_VULKAN
@@ -30,8 +34,12 @@ DreamGraphics * DreamGraphics::GetInstance()
 		myGrpahics = new DreamGLGraphics();
 #endif
 
-#ifdef DREAM_DX
-		myGrpahics = new DreamDXGraphics();
+#ifdef DREAM_DX11
+		myGrpahics = new DreamDX11Graphics();
+#endif
+
+#ifdef DREAM_DX12
+		myGrpahics = new DreamDX12Graphics();
 #endif
 
 #ifdef DREAM_VULKAN
@@ -50,8 +58,12 @@ DreamShaderLinker* DreamGraphics::GenerateShaderLinker()
 		link = new DreamGLShaderLinker();
 #endif
 
-#ifdef DREAM_DX
-		link = new DreamDXShaderLinker();
+#ifdef DREAM_DX11
+		link = new DreamDX11ShaderLinker();
+#endif
+
+#ifdef DREAM_DX12
+		link = new DreamDX12ShaderLinker();
 #endif
 
 #ifdef DREAM_VULKAN

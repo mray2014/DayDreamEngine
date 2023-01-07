@@ -1,18 +1,18 @@
-#include "DreamDXGraphics.h"
+#include "DreamDX11Graphics.h"
 #include <iostream>
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-DreamDXGraphics* instance = nullptr;
+DreamDX11Graphics* instance = nullptr;
 
-LRESULT DreamDXGraphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT DreamDX11Graphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return instance->ProcessMessage(hWnd, uMsg, wParam, lParam);
 }
 
-DreamDXGraphics::DreamDXGraphics()
+DreamDX11Graphics::DreamDX11Graphics()
 {
 	clearScreenColor = DreamVector4(0.4f, 0.6f, 0.75f, 0.0f);
 	if (!instance) {
@@ -21,7 +21,7 @@ DreamDXGraphics::DreamDXGraphics()
 }
 
 
-DreamDXGraphics::~DreamDXGraphics()
+DreamDX11Graphics::~DreamDX11Graphics()
 {
 	if (depthStencilView) { depthStencilView->Release(); }
 	if (backBufferRTV) { backBufferRTV->Release(); }
@@ -31,7 +31,7 @@ DreamDXGraphics::~DreamDXGraphics()
 	if (device) { device->Release(); }
 }
 
-long DreamDXGraphics::InitWindow(int w, int h, const char* title)
+long DreamDX11Graphics::InitWindow(int w, int h, const char* title)
 {
 	width = w;
 	height = h;
@@ -41,7 +41,7 @@ long DreamDXGraphics::InitWindow(int w, int h, const char* title)
 	// appropriate window class struct
 	WNDCLASS wndClass = {}; // Zero out the memory
 	wndClass.style = CS_HREDRAW | CS_VREDRAW;	// Redraw on horizontal or vertical movement/adjustment
-	wndClass.lpfnWndProc = DreamDXGraphics::WindowProc;
+	wndClass.lpfnWndProc = DreamDX11Graphics::WindowProc;
 	wndClass.cbClsExtra = 0;
 	wndClass.cbWndExtra = 0;
 	wndClass.hInstance = hInstance;						// Our app's handle
@@ -109,7 +109,7 @@ long DreamDXGraphics::InitWindow(int w, int h, const char* title)
 	return S_OK;
 }
 
-long DreamDXGraphics::InitGraphics()
+long DreamDX11Graphics::InitGraphics()
 {
 	// This will hold options for DirectX initialization
 	unsigned int deviceFlags = 0;
@@ -221,7 +221,7 @@ long DreamDXGraphics::InitGraphics()
 	return S_OK;
 }
 
-void DreamDXGraphics::SetViewPort(int posX, int posY, int w, int h)
+void DreamDX11Graphics::SetViewPort(int posX, int posY, int w, int h)
 {
 	width = w;
 	height = h;
@@ -288,7 +288,7 @@ void DreamDXGraphics::SetViewPort(int posX, int posY, int w, int h)
 	context->RSSetViewports(1, &viewport);
 }
 
-bool DreamDXGraphics::CheckWindowClose()
+bool DreamDX11Graphics::CheckWindowClose()
 {
 	MSG msg = {};
 	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -311,7 +311,7 @@ bool DreamDXGraphics::CheckWindowClose()
 	return true;
 }
 
-void DreamDXGraphics::ClearScreen()
+void DreamDX11Graphics::ClearScreen()
 {
 	const float color[4] = { clearScreenColor.x, clearScreenColor.y, clearScreenColor.z, clearScreenColor.w };
 
@@ -323,21 +323,21 @@ void DreamDXGraphics::ClearScreen()
 		0);
 }
 
-void DreamDXGraphics::SwapBuffers()
+void DreamDX11Graphics::SwapBuffers()
 {
 	swapChain->Present(0, 0);
 }
 
-void DreamDXGraphics::CheckInputs()
+void DreamDX11Graphics::CheckInputs()
 {
 }
 
-DreamVertexArray* DreamDXGraphics::GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind)
+DreamVertexArray* DreamDX11Graphics::GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind)
 {
-	return new DreamDXVertexArray(vert, ind);
+	return new DreamDX11VertexArray(vert, ind);
 }
 
-DreamBuffer* DreamDXGraphics::GenerateBuffer(BufferType type, void* bufferData, size_t numOfElements, std::vector<size_t> strides, std::vector<size_t> offests, VertexDataUsage dataUsage)
+DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData, size_t numOfElements, std::vector<size_t> strides, std::vector<size_t> offests, VertexDataUsage dataUsage)
 {
 	ID3D11Buffer* buffer = nullptr;
 
@@ -389,12 +389,12 @@ DreamBuffer* DreamDXGraphics::GenerateBuffer(BufferType type, void* bufferData, 
 	return new DreamBuffer((void*)buffer, numOfBuffers, &strides[0], &offests[0]);
 }
 
-//void DreamDXGraphics::BindVertexLayout(DreamBuffer* layout)
+//void DreamDX11Graphics::BindVertexLayout(DreamBuffer* layout)
 //{
 //	context->IASetInputLayout((ID3D11InputLayout*)layout->GetBufferPointer().GetStoredPointer());
 //}
 
-void DreamDXGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
+void DreamDX11Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 {
 	ID3D11Buffer* buff = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
 	switch (type) {
@@ -420,7 +420,7 @@ bool layoutStarted = false;
 std::vector<D3D11_INPUT_ELEMENT_DESC> vertDesc;
 size_t vertexStrideCount = 0;
 
-void DreamDXGraphics::BeginVertexLayout()
+void DreamDX11Graphics::BeginVertexLayout()
 {
 	if (layoutStarted) {
 		printf("ERROR: Vertex Layout creation process has started already!\nCall FinalizeVertexLayout to end the current operation and start a new one");
@@ -431,7 +431,7 @@ void DreamDXGraphics::BeginVertexLayout()
 
 }
 
-void DreamDXGraphics::AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+void DreamDX11Graphics::AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
 {
 	if (layoutStarted) {
 
@@ -464,7 +464,7 @@ void DreamDXGraphics::AddVertexLayoutData(std::string dataName, int size, unsign
 	}
 }
 
-DreamBuffer* DreamDXGraphics::FinalizeVertexLayout()
+DreamBuffer* DreamDX11Graphics::FinalizeVertexLayout()
 {
 	if (layoutStarted && shaderBlob) {
 		ID3D11InputLayout* vInputLayout;
@@ -503,7 +503,7 @@ DreamBuffer* DreamDXGraphics::FinalizeVertexLayout()
 	return nullptr;
 }
 
-void DreamDXGraphics::UnBindBuffer(BufferType type)
+void DreamDX11Graphics::UnBindBuffer(BufferType type)
 {
 	switch (type) {
 	case BufferType::ArrayBuffer: {
@@ -516,7 +516,7 @@ void DreamDXGraphics::UnBindBuffer(BufferType type)
 }
 
 
-bool DreamDXGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr)
+bool DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr)
 {
 	//$(OutDir)
 	std::string outputDir = OUTPUT_DIR;
@@ -598,7 +598,7 @@ bool DreamDXGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, Dre
 	return true;
 }
 
-void DreamDXGraphics::ReleaseShader(DreamShader* shader)
+void DreamDX11Graphics::ReleaseShader(DreamShader* shader)
 {
 	const void* ptr = shader->GetShaderPtr().GetStoredPointer();
 
@@ -632,7 +632,7 @@ void DreamDXGraphics::ReleaseShader(DreamShader* shader)
 	}
 }
 
-void DreamDXGraphics::SetShader(DreamShader* shader)
+void DreamDX11Graphics::SetShader(DreamShader* shader)
 {
 	
 	switch (shader->GetShaderType()) {
@@ -660,19 +660,19 @@ void DreamDXGraphics::SetShader(DreamShader* shader)
 	
 }
 
-void DreamDXGraphics::DrawWithIndex(size_t size)
+void DreamDX11Graphics::DrawWithIndex(size_t size)
 {
 	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->DrawIndexed(size, 0, 0);
 }
 
-void DreamDXGraphics::DrawWithVertex(size_t size)
+void DreamDX11Graphics::DrawWithVertex(size_t size)
 {
 	context->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->Draw(size, 0);
 }
 
-void DreamDXGraphics::Draw()
+void DreamDX11Graphics::Draw()
 {
 	//D3D11_MAPPED_SUBRESOURCE mapped = {};
 	//context->Map(instanceWorldMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
@@ -720,16 +720,16 @@ void DreamDXGraphics::Draw()
 	//	0, 0, 0);
 }
 
-void DreamDXGraphics::TerminateGraphics()
+void DreamDX11Graphics::TerminateGraphics()
 {
 }
 
-void DreamDXGraphics::DestroyWindow()
+void DreamDX11Graphics::DestroyWindow()
 {
 	PostMessage(this->hWnd, WM_CLOSE, NULL, NULL);
 }
 
-void DreamDXGraphics::DestroyBuffer(DreamBuffer* buffer)
+void DreamDX11Graphics::DestroyBuffer(DreamBuffer* buffer)
 {
 	if (buffer) {
 		ID3D11Buffer* dxBuffer = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
@@ -746,7 +746,7 @@ void DreamDXGraphics::DestroyBuffer(DreamBuffer* buffer)
 // our program to hang and Windows would think it was
 // unresponsive.
 // --------------------------------------------------------
-LRESULT DreamDXGraphics::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT DreamDX11Graphics::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	//ImGuiIO& IO = ImGui::GetIO();
 
@@ -844,39 +844,39 @@ LRESULT DreamDXGraphics::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-void DreamDXGraphics::BindVertexLayout(DreamBuffer* layout)
+void DreamDX11Graphics::BindVertexLayout(DreamBuffer* layout)
 {
 	context->IASetInputLayout((ID3D11InputLayout*)layout->GetBufferPointer().GetStoredPointer());
 }
 
-void DreamDXGraphics::UnBindVertexLayout()
+void DreamDX11Graphics::UnBindVertexLayout()
 {
 }
 
-DreamDXShaderLinker::DreamDXShaderLinker()
+DreamDX11ShaderLinker::DreamDX11ShaderLinker()
 {
 	graphics = DreamGraphics::GetInstance();
 }
 
-DreamDXShaderLinker::~DreamDXShaderLinker()
+DreamDX11ShaderLinker::~DreamDX11ShaderLinker()
 {
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
 		graphics->ReleaseShader(linkedShaders[i]);
 	}
 }
 
-void DreamDXShaderLinker::AttachShader(DreamShader* shader)
+void DreamDX11ShaderLinker::AttachShader(DreamShader* shader)
 {
 	linkedShaders.push_back(shader);
 }
 
-void DreamDXShaderLinker::Finalize()
+void DreamDX11ShaderLinker::Finalize()
 {
 }
 
-void DreamDXShaderLinker::BindShaderLink()
+void DreamDX11ShaderLinker::BindShaderLink()
 {
-	DreamDXGraphics* dxGraphics = (DreamDXGraphics*)graphics;
+	DreamDX11Graphics* dxGraphics = (DreamDX11Graphics*)graphics;
 
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
 		if (linkedShaders[i]->GetShaderType() == VertexShader) {
@@ -888,27 +888,27 @@ void DreamDXShaderLinker::BindShaderLink()
 	}
 }
 
-void DreamDXShaderLinker::UnBindShaderLink()
+void DreamDX11ShaderLinker::UnBindShaderLink()
 {
 }
 
-DreamDXVertexArray::DreamDXVertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)
+DreamDX11VertexArray::DreamDX11VertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)
 {
 }
 
-DreamDXVertexArray::~DreamDXVertexArray()
+DreamDX11VertexArray::~DreamDX11VertexArray()
 {
 	graphics->DestroyBuffer(vertexBuffer);
 	graphics->DestroyBuffer(indexBuffer);
 }
-void DreamDXVertexArray::Bind()
+void DreamDX11VertexArray::Bind()
 {
 	graphics->BindBuffer(ArrayBuffer, vertexBuffer);
 	if (indexBuffer) {
 		graphics->BindBuffer(ElementArrayBuffer, indexBuffer);
 	}
 }
-void DreamDXVertexArray::UnBind()
+void DreamDX11VertexArray::UnBind()
 {
 	graphics->UnBindBuffer(ArrayBuffer);
 	graphics->UnBindBuffer(ElementArrayBuffer);

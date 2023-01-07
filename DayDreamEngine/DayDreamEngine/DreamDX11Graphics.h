@@ -5,20 +5,20 @@
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
 
-class DreamDXVertexArray : public DreamVertexArray {
+class DreamDX11VertexArray : public DreamVertexArray {
 public:
-	DreamDXVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr);
-	~DreamDXVertexArray();
+	DreamDX11VertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr);
+	~DreamDX11VertexArray();
 
 	void Bind() override;
 	void UnBind() override;
 };
 
-class DreamDXGraphics : public DreamGraphics
+class DreamDX11Graphics : public DreamGraphics
 {
 public:
-	DreamDXGraphics();
-	~DreamDXGraphics();
+	DreamDX11Graphics();
+	~DreamDX11Graphics();
 
 	long InitWindow(int w, int h, const char* title) override;
 	long InitGraphics() override;
@@ -76,10 +76,10 @@ private:
 	ID3D11DepthStencilView* depthStencilView = {};
 };
 
-class DreamDXShaderLinker : public DreamShaderLinker {
+class DreamDX11ShaderLinker : public DreamShaderLinker {
 protected:
-	DreamDXShaderLinker();
-	~DreamDXShaderLinker();
+	DreamDX11ShaderLinker();
+	~DreamDX11ShaderLinker();
 public:
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;

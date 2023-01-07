@@ -36,9 +36,6 @@
     <ClCompile Include="DreamGraphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DreamDXGraphics.cpp">
-      <Filter>PlatformDependent\Source</Filter>
-    </ClCompile>
     <ClCompile Include="DreamGLGraphics.cpp">
       <Filter>PlatformDependent\Source</Filter>
     </ClCompile>
@@ -57,6 +54,12 @@
     <ClCompile Include="DreamBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DreamDX11Graphics.cpp">
+      <Filter>PlatformDependent\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DreamDX12Graphics.cpp">
+      <Filter>PlatformDependent\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h">
@@ -64,9 +67,6 @@
     </ClInclude>
     <ClInclude Include="DreamGraphics.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DreamDXGraphics.h">
-      <Filter>PlatformDependent\Header</Filter>
     </ClInclude>
     <ClInclude Include="DreamVulkanGraphics.h">
       <Filter>PlatformDependent\Header</Filter>
@@ -82,6 +82,12 @@
     </ClInclude>
     <ClInclude Include="DreamShader.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamDX11Graphics.h">
+      <Filter>PlatformDependent\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamDX12Graphics.h">
+      <Filter>PlatformDependent\Header</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

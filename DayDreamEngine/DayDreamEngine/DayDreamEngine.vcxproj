@@ -226,7 +226,8 @@
     <ClCompile Include="..\Platform\Universal\Libs\pch.cpp" />
     <ClCompile Include="DayDreamEngine.cpp" />
     <ClCompile Include="DreamBuffer.cpp" />
-    <ClCompile Include="DreamDXGraphics.cpp" />
+    <ClCompile Include="DreamDX11Graphics.cpp" />
+    <ClCompile Include="DreamDX12Graphics.cpp" />
     <ClCompile Include="DreamGLGraphics.cpp" />
     <ClCompile Include="DreamGraphics.cpp" />
     <ClCompile Include="DreamMesh.cpp" />
@@ -237,7 +238,8 @@
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h" />
     <ClInclude Include="DreamBuffer.h" />
-    <ClInclude Include="DreamDXGraphics.h" />
+    <ClInclude Include="DreamDX11Graphics.h" />
+    <ClInclude Include="DreamDX12Graphics.h" />
     <ClInclude Include="DreamGLGraphics.h" />
     <ClInclude Include="DreamGraphics.h" />
     <ClInclude Include="DreamMesh.h" />
