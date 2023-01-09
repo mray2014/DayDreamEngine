@@ -98,13 +98,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)Platform\Independent\Libs\$(Platform)\</OutDir>
     <IncludePath>$(SolutionDir)Platform\Dependent\Includes;$(SolutionDir)Platform\Universal\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Platform\Dependent\Libs;$(SolutionDir)Platform\Universal\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugRelease|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)Platform\Independent\Libs\</OutDir>
+    <OutDir>$(SolutionDir)Platform\Independent\Libs\$(Platform)\</OutDir>
     <IncludePath>$(SolutionDir)Platform\Dependent\Includes;$(SolutionDir)Platform\Universal\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Platform\Dependent\Libs;$(SolutionDir)Platform\Universal\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
@@ -112,21 +112,23 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)Platform\Dependent\Includes;$(SolutionDir)Platform\Universal\Includes;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)Platform\Dependent\Libs;$(SolutionDir)Platform\Universal\Libs;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Platform\Independent\Libs\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugRelease|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)Platform\Dependent\Includes;$(SolutionDir)Platform\Universal\Includes;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)Platform\Dependent\Libs;$(SolutionDir)Platform\Universal\Libs;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)Platform\Independent\Libs\</OutDir>
+    <OutDir>$(SolutionDir)Platform\Independent\Libs\$(Platform)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)Platform\Independent\Libs\</OutDir>
+    <OutDir>$(SolutionDir)Platform\Independent\Libs\$(Platform)\</OutDir>
     <IncludePath>$(SolutionDir)Platform\Dependent\Includes;$(SolutionDir)Platform\Universal\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Platform\Dependent\Libs;$(SolutionDir)Platform\Universal\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)Platform\Independent\Libs\$(Platform)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

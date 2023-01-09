@@ -402,8 +402,8 @@ void DreamDX11Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 		context->IASetVertexBuffers(0,
 			buffer->GetNumOfBuffers(),
 			&buff,
-			buffer->GetBufferStrides(),
-			buffer->GetBufferOffsets());
+			(const UINT*)buffer->GetBufferStrides(),
+			(const UINT*)buffer->GetBufferOffsets());
 		break;
 	}
 	case BufferType::ElementArrayBuffer: {
@@ -452,7 +452,7 @@ void DreamDX11Graphics::AddVertexLayoutData(std::string dataName, int size, unsi
 		}
 		}
 		//D3D11_APPEND_ALIGNED_ELEMENT;
-		vertDesc.push_back({"", 0, (DXGI_FORMAT)format, 0, vertexStrideCount, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+		vertDesc.push_back({"", 0, (DXGI_FORMAT)format, 0, (const UINT)vertexStrideCount, D3D11_INPUT_PER_VERTEX_DATA, 0 });
 
 		vertDesc[vertDesc.size() - 1].SemanticName = new char[dataName.size() + 1];
 		memcpy((void*)(vertDesc[vertDesc.size() - 1].SemanticName), dataName.c_str(), sizeof(char) * (dataName.size() + 1));

@@ -88,7 +88,7 @@ DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, void* bufferData, 
 
 	size_t handle;
 
-	glGenBuffers(numOfBuffers, &handle);
+	glGenBuffers(numOfBuffers, (GLuint*)&handle);
 
 	switch (type) {
 	case BufferType::ArrayBuffer: {
@@ -180,7 +180,7 @@ void DreamGLGraphics::BeginVertexLayout()
 {
 	if (vertLayoutHandle == -1)
 	{
-		glGenVertexArrays(1, &vertLayoutHandle);
+		glGenVertexArrays(1, (GLuint*)&vertLayoutHandle);
 
 		glBindVertexArray(vertLayoutHandle);
 	}
@@ -372,7 +372,7 @@ void DreamGLGraphics::ReleaseShader(DreamShader* shader)
 void DreamGLGraphics::DestroyBuffer(DreamBuffer* buffer)
 {
 	if (buffer) {
-		glDeleteBuffers(1, &buffer->GetBufferPointer().GetStoredHandle());
+		glDeleteBuffers(1, (GLuint*)&buffer->GetBufferPointer().GetStoredHandle());
 
 		delete buffer;
 		buffer = nullptr;
