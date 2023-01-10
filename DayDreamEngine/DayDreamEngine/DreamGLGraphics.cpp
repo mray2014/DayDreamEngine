@@ -302,13 +302,17 @@ bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, Dre
 	bool success = false;
 	GLuint prog = -1;
 
-	std::wstring path = L"Shaders/";
-	path.append(file);
-	path.append(L".glsl");
+	std::wstring wfile = L"";
+	wfile.append(file);
+	std::string convertFile(wfile.begin(), wfile.end());
+
+	std::string path = "Shaders/";
+	path.append(convertFile);
+	path.append(".glsl");
 
 	if (DreamFileIO::OpenFileRead(path.c_str()))
 	{
-		wstring fileContent;
+		string fileContent;
 
 		if (DreamFileIO::ReadFullFile(fileContent)) {
 

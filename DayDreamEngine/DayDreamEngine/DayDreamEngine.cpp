@@ -9,23 +9,23 @@
 
 void UnitTestFileIO() {
 
-	std::wstring testLines[]{
-	L"Yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahh",
-	L"Yoooooooo",
-	L"Yaeeeeeeeeeee",
-	L"Yweeeeeeeeeeeeeee",
+	std::string testLines[]{
+	"Yaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahh",
+	"Yoooooooo",
+	"Yaeeeeeeeeeee",
+	"Yweeeeeeeeeeeeeee",
 	};
 
-	DreamFileIO::OpenFileWrite(L"word.txt", FileWriteType::OverWrite);
+	DreamFileIO::OpenFileWrite("word.txt", FileWriteType::OverWrite);
 
 	for (int i = 0; i < sizeof(testLines) / sizeof(std::string); i++) {
 		DreamFileIO::WriteLine(testLines[i].c_str());
 	}
 	DreamFileIO::CloseFileWrite();
 
-	if (DreamFileIO::OpenFileRead(L"word.txt")) {
+	if (DreamFileIO::OpenFileRead("word.txt")) {
 		int i = 0;
-		std::wstring line;
+		std::string line;
 		while (DreamFileIO::ReadLine(line)) {
 
 			assert(line == testLines[i]);
@@ -126,7 +126,7 @@ int main()
 
 		//NOTE: there is a black line on the side of the drawn triangle, halp
 		graphics->Draw();
-		mesh.DrawOpaque();
+		///mesh.DrawOpaque();
 
 		graphics->SwapBuffers();
 		graphics->CheckInputs();

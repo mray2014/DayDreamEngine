@@ -1,6 +1,5 @@
 #include <iostream>
 #include <pch.h>
-#include <GLFW\glfw3.h>
 #include "DreamMath.h"
 
 

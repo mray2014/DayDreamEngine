@@ -4,6 +4,7 @@
 enum ShaderType {
 	VertexShader,
 	PixelShader,
+	TessalationShader,
 	GeometryShader,
 	ComputeShader,
 };

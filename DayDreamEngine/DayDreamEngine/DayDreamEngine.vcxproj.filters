@@ -97,6 +97,12 @@
     <None Include="Shaders\vertex.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\pixel.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\vertex.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\pixel.hlsl">

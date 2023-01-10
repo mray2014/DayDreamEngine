@@ -1,16 +1,23 @@
 #pragma once
 #include "DreamGraphics.h"
 
-#ifdef DREAM_VULKAN
-#define GLFW_INCLUDE_VULKAN
-#endif
+#define VK_USE_PLATFORM_WIN32_KHR
 
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
+
+#include <optional>
+
+class DreamVulkanGraphics;
 
 class DreamVulkanShaderLinker : public DreamShaderLinker {
 protected:
 	DreamVulkanShaderLinker();
+	~DreamVulkanShaderLinker();
 public:
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;
@@ -18,7 +25,10 @@ public:
 	void UnBindShaderLink() override;
 
 private:
-	size_t prog;
+	DreamVulkanGraphics* vulkanGraphics = nullptr;
+	std::vector<VkPipelineShaderStageCreateInfo> shadersStageInfo;
+	VkPipelineLayout pipelineLayout;
+	VkPipeline graphicsPipeline;
 	friend class DreamGraphics;
 };
 
@@ -66,19 +76,94 @@ public:
 	void DestroyBuffer(DreamBuffer* buffer) override;
 
 	bool isDeviceSuitable(VkPhysicalDevice device);
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 	static void OnWindowResize(GLFWwindow* window, int width, int height);
 
+	void createInstance();
+	bool checkValidationLayerSupport();
+	std::vector<const char*> getRequiredExtensions();
+	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+	void setupDebugMessenger();
+	void createSurface();
+	void pickPhysicalDevice();
+	void createLogicalDevice();
+	void createSwapChain();
+
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
+
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+	const std::vector<const char*> deviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
+
+
 	struct QueueFamilyIndices {
-		uint32_t graphicsFamily;
+		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
+
+		bool isComplete() {
+			return graphicsFamily.has_value() && presentFamily.has_value();
+		}
 	};
 
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	void createImageViews();
+	void createRenderPass();
+
+	VkPipeline CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout layout);
+
+	std::vector<VkFramebuffer> swapChainFramebuffers;
+	void createFramebuffers();
+	void createCommandPool();
+	void createCommandBuffer();
+	void createSyncObjects();
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void BindGraphicsPipeline(VkPipeline pipeline);
 
 private:
+	const std::vector<const char*> validationLayers = {
+	"VK_LAYER_KHRONOS_validation"
+	};
+
+#ifdef NDEBUG
+	const bool enableValidationLayers = false;
+#else
+	const bool enableValidationLayers = true;
+#endif
+
 	VkInstance instance;
+	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
 	VkQueue graphicsQueue;
+	VkQueue presentQueue;
+	VkSwapchainKHR swapChain;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+
+	VkSurfaceKHR surface;
+
+	std::vector<VkImage> swapChainImages;
+	std::vector<VkImageView> swapChainImageViews;
+
+	VkRenderPass renderPass;
+	VkCommandPool commandPool;
+	VkCommandBuffer commandBuffer;
+
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderFinishedSemaphore;
+	VkFence inFlightFence;
+
 	GLFWwindow* window = nullptr;
 };
 

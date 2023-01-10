@@ -4,64 +4,188 @@
 
 #ifdef WINDOWS
 
-static std::wifstream readFileStream;
-static std::wofstream writeFileStream;
+static std::wifstream readFileStream_W;
+static std::wofstream writeFileStream_W;
+
+static std::ifstream readFileStream;
+static std::ofstream writeFileStream;
 
 #endif
 
-static std::wstring* line = nullptr;
+static std::wstring* line_W = nullptr;
+static std::string* line = nullptr;
 
-bool DreamFileIO::OpenFileRead(const wchar_t* filePath)
+bool DreamFileIO::OpenFileRead_W(const wchar_t* filePath, int mode)
 {
-	
-	readFileStream = std::wifstream(filePath);
+	readFileStream_W = std::wifstream(filePath, mode);
+	bool fileOpened = readFileStream_W.is_open();
+
+	if (!fileOpened) {
+		printf("FILE DOES NOT EXIST");
+	}
+	else {
+		line_W = new std::wstring();
+	}
+
+	return fileOpened;
+}
+
+void DreamFileIO::OpenFileWrite_W(const wchar_t* filePath, FileWriteType type)
+{
+	switch (type) {
+	case FileWriteType::OverWrite: 
+	{
+		writeFileStream_W = std::wofstream(filePath);
+		break;
+	}
+	case FileWriteType::AppendToEnd:
+	{
+		std::wstring fileContents = L"";
+		if (DreamFileIO::OpenFileRead_W(filePath)) {
+			std::wstring newLine;
+			while (DreamFileIO::ReadLine_W(newLine)) {
+				fileContents += newLine;
+				fileContents += L"\n";
+			}
+			DreamFileIO::CloseFileRead();
+		}
+
+		writeFileStream_W = std::wofstream(filePath);
+		writeFileStream_W << fileContents;
+		break;
+	}
+	}
+}
+
+const bool DreamFileIO::ReadFullFileQuick_W(std::wstring& lineOut)
+{
+	if (readFileStream_W.is_open()) {
+		readFileStream_W.seekg(0, std::ios::end);
+		int lenght = (int)readFileStream_W.tellg();
+
+		readFileStream_W.seekg(0, std::ios::beg);
+		wchar_t* text = new wchar_t[lenght + 1];
+
+		readFileStream_W.read(text, lenght);
+		text[lenght] = '\0';
+
+		lineOut = text;
+		return true;
+	}
+
+	return false;
+}
+
+const bool DreamFileIO::ReadFullFile_W(std::wstring& lineOut)
+{
+	lineOut = L"";
+
+	if (readFileStream_W.is_open()) {
+
+		std::wstring text = L"";
+
+		while (!readFileStream_W.eof()) {
+			std::getline(readFileStream_W, text);
+			lineOut.append(text + L"\n");
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+const bool DreamFileIO::ReadLine_W(std::wstring& lineOut)
+{
+	bool endOfFile = false;
+	if (readFileStream_W.is_open()) {
+		std::getline(readFileStream_W, *line_W);
+	}
+	lineOut = *line_W;
+	return !readFileStream_W.eof();
+}
+
+void DreamFileIO::CloseFileRead_W()
+{
+	if (readFileStream_W.is_open()) {
+		if (line_W != nullptr) { delete line_W; line_W = nullptr; }
+		readFileStream_W.close();
+	}
+}
+
+void DreamFileIO::CloseFileWrite_W()
+{
+	if (writeFileStream_W.is_open()) {
+		writeFileStream_W.close();
+	}
+}
+
+void DreamFileIO::WriteLine_W(const wchar_t* lineToWrite)
+{
+	if (writeFileStream_W.is_open()) {
+		writeFileStream_W << lineToWrite << "\n";
+	}
+}
+
+void DreamFileIO::Write_W(const wchar_t* lineToWrite)
+{
+	if (writeFileStream_W.is_open()) {
+		writeFileStream_W << lineToWrite;
+	}
+}
+
+
+
+bool DreamFileIO::OpenFileRead(const char* filePath, int mode)
+{
+	readFileStream = std::ifstream(filePath, mode);
 	bool fileOpened = readFileStream.is_open();
 
 	if (!fileOpened) {
 		printf("FILE DOES NOT EXIST");
 	}
 	else {
-		line = new std::wstring();
+		line = new std::string();
 	}
 
 	return fileOpened;
 }
 
-void DreamFileIO::OpenFileWrite(const wchar_t* filePath, FileWriteType type)
+void DreamFileIO::OpenFileWrite(const char* filePath, FileWriteType type)
 {
 	switch (type) {
-	case FileWriteType::OverWrite: 
+	case FileWriteType::OverWrite:
 	{
-		writeFileStream = std::wofstream(filePath);
+		writeFileStream = std::ofstream(filePath);
 		break;
 	}
 	case FileWriteType::AppendToEnd:
 	{
-		std::wstring fileContents = L"";
+		std::string fileContents = "";
 		if (DreamFileIO::OpenFileRead(filePath)) {
-			std::wstring line;
+			std::string line;
 			while (DreamFileIO::ReadLine(line)) {
 				fileContents += line;
-				fileContents += L"\n";
+				fileContents += "\n";
 			}
 			DreamFileIO::CloseFileRead();
 		}
 
-		writeFileStream = std::wofstream(filePath);
+		writeFileStream = std::ofstream(filePath);
 		writeFileStream << fileContents;
 		break;
 	}
 	}
 }
 
-const bool DreamFileIO::ReadFullFileQuick(std::wstring& lineOut)
+const bool DreamFileIO::ReadFullFileQuick(std::string& lineOut)
 {
 	if (readFileStream.is_open()) {
 		readFileStream.seekg(0, std::ios::end);
 		int lenght = (int)readFileStream.tellg();
 
 		readFileStream.seekg(0, std::ios::beg);
-		wchar_t* text = new wchar_t[lenght + 1];
+		char* text = new char[lenght + 1];
 
 		readFileStream.read(text, lenght);
 		text[lenght] = '\0';
@@ -73,17 +197,17 @@ const bool DreamFileIO::ReadFullFileQuick(std::wstring& lineOut)
 	return false;
 }
 
-const bool DreamFileIO::ReadFullFile(std::wstring& lineOut)
+const bool DreamFileIO::ReadFullFile(std::string& lineOut)
 {
-	lineOut = L"";
+	lineOut = "";
 
 	if (readFileStream.is_open()) {
 
-		std::wstring text = L"";
+		std::string text = "";
 
 		while (!readFileStream.eof()) {
 			std::getline(readFileStream, text);
-			lineOut.append(text + L"\n");
+			lineOut.append(text + "\n");
 		}
 
 		return true;
@@ -92,7 +216,7 @@ const bool DreamFileIO::ReadFullFile(std::wstring& lineOut)
 	return false;
 }
 
-const bool DreamFileIO::ReadLine(std::wstring& lineOut)
+const bool DreamFileIO::ReadLine(std::string& lineOut)
 {
 	bool endOfFile = false;
 	if (readFileStream.is_open()) {
@@ -109,6 +233,7 @@ void DreamFileIO::CloseFileRead()
 		readFileStream.close();
 	}
 }
+
 void DreamFileIO::CloseFileWrite()
 {
 	if (writeFileStream.is_open()) {
@@ -116,80 +241,16 @@ void DreamFileIO::CloseFileWrite()
 	}
 }
 
-void DreamFileIO::WriteLine(const wchar_t* lineToWrite)
+void DreamFileIO::WriteLine(const char* lineToWrite)
 {
 	if (writeFileStream.is_open()) {
 		writeFileStream << lineToWrite << "\n";
 	}
 }
 
-void DreamFileIO::Write(const wchar_t* lineToWrite)
+void DreamFileIO::Write(const char* lineToWrite)
 {
 	if (writeFileStream.is_open()) {
 		writeFileStream << lineToWrite;
 	}
-}
-
-
-
-
-bool DreamFileIO::OpenFileRead(const char* filePath)
-{
-	std::string sText(filePath);
-	std::wstring wText(sText.begin(), sText.end());
-
-	return 	OpenFileRead(wText.c_str());
-}
-
-void DreamFileIO::OpenFileWrite(const char* filePath, FileWriteType type)
-{
-	std::string sText(filePath);
-	std::wstring wText(sText.begin(), sText.end());
-
-	OpenFileWrite(wText.c_str(), type);
-}
-
-const bool DreamFileIO::ReadFullFileQuick(std::string& lineOut)
-{
-	std::wstring wtext;
-
-	bool success = ReadFullFileQuick(wtext);
-	lineOut = std::string(wtext.begin(), wtext.end());
-
-	return success;
-}
-
-const bool DreamFileIO::ReadFullFile(std::string& lineOut)
-{
-	std::wstring wtext;
-
-	bool success = ReadFullFile(wtext);
-	lineOut = std::string(wtext.begin(), wtext.end());
-
-	return success;
-}
-
-const bool DreamFileIO::ReadLine(std::string& lineOut)
-{
-	std::wstring wtext;
-
-	bool success = ReadLine(wtext);
-	lineOut = std::string(wtext.begin(), wtext.end());
-
-	return success;
-}
-
-void DreamFileIO::WriteLine(const char* lineToWrite)
-{
-	std::string sText(lineToWrite);
-	std::wstring wText(sText.begin(), sText.end());
-
-	return 	WriteLine(wText.c_str());
-}
-void DreamFileIO::Write(const char* lineToWrite)
-{
-	std::string sText(lineToWrite);
-	std::wstring wText(sText.begin(), sText.end());
-
-	return 	Write(wText.c_str());
 }
