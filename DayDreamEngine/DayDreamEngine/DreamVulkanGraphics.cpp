@@ -19,7 +19,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 }
 
 void DreamVulkanGraphics::OnWindowResize(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
+	auto app = reinterpret_cast<DreamVulkanGraphics*>(glfwGetWindowUserPointer(window));
+	app->framebufferResized = true;
+
+	//glViewport(0, 0, width, height);
 }
 
 DreamVulkanGraphics::DreamVulkanGraphics()
@@ -40,10 +43,10 @@ long DreamVulkanGraphics::InitWindow(int w, int h, const char* title)
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	window = glfwCreateWindow(width, height, title, NULL, NULL);
-
+	glfwSetWindowUserPointer(window, this);
 	//glfwCreateWindowSurface(instance, window, nullptr, &surface);
 
 	if (window == NULL)
@@ -52,7 +55,7 @@ long DreamVulkanGraphics::InitWindow(int w, int h, const char* title)
 		glfwTerminate();
 		return -1;
 	}
-	glfwSetWindowSizeCallback(window, OnWindowResize);
+	glfwSetFramebufferSizeCallback(window, OnWindowResize);
 	return 0;
 }
 
@@ -448,6 +451,23 @@ void DreamVulkanGraphics::createSwapChain()
 	swapChainExtent = extent;
 }
 
+void DreamVulkanGraphics::recreateSwapChain() {
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(window, &width, &height);
+	while (width == 0 || height == 0) {
+		glfwGetFramebufferSize(window, &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(device);
+
+	cleanupSwapChain();
+
+	createSwapChain();
+	createImageViews();
+	createFramebuffers();
+}
+
 void DreamVulkanGraphics::createImageViews() {
 
 	//If you were working on a stereographic 3D application, then you would create a swap chain with multiple layers.
@@ -793,9 +813,20 @@ void DreamVulkanGraphics::ClearScreen()
 	glfwPollEvents();
 
 	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+	VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		recreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+
 	vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
 
 	vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
 	recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
@@ -856,7 +887,15 @@ void DreamVulkanGraphics::SwapBuffers()
 
 	presentInfo.pImageIndices = &imageIndex;
 
-	vkQueuePresentKHR(presentQueue, &presentInfo);
+	VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+		framebufferResized = false;
+		recreateSwapChain();
+	}
+	else if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to present swap chain image!");
+	}
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -1026,8 +1065,24 @@ void DreamVulkanGraphics::Draw()
 {
 }
 
+void DreamVulkanGraphics::cleanupSwapChain() {
+	for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
+		vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
+	}
+
+	for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+		vkDestroyImageView(device, swapChainImageViews[i], nullptr);
+	}
+
+	vkDestroySwapchainKHR(device, swapChain, nullptr);
+}
+
 void DreamVulkanGraphics::TerminateGraphics()
 {
+	vkDeviceWaitIdle(device);
+
+	cleanupSwapChain();
+
 	if (enableValidationLayers) {
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 	}
@@ -1039,14 +1094,7 @@ void DreamVulkanGraphics::TerminateGraphics()
 	}
 
 	vkDestroyCommandPool(device, commandPool, nullptr);
-	for (auto framebuffer : swapChainFramebuffers) {
-		vkDestroyFramebuffer(device, framebuffer, nullptr);
-	}
-	for (auto imageView : swapChainImageViews) {
-		vkDestroyImageView(device, imageView, nullptr);
-	}
 	vkDestroyRenderPass(device, renderPass, nullptr);
-	vkDestroySwapchainKHR(device, swapChain, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	vkDestroyInstance(instance, nullptr);
 	vkDestroyDevice(device, nullptr);
@@ -1066,16 +1114,6 @@ void DreamVulkanGraphics::DestroyBuffer(DreamBuffer* buffer)
 DreamVulkanShaderLinker::DreamVulkanShaderLinker()
 {
 	vulkanGraphics = (DreamVulkanGraphics*)DreamGraphics::GetInstance();
-	/*std::vector<VkDynamicState> dynamicStates = {
-	VK_DYNAMIC_STATE_VIEWPORT,
-	VK_DYNAMIC_STATE_SCISSOR
-	};
-
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicState.pDynamicStates = dynamicStates.data();*/
-
 }
 DreamVulkanShaderLinker::~DreamVulkanShaderLinker() {
 	//vkDestroyPipeline(device, graphicsPipeline, nullptr);

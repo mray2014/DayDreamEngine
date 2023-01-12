@@ -131,10 +131,14 @@ public:
 	void BindGraphicsPipeline(VkPipeline pipeline);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
+	void recreateSwapChain();
+	void cleanupSwapChain();
+
 private:
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	uint32_t currentFrame = 0;
 	uint32_t imageIndex;
+	bool framebufferResized = false;
 
 	const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
