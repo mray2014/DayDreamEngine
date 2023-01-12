@@ -1,6 +1,7 @@
 #include "DreamFileIO.h"
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #ifdef WINDOWS
 
@@ -178,19 +179,21 @@ void DreamFileIO::OpenFileWrite(const char* filePath, FileWriteType type)
 	}
 }
 
-const bool DreamFileIO::ReadFullFileQuick(std::string& lineOut)
+const bool DreamFileIO::ReadFullFileQuick(char** lineOut, size_t& lengthOut)
 {
 	if (readFileStream.is_open()) {
-		readFileStream.seekg(0, std::ios::end);
+
+		readFileStream.seekg(0, std::ios::end);		
 		int lenght = (int)readFileStream.tellg();
 
 		readFileStream.seekg(0, std::ios::beg);
-		char* text = new char[lenght + 1];
+		*lineOut = new char[lenght];
 
-		readFileStream.read(text, lenght);
-		text[lenght] = '\0';
+		readFileStream.read(*lineOut, lenght);
+		(*lineOut)[lenght] = '\0';
 
-		lineOut = text;
+		lengthOut = lenght;
+
 		return true;
 	}
 

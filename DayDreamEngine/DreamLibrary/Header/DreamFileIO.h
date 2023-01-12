@@ -22,7 +22,7 @@ public:
 
 	static bool OpenFileRead(const char* filePath, int mode = 1);
 	static void OpenFileWrite(const char* filePath, FileWriteType type);
-	static const bool ReadFullFileQuick(std::string& lineOut);
+	static const bool ReadFullFileQuick(char** lineOut, size_t& lengthOut);
 	static const bool ReadFullFile(std::string& lineOut);
 	static const bool ReadLine(std::string& lineOut);
 	static void WriteLine(const char* lineToWrite);

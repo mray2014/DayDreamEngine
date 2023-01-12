@@ -5,6 +5,7 @@
 #include <algorithm> // Necessary for std::clamp
 #include <DreamFileIO.h>
 #include <iostream>
+#include "DreamMesh.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -202,7 +203,7 @@ void DreamVulkanGraphics::createInstance()
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "DayDreamEngine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_3;
 
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -517,55 +518,45 @@ void DreamVulkanGraphics::createRenderPass() {
 		throw std::runtime_error("failed to create render pass!");
 	}
 }
-VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout layout) {
+VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout) {
+	//VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+	//vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	//vertexInputInfo.vertexBindingDescriptionCount = 0;
+	//vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
+	//vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	//vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+
+	// If we are gonna layout vertex input data
+	VkVertexInputBindingDescription bindingDescription{};
+	bindingDescription.binding = 0;
+	bindingDescription.stride = sizeof(DreamVertex);
+	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
+		{0,//location;
+		0,//binding;
+		VK_FORMAT_R32G32B32_SFLOAT,//format;
+		offsetof(DreamVertex, pos)//offset;
+		}
+	};
+
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
-
-	// If we are gonna layout vertex input data
-	//VkVertexInputBindingDescription bindingDescription{};
-	//bindingDescription.binding = 0;
-	//bindingDescription.stride = sizeof(DreamVertex);
-	//bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-	//VkVertexInputAttributeDescription attributeDescriptions[] = {
-	//	{0,//location;
-	//	0,//binding;
-	//	VK_FORMAT_R32G32B32_SFLOAT,//format;
-	//	offsetof(DreamVertex, pos)//offset;
-	//	}
-	//};
-
-	//VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-	//vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	//vertexInputInfo.vertexBindingDescriptionCount = 1;
-	//vertexInputInfo.vertexAttributeDescriptionCount = 1;
-	//vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-	//vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)swapChainExtent.width;
-	viewport.height = (float)swapChainExtent.height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = swapChainExtent;
 
 	std::vector<VkDynamicState> dynamicStates = {
 	VK_DYNAMIC_STATE_VIEWPORT,
-	VK_DYNAMIC_STATE_SCISSOR
+	VK_DYNAMIC_STATE_SCISSOR,
+	VK_DYNAMIC_STATE_LINE_WIDTH,
 	};
 
 	VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -634,22 +625,21 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	//When i need to set uniform values in shaders 
-	//VkPipelineLayout pipelineLayout;
-	//VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	//pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	//pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	//pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	//pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0; // Optional
+	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-	//if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-	//	throw std::runtime_error("failed to create pipeline layout!");
-	//}
+	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
 	//vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2;
+	pipelineInfo.stageCount = shadersStageInfo.size();
 	pipelineInfo.pStages = &shadersStageInfo[0];
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -665,7 +655,7 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 
-	VkPipeline graphicsPipeline = nullptr;
+	VkPipeline graphicsPipeline;
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
@@ -707,17 +697,23 @@ void DreamVulkanGraphics::createCommandPool() {
 	}
 }
 void DreamVulkanGraphics::createCommandBuffer() {
+	commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = 1;
+	allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 }
 void DreamVulkanGraphics::createSyncObjects() {
+	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -725,14 +721,17 @@ void DreamVulkanGraphics::createSyncObjects() {
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-		vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create semaphores!");
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+			vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+
+			throw std::runtime_error("failed to create synchronization objects for a frame!");
+		}
 	}
 }
 
-void DreamVulkanGraphics::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+void DreamVulkanGraphics::recordCommandBuffer(VkCommandBuffer commandBuffer,  size_t imageIndex) {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -755,7 +754,7 @@ void DreamVulkanGraphics::recordCommandBuffer(VkCommandBuffer commandBuffer, uin
 
 }
 void DreamVulkanGraphics::BindGraphicsPipeline(VkPipeline pipeline) {
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	vkCmdBindPipeline(commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
 
 long DreamVulkanGraphics::InitGraphics()
@@ -791,37 +790,43 @@ bool DreamVulkanGraphics::CheckWindowClose()
 
 void DreamVulkanGraphics::ClearScreen()
 {
+	glfwPollEvents();
+
+	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+	vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
+	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+	vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
+	recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 }
 
 void DreamVulkanGraphics::SwapBuffers()
 {
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+
+	vkCmdEndRenderPass(commandBuffers[currentFrame]);
+
+	if (vkEndCommandBuffer(commandBuffers[currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to record command buffer!");
 	}
-
-	vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(device, 1, &inFlightFence);
-
-
-	uint32_t imageIndex;
-	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
 
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
+
+	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
@@ -834,14 +839,12 @@ void DreamVulkanGraphics::SwapBuffers()
 	VkSwapchainKHR swapChains[] = { swapChain };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &imageIndex;
 
-	presentInfo.pResults = nullptr; // Optional
+	presentInfo.pImageIndices = &imageIndex;
 
 	vkQueuePresentKHR(presentQueue, &presentInfo);
 
-	vkResetCommandBuffer(commandBuffer, 0);
-	recordCommandBuffer(commandBuffer, imageIndex);
+	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void DreamVulkanGraphics::CheckInputs()
@@ -853,13 +856,93 @@ DreamVertexArray* DreamVulkanGraphics::GenerateVertexArray(DreamBuffer* vert, Dr
 	return new DreamVulkanVertexArray(vert, ind);
 }
 
+
+uint32_t DreamVulkanGraphics::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("failed to find suitable memory type!");
+	return -1;
+}
+
 DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferData, size_t numOfElements, std::vector<size_t> strides, std::vector<size_t> offests, VertexDataUsage dataUsage)
 {
-	return nullptr;
+	VkBuffer buffer;
+	VkDeviceMemory bufferMemory;
+	VkBufferUsageFlagBits flag;
+
+	size_t numOfBuffers = strides.size();
+
+	switch (type) {
+	case ArrayBuffer: {
+		flag = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		break;
+	}
+	case ElementArrayBuffer: {
+		flag = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+		break;
+	}
+	}
+
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = numOfElements * strides[0];
+	bufferInfo.usage = flag;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	//VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+	//VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+	//VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create vertex buffer!");
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate vertex buffer memory!");
+	}
+
+	vkBindBufferMemory(device, buffer, bufferMemory, 0);
+
+	void* data;
+	vkMapMemory(device, bufferMemory, 0, bufferInfo.size, 0, &data);
+	memcpy(data, bufferData, (size_t)bufferInfo.size);
+	vkUnmapMemory(device, bufferMemory);
+
+	//vkDestroyBuffer(device, vertexBuffer, nullptr);
+	//vkFreeMemory(device, vertexBufferMemory, nullptr);
+
+	return new DreamBuffer((void*)buffer, numOfBuffers, &strides[0], &offests[0]);
 }
 
 void DreamVulkanGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 {
+	switch (type) {
+	case ArrayBuffer: {
+		VkBuffer vertexBuffers[] = { (VkBuffer)(buffer->GetBufferPointer().GetStoredPointer()) };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+		break;
+	}
+	case ElementArrayBuffer: {
+		//vkCmdBindVertexBuffers(commandBuffer[currentFrame], 0, 1, vertexBuffers, offsets);
+		break;
+	}
+	}
 }
 
 void DreamVulkanGraphics::BeginVertexLayout()
@@ -891,14 +974,15 @@ bool DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType shaderType,
 
 	DreamFileIO::OpenFileRead(path.c_str(), std::ios::ate | std::ios::binary);
 
-	std::string shaderCode;
-	DreamFileIO::ReadFullFile(shaderCode);
+	char* shaderCode = nullptr;
+	size_t length;
+	DreamFileIO::ReadFullFileQuick(&shaderCode, length);
 	DreamFileIO::CloseFileRead();
 
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = shaderCode.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
+	createInfo.codeSize = length;
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode);
 
 	VkShaderModule shaderModule;
 	if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
@@ -927,16 +1011,14 @@ void DreamVulkanGraphics::DrawWithVertex(size_t size)
 	viewport.height = static_cast<float>(swapChainExtent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
 	scissor.extent = swapChainExtent;
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, size, 1, 0, 0);
-
-	vkCmdEndRenderPass(commandBuffer);
+	vkCmdDraw(commandBuffers[currentFrame], size, 1, 0, 0);
 }
 
 void DreamVulkanGraphics::Draw()
@@ -949,9 +1031,11 @@ void DreamVulkanGraphics::TerminateGraphics()
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 	}
 
-	vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-	vkDestroyFence(device, inFlightFence, nullptr);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+		vkDestroyFence(device, inFlightFences[i], nullptr);
+	}
 
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	for (auto framebuffer : swapChainFramebuffers) {
@@ -975,6 +1059,7 @@ void DreamVulkanGraphics::DestroyWindow()
 
 void DreamVulkanGraphics::DestroyBuffer(DreamBuffer* buffer)
 {
+	vkDestroyBuffer(device, (VkBuffer)buffer->GetBufferPointer().GetStoredHandle(), nullptr);
 }
 
 DreamVulkanShaderLinker::DreamVulkanShaderLinker()
@@ -1028,7 +1113,7 @@ void DreamVulkanShaderLinker::AttachShader(DreamShader* shader)
 
 void DreamVulkanShaderLinker::Finalize()
 {
-	//graphicsPipeline = vulkanGraphics->CreateGraphicPipeLine(shadersStageInfo, pipelineLayout);
+	graphicsPipeline = vulkanGraphics->CreateGraphicPipeLine(shadersStageInfo, pipelineLayout);
 }
 
 void DreamVulkanShaderLinker::BindShaderLink()
@@ -1040,7 +1125,7 @@ void DreamVulkanShaderLinker::UnBindShaderLink()
 {
 }
 
-DreamVulkanVertexArray::DreamVulkanVertexArray(DreamBuffer* vert, DreamBuffer* ind)
+DreamVulkanVertexArray::DreamVulkanVertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)
 {
 
 }
@@ -1051,6 +1136,10 @@ DreamVulkanVertexArray::~DreamVulkanVertexArray()
 
 void DreamVulkanVertexArray::Bind()
 {
+	graphics->BindBuffer(BufferType::ArrayBuffer, vertexBuffer);
+	if (indexBuffer) {
+		graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
+	}
 }
 
 void DreamVulkanVertexArray::UnBind()

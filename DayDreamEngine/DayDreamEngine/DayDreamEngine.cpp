@@ -125,8 +125,8 @@ int main()
 		graphics->ClearScreen();
 
 		//NOTE: there is a black line on the side of the drawn triangle, halp
+		mesh.DrawOpaque();
 		graphics->Draw();
-		///mesh.DrawOpaque();
 
 		graphics->SwapBuffers();
 		graphics->CheckInputs();
