@@ -108,8 +108,8 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	DreamMesh mesh = DreamMesh(mainLink, vert);
-	//DreamMesh mesh = DreamMesh(mainLink, vert, indices);
+	//DreamMesh mesh = DreamMesh(mainLink, vert);
+	DreamMesh mesh = DreamMesh(mainLink, vert, indices);
 	
 	// Perspective matrix
 	// Update our projection matrix since the window size changed
