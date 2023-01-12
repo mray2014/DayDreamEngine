@@ -94,7 +94,7 @@ int main()
 	mainLink->Finalize();
 
 	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
-	std::vector<size_t> indices = std::vector<size_t>();
+	std::vector<uint32_t> indices = std::vector<uint32_t>();
 
 	vert.push_back(DreamVertex(-0.5, -0.5, 0.0f));
 	vert.push_back(DreamVertex(0.0, 0.5, 0.0f));

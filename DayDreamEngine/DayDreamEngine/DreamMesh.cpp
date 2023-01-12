@@ -17,7 +17,7 @@ DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts)
 }
 
 
-DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts, std::vector<size_t>& indices) {
+DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices) {
 	graphics = DreamGraphics::GetInstance();
 	shaderLink = shader;
 
@@ -26,7 +26,7 @@ DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts,
 		indicesCount = indices.size();
 
 		DreamBuffer* vertBuffer = graphics->GenerateBuffer(BufferType::ArrayBuffer, &verts[0], vertCount, { sizeof(DreamVertex) });
-		DreamBuffer* indexBuffer = graphics->GenerateBuffer(BufferType::ElementArrayBuffer, &indices[0], indicesCount, { sizeof(size_t) });
+		DreamBuffer* indexBuffer = graphics->GenerateBuffer(BufferType::ElementArrayBuffer, &indices[0], indicesCount, { sizeof(uint32_t) });
 		
 		vertArray = graphics->GenerateVertexArray(vertBuffer, indexBuffer);
 	}
