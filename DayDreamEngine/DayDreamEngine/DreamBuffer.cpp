@@ -1,8 +1,9 @@
 #include "DreamBuffer.h"
 #include <memory>
 
-DreamBuffer::DreamBuffer(void* newPtr, size_t numOfBuffs, size_t* s, size_t* o) {
-	info = DreamPointer(newPtr);
+DreamBuffer::DreamBuffer(void* newPtr, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
+
+	info = DreamPointer(newPtr, ptrBlockSize);
 	numOfBuffers = numOfBuffs;
 
 	if (s) {
@@ -16,8 +17,8 @@ DreamBuffer::DreamBuffer(void* newPtr, size_t numOfBuffs, size_t* s, size_t* o) 
 	}
 }
 
-DreamBuffer::DreamBuffer(size_t handle, size_t numOfBuffs, size_t* s, size_t* o) {
-	info = DreamPointer(handle);
+DreamBuffer::DreamBuffer(size_t handle, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
+	info = DreamPointer(handle, ptrBlockSize);
 	numOfBuffers = numOfBuffs;
 
 	if (s) {

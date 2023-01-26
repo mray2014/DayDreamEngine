@@ -931,6 +931,11 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferDa
 	VkBufferUsageFlagBits flag;
 
 	size_t numOfBuffers = strides.size();
+	size_t dataSize = 0;
+	for (size_t i = 0; i < numOfBuffers; i++) {
+		dataSize += strides[i];
+	}
+	dataSize *= numOfElements;
 
 	switch (type) {
 	case ArrayBuffer: {
@@ -945,7 +950,7 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferDa
 
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = numOfElements * strides[0];
+	bufferInfo.size = dataSize;
 	bufferInfo.usage = flag;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -979,7 +984,7 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferDa
 	//vkDestroyBuffer(device, vertexBuffer, nullptr);
 	//vkFreeMemory(device, vertexBufferMemory, nullptr);
 
-	return new DreamBuffer((void*)buffer, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer((void*)buffer, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
 
 void DreamVulkanGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)

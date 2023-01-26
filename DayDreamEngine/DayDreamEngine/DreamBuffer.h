@@ -11,12 +11,14 @@ struct DreamPointer {
 
 	}
 
-	DreamPointer(void* ptr) {
+	DreamPointer(void* ptr, size_t ptrSize = 0) {
 		store.ptr = ptr;
+		ptrBlockSize = ptrSize;
 	}
 
-	DreamPointer(size_t handle){
+	DreamPointer(size_t handle, size_t ptrSize = 0){
 		store.handle = handle;
+		ptrBlockSize = ptrSize;
 	}
 
 	const void* GetStoredPointer() {
@@ -26,6 +28,10 @@ struct DreamPointer {
 		return store.handle;
 	}
 
+	size_t GetPtrBlockSize() {
+		return ptrBlockSize;
+	}
+
 private:
 	union StoreUnion
 	{
@@ -33,6 +39,7 @@ private:
 		size_t handle;
 	};
 	StoreUnion store;
+	size_t ptrBlockSize;
 };
 
 class DreamBuffer {
@@ -40,8 +47,8 @@ public:
 	DreamBuffer() {
 		info = DreamPointer();
 	}
-	DreamBuffer(void* newPtr, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
-	DreamBuffer(size_t handle, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(void* newPtr, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(size_t handle, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
 
 	~DreamBuffer() {
 		if (stride) {

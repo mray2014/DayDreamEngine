@@ -1,9 +1,55 @@
 #pragma once
 #include "DreamGraphics.h"
-#include <Windows.h>
 
-#include <d3d11.h>
-#pragma comment(lib, "d3d11.lib")
+#define WIN32_LEAN_AND_MEAN
+
+#include <Windows.h>
+#include <shellapi.h> // For CommandLineToArgvW
+// The min/max macros conflict with like-named member functions.
+// Only use std::min and std::max defined in <algorithm>.
+#if defined(min)
+#undef min
+#endif
+
+#if defined(max)
+#undef max
+#endif
+
+// In order to define a function called CreateWindow, the Windows macro needs to
+// be undefined.
+#if defined(CreateWindow)
+#undef CreateWindow
+#endif
+
+// Windows Runtime Library. Needed for Microsoft::WRL::ComPtr<> template class.
+#include <wrl.h>
+using namespace Microsoft::WRL;
+
+// DirectX 12 specific headers.
+
+#include <d3d12.h>
+#pragma comment(lib, "d3d12.lib")
+#include <dxgi1_6.h>
+#include <d3dcompiler.h>
+//#include <DirectXMath.h>
+
+#include <algorithm>
+
+#include <cassert>
+
+#include <chrono>
+
+
+
+inline void ThrowIfFailed(HRESULT hr)
+{
+	if (FAILED(hr))
+	{
+		throw std::exception();
+	}
+
+}
+
 
 class DreamDX12VertexArray : public DreamVertexArray {
 public:
@@ -48,7 +94,6 @@ public:
 	void BindVertexLayout(DreamBuffer* layout);
 	void UnBindVertexLayout();
 
-
 	static LRESULT CALLBACK WindowProc(
 		HWND hWnd,		// Window handle
 		UINT uMsg,		// Message
@@ -57,23 +102,73 @@ public:
 	);
 	LRESULT ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-protected:
+	void EnableDebugLayer();
+	ComPtr<IDXGIAdapter4> GetAdapter(bool useWarp);
+	ComPtr<ID3D12Device2> CreateDevice(ComPtr<IDXGIAdapter4> adapter);
+	ComPtr<ID3D12CommandQueue> CreateCommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type);
+	bool CheckTearingSupport();
+	ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd, ComPtr<ID3D12CommandQueue> commandQueue, uint32_t width, uint32_t height, uint32_t bufferCount);
+	ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ComPtr<ID3D12Device2> device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors);
+	void UpdateRenderTargetViews(ComPtr<ID3D12Device2> device, ComPtr<IDXGISwapChain4> swapChain, ComPtr<ID3D12DescriptorHeap> descriptorHeap);
+	ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type);
+	ComPtr<ID3D12GraphicsCommandList> CreateCommandList(ComPtr<ID3D12Device2> device, ComPtr<ID3D12CommandAllocator> commandAllocator, D3D12_COMMAND_LIST_TYPE type);
+	ComPtr<ID3D12Fence> CreateFence(ComPtr<ID3D12Device2> device);
+	HANDLE CreateEventHandle();
+	uint64_t Signal(ComPtr<ID3D12CommandQueue> commandQueue, ComPtr<ID3D12Fence> fence, uint64_t& fenceValue);
+	void WaitForFenceValue(ComPtr<ID3D12Fence> fence, uint64_t fenceValue, HANDLE fenceEvent, std::chrono::milliseconds duration = std::chrono::milliseconds::max());
+	void Flush(ComPtr<ID3D12CommandQueue> commandQueue, ComPtr<ID3D12Fence> fence, uint64_t& fenceValue, HANDLE fenceEvent);
+	void Update();
+	void Render();
+	void SetFullscreen(bool fullscreen); // Add this graphic platorm
+	ID3D12PipelineState* CreateGraphicPipeLine(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeLineDesc);
+	void BindGraphicPipeLine(ID3D12PipelineState* pipeline, ID3D12RootSignature* rootSig);
 
+
+protected:
+	
 
 private:
-	HINSTANCE	hInstance{};		// The handle to the application
-	HWND		hWnd{};			// The handle to the window itself
-	std::string titleBarText{};	// Custom text in window's title bar
-	bool		titleBarStats{};	// Show extra stats in title bar?
+	HINSTANCE	hInst{};
+	HWND		hWnd{};
+	const static uint8_t g_NumFrames = 3;
 
-	// DirectX related objects and variables
-	D3D_FEATURE_LEVEL		dxFeatureLevel{};
-	IDXGISwapChain* swapChain = {};
-	ID3D11Device* device = {};
-	ID3D11DeviceContext* context = {};
+	// Use WARP adapter
+	bool g_UseWarp = false;
 
-	ID3D11RenderTargetView* backBufferRTV = {};
-	ID3D11DepthStencilView* depthStencilView = {};
+	// Set to true once the DX12 objects have been initialized.
+	bool g_IsInitialized = false;
+
+	// Window rectangle (used to toggle fullscreen state).
+	RECT g_WindowRect;
+
+	// DirectX 12 Objects
+	ComPtr<ID3D12Device2> g_Device;
+	ComPtr<ID3D12CommandQueue> g_CommandQueue;
+	ComPtr<IDXGISwapChain4> g_SwapChain;
+	ComPtr<ID3D12Resource> g_BackBuffers[g_NumFrames];
+	ComPtr<ID3D12GraphicsCommandList> g_CommandList;
+	ComPtr<ID3D12CommandAllocator> g_CommandAllocators[g_NumFrames];
+	ComPtr<ID3D12DescriptorHeap> g_RTVDescriptorHeap;
+	ComPtr<ID3D12DescriptorHeap> g_DTVDescriptorHeap;
+	UINT g_RTVDescriptorSize;
+	UINT g_DTVDescriptorSize;
+	UINT g_CurrentBackBufferIndex;
+
+
+	// Synchronization objects
+	ComPtr<ID3D12Fence> g_Fence;
+	uint64_t g_FenceValue = 0;
+	uint64_t g_FrameFenceValues[g_NumFrames] = {};
+	HANDLE g_FenceEvent;
+
+	// By default, enable V-Sync.
+	// Can be toggled with the V key.
+	bool g_VSync = true;
+	bool g_TearingSupported = false;
+
+	// By default, use windowed mode.
+	// Can be toggled with the Alt+Enter or F11
+	bool g_Fullscreen = false;
 };
 
 class DreamDX12ShaderLinker : public DreamShaderLinker {
@@ -86,7 +181,9 @@ public:
 	void BindShaderLink() override;
 	void UnBindShaderLink() override;
 private:
-	DreamGraphics* graphics;
+	DreamDX12Graphics* dx12Graphics;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeLineDesc;
+	ID3D12PipelineState* pipelineState;
 	friend class DreamGraphics;
 };
 

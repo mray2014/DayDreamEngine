@@ -347,7 +347,7 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 	for (size_t i = 0; i < numOfBuffers; i++) {
 		dataSize += strides[i];
 	}
-
+	dataSize *= numOfElements;
 	// Create the proper struct to hold the initial vertex data
 	// - This is how we put the initial data into the buffer
 	D3D11_SUBRESOURCE_DATA initialBufferData;
@@ -358,7 +358,7 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 		D3D11_BUFFER_DESC vbd;
 
 		vbd.Usage = D3D11_USAGE_IMMUTABLE;
-		vbd.ByteWidth = numOfElements * dataSize;       // 3 = number of vertices in the buffer
+		vbd.ByteWidth =  dataSize;       // 3 = number of vertices in the buffer
 		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells DirectX this is a vertex buffer
 		vbd.CPUAccessFlags = 0;
 		vbd.MiscFlags = 0;
@@ -373,7 +373,7 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 		D3D11_BUFFER_DESC vbd;
 
 		vbd.Usage = D3D11_USAGE_IMMUTABLE;
-		vbd.ByteWidth = numOfElements * sizeof(size_t);       // 3 = number of vertices in the buffer
+		vbd.ByteWidth = dataSize;       // 3 = number of vertices in the buffer
 		vbd.BindFlags = D3D11_BIND_INDEX_BUFFER; // Tells DirectX this is a vertex buffer
 		vbd.CPUAccessFlags = 0;
 		vbd.MiscFlags = 0;
@@ -386,7 +386,7 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 	}
 	}
 
-	return new DreamBuffer((void*)buffer, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer((void*)buffer, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
 
 //void DreamDX11Graphics::BindVertexLayout(DreamBuffer* layout)

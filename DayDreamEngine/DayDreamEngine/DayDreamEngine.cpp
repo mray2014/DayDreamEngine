@@ -85,6 +85,8 @@ int main()
 	graphics->InitGraphics();
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+	//graphics->SetViewPort(0,0, 200, 200);
+
 	DreamShader* vertexShader = new VertexDreamShader(L"vertex");
 	DreamShader* pixelShader = new PixelDreamShader(L"pixel");
 
@@ -108,8 +110,8 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	DreamMesh mesh = DreamMesh(mainLink, vert);
-	//DreamMesh mesh = DreamMesh(mainLink, vert, indices);
+	//DreamMesh mesh = DreamMesh(mainLink, vert);
+	DreamMesh mesh = DreamMesh(mainLink, vert, indices);
 	
 	// Perspective matrix
 	// Update our projection matrix since the window size changed

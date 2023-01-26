@@ -140,11 +140,13 @@ DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, void* bufferData, 
 		dataSize += strides[i];
 	}
 
+	dataSize *= numOfElements;
+
 	glBindBuffer(buffType, handle);
-	glBufferData(buffType, numOfElements * dataSize, bufferData, drawType);
+	glBufferData(buffType,  dataSize, bufferData, drawType);
 	glBindBuffer(buffType, 0);
 
-	return new DreamBuffer(handle, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer(handle, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
 
 void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
