@@ -31,6 +31,7 @@ using namespace Microsoft::WRL;
 #pragma comment(lib, "d3d12.lib")
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
+#include <d3d12sdklayers.h>
 //#include <DirectXMath.h>
 
 #include <algorithm>
@@ -169,12 +170,13 @@ private:
 	// By default, use windowed mode.
 	// Can be toggled with the Alt+Enter or F11
 	bool g_Fullscreen = false;
+	bool quit = false;
 };
 
 class DreamDX12ShaderLinker : public DreamShaderLinker {
 protected:
 	DreamDX12ShaderLinker();
-	~DreamDX12ShaderLinker();
+	~DreamDX12ShaderLinker() override;
 public:
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;

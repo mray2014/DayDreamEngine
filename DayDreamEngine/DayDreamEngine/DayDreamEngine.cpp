@@ -110,8 +110,8 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	//DreamMesh mesh = DreamMesh(mainLink, vert);
-	DreamMesh mesh = DreamMesh(mainLink, vert, indices);
+	DreamMesh* mesh = new DreamMesh(mainLink, vert);
+	//DreamMesh mesh = DreamMesh(mainLink, vert, indices);
 	
 	// Perspective matrix
 	// Update our projection matrix since the window size changed
@@ -127,15 +127,25 @@ int main()
 		graphics->ClearScreen();
 
 		//NOTE: there is a black line on the side of the drawn triangle, halp
-		mesh.DrawOpaque();
+		mesh->DrawOpaque();
 		graphics->Draw();
 
 		graphics->SwapBuffers();
 		graphics->CheckInputs();
 	}
 
+	if (mesh) {
+		delete mesh;
+		mesh = nullptr;
+	}
+
 	graphics->DestroyWindow();
 	graphics->TerminateGraphics();
+
+	if (graphics) {
+		delete graphics;
+		graphics = nullptr;
+	}
 
 	return 0;
 }

@@ -18,6 +18,7 @@ protected:
 	DreamShaderLinker();
 	std::vector<DreamShader*> linkedShaders;
 public:
+	virtual ~DreamShaderLinker() {}
 	virtual void AttachShader(DreamShader* shader) = 0;
 	virtual void Finalize() = 0;
 	virtual void BindShaderLink() = 0;

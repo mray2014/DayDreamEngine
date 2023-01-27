@@ -38,6 +38,11 @@ DreamMesh::~DreamMesh()
 		delete vertArray;
 		vertArray = nullptr;
 	}
+
+	if (shaderLink) {
+		delete shaderLink;
+		shaderLink = nullptr;
+	}
 }
 
 void DreamMesh::DrawOpaque()
