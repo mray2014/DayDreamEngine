@@ -1243,6 +1243,7 @@
     <ClCompile Include="..\Platform\Universal\Libs\pch.cpp" />
     <ClCompile Include="DayDreamEngine.cpp" />
     <ClCompile Include="DreamBuffer.cpp" />
+    <ClCompile Include="DreamCamera.cpp" />
     <ClCompile Include="DreamDX11Graphics.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Debug|Win32'">true</ExcludedFromBuild>
@@ -1326,10 +1327,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_DebugRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="DreamGameObject.cpp" />
     <ClCompile Include="Libraries\glad.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h" />
+    <ClInclude Include="DreamCamera.h" />
     <ClInclude Include="DreamBuffer.h" />
     <ClInclude Include="DreamDX11Graphics.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_Release|Win32'">true</ExcludedFromBuild>
@@ -1414,6 +1417,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_DebugRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="DreamGameObject.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

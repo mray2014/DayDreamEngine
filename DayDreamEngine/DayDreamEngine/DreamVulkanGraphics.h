@@ -17,8 +17,8 @@ class DreamVulkanGraphics;
 class DreamVulkanShaderLinker : public DreamShaderLinker {
 protected:
 	DreamVulkanShaderLinker();
-	~DreamVulkanShaderLinker();
 public:
+	~DreamVulkanShaderLinker() override;
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;
 	void BindShaderLink() override;
@@ -129,6 +129,7 @@ public:
 	void createSyncObjects();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, size_t imageIndex);
 	void BindGraphicsPipeline(VkPipeline pipeline);
+	void DestroyGraphicsPipeline(VkPipeline pipe, VkPipelineLayout layout);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	void recreateSwapChain();

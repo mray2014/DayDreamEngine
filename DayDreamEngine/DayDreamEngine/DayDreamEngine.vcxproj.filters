@@ -60,6 +60,12 @@
     <ClCompile Include="DreamDX12Graphics.cpp">
       <Filter>PlatformDependent\Source</Filter>
     </ClCompile>
+    <ClCompile Include="DreamGameObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DreamCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h">
@@ -88,6 +94,12 @@
     </ClInclude>
     <ClInclude Include="DreamDX12Graphics.h">
       <Filter>PlatformDependent\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamGameObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamCamera.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -860,9 +860,6 @@ DreamDX11ShaderLinker::DreamDX11ShaderLinker()
 
 DreamDX11ShaderLinker::~DreamDX11ShaderLinker()
 {
-	for (size_t i = 0; i < linkedShaders.size(); i++) {
-		graphics->ReleaseShader(linkedShaders[i]);
-	}
 }
 
 void DreamDX11ShaderLinker::AttachShader(DreamShader* shader)

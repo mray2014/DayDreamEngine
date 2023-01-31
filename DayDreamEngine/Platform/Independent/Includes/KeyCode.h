@@ -1,6 +1,10 @@
 #pragma once
 enum KeyCode {
 
+	MOUSE_LEFT_CLICK = 1,
+	MOUSE_RIGHT_CLICK = 2,
+	MOUSE_MIDDLE_CLICK = 4,
+
 	NUM_0 = 48,
 	NUM_1 = 49,
 	NUM_2 = 50,

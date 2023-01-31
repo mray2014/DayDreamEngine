@@ -777,6 +777,19 @@ void DreamVulkanGraphics::BindGraphicsPipeline(VkPipeline pipeline) {
 	vkCmdBindPipeline(commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
 
+void DreamVulkanGraphics::DestroyGraphicsPipeline(VkPipeline pipe, VkPipelineLayout layout) {
+
+	vkDeviceWaitIdle(device);
+
+	if (pipe) {
+		vkDestroyPipeline(device, pipe, nullptr);
+	}
+
+	if (layout) {
+		vkDestroyPipelineLayout(device, layout, nullptr);
+	}
+}
+
 long DreamVulkanGraphics::InitGraphics()
 {
 
@@ -1054,6 +1067,14 @@ bool DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType shaderType,
 
 void DreamVulkanGraphics::ReleaseShader(DreamShader* shader)
 {
+	if (shader) {
+		VkShaderModule module = (VkShaderModule)(shader->GetShaderPtr().GetStoredPointer());
+
+		vkDestroyShaderModule(device, module, nullptr);
+
+		delete shader;
+		shader = nullptr;
+	}
 }
 
 void DreamVulkanGraphics::DrawWithIndex(size_t size)
@@ -1101,8 +1122,8 @@ void DreamVulkanGraphics::TerminateGraphics()
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	vkDestroyRenderPass(device, renderPass, nullptr);
 	vkDestroySurfaceKHR(instance, surface, nullptr);
-	vkDestroyInstance(instance, nullptr);
 	vkDestroyDevice(device, nullptr);
+	vkDestroyInstance(instance, nullptr);
 	glfwTerminate();
 }
 
@@ -1113,7 +1134,10 @@ void DreamVulkanGraphics::DestroyWindow()
 
 void DreamVulkanGraphics::DestroyBuffer(DreamBuffer* buffer)
 {
-	vkDestroyBuffer(device, (VkBuffer)buffer->GetBufferPointer().GetStoredHandle(), nullptr);
+	vkDeviceWaitIdle(device);
+
+
+	vkDestroyBuffer(device, (VkBuffer)(buffer->GetBufferPointer().GetStoredHandle()), nullptr);
 }
 
 DreamVulkanShaderLinker::DreamVulkanShaderLinker()
@@ -1121,8 +1145,8 @@ DreamVulkanShaderLinker::DreamVulkanShaderLinker()
 	vulkanGraphics = (DreamVulkanGraphics*)DreamGraphics::GetInstance();
 }
 DreamVulkanShaderLinker::~DreamVulkanShaderLinker() {
-	//vkDestroyPipeline(device, graphicsPipeline, nullptr);
-	//vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
+	vulkanGraphics->DestroyGraphicsPipeline(graphicsPipeline, pipelineLayout);
 }
 
 void DreamVulkanShaderLinker::AttachShader(DreamShader* shader)

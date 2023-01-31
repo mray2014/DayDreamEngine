@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "KeyCode.h"
 //#include<unordered_map>
 
 namespace DreamInput

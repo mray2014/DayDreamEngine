@@ -1533,6 +1533,15 @@ static DreamVector3 GetEulerFrom3X3Rot(DreamMatrix3X3 mat) {
 
 struct DreamTransform {
 public:
+	DreamTransform() {
+		forward = DreamVector3(0.0f, 0.0f, 1.0f);
+		up = DreamVector3(0.0f, 1.0f, 0.0f);
+		right = DreamVector3(1.0f, 0.0f, 0.0f);
+
+		position = DreamVector3();
+		rotation = DreamVector3();
+		scale = DreamVector3(1.0f, 1.0f, 1.0f);
+	}
 	DreamVector3 position;
 	DreamVector3 rotation;
 	DreamVector3 scale;

@@ -264,6 +264,7 @@
     <ClCompile Include="DreamPhysics.cpp" />
     <ClCompile Include="DreamPoolAllocator.cpp" />
     <ClCompile Include="DreamStaticStackAllocator.cpp" />
+    <ClCompile Include="DreamTimeManager.cpp" />
     <ClCompile Include="InputManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -274,6 +275,7 @@
     <ClInclude Include="Header\DreamPhysics.h" />
     <ClInclude Include="Header\DreamPoolAllocator.h" />
     <ClInclude Include="Header\DreamStaticStackAllocator.h" />
+    <ClInclude Include="Header\DreamTimeManager.h" />
     <ClInclude Include="Header\DreamUnitTest.h" />
     <ClInclude Include="Header\InputManager.h" />
     <ClInclude Include="Header\KeyCode.h" />

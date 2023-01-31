@@ -1058,10 +1058,6 @@ DreamDX12ShaderLinker::DreamDX12ShaderLinker()
 
 DreamDX12ShaderLinker::~DreamDX12ShaderLinker()
 {
-	for (size_t i = 0; i < linkedShaders.size(); i++) {
-		dx12Graphics->ReleaseShader(linkedShaders[i]);
-	}
-
 	if (pipeLineDesc.pRootSignature) {
 		pipeLineDesc.pRootSignature->Release();
 		pipeLineDesc.pRootSignature = nullptr;

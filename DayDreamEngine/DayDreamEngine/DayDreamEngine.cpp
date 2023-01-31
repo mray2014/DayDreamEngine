@@ -6,6 +6,11 @@
 #include <DreamAllocatorManager.h>
 #include <DreamFileIO.h>
 #include <DreamUnitTest.h>
+#include <DreamTimeManager.h>
+#include <Windows.h>
+#include "DreamCamera.h"
+
+
 
 void UnitTestFileIO() {
 
@@ -111,27 +116,33 @@ int main()
 	indices.push_back(3);
 
 	DreamMesh* mesh = new DreamMesh(mainLink, vert);
-	//DreamMesh mesh = DreamMesh(mainLink, vert, indices);
-	
-	// Perspective matrix
-	// Update our projection matrix since the window size changed
-	//XMMATRIX P = XMMatrixPerspectiveFovLH(
-	//	0.25f * 3.1415926535f,	// Field of View Angle
-	//	(float)width / height,	// Aspect ratio
-	//	0.1f,				  	// Near clip plane distance
-	//	100.0f);			  	// Far clip plane distance
-	//XMStoreFloat4x4(&cam->projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
+	//DreamMesh* mesh = new DreamMesh(mainLink, vert, indices);
 
+	DreamCamera camera = DreamCamera();
+
+	DreamTimeManager::Init();
 	while (!graphics->CheckWindowClose())
 	{
+		DreamTimeManager::Update();
+		//printf("%f\n", DreamTimeManager::GetDeltaTime());
+
+		// Controller
+		graphics->CheckInputs();
+
+		// Model
+		camera.Update();
+		printf("%s\n", camera.transform.position.ToString().c_str());
+
+		// View
 		graphics->ClearScreen();
 
 		//NOTE: there is a black line on the side of the drawn triangle, halp
+		// TODO: Bind Graphic pipelines instead of shaders individually
+		// TODO: Spirv-Cross to handle all shader platform types
 		mesh->DrawOpaque();
 		graphics->Draw();
 
 		graphics->SwapBuffers();
-		graphics->CheckInputs();
 	}
 
 	if (mesh) {
@@ -139,6 +150,9 @@ int main()
 		mesh = nullptr;
 	}
 
+	// TODO: Garbage Collector? delay deletes till end of frame [MarkForDeletion]
+	graphics->ReleaseShader(vertexShader);
+	graphics->ReleaseShader(pixelShader);
 	graphics->DestroyWindow();
 	graphics->TerminateGraphics();
 

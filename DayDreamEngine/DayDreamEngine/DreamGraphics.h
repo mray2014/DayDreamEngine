@@ -100,8 +100,15 @@ public:
 	~DreamVertexArray()
 	{
 		if (graphics) {
-			graphics->DestroyBuffer(vertexBuffer);
-			graphics->DestroyBuffer(indexBuffer);
+
+			if (vertexBuffer) {
+				graphics->DestroyBuffer(vertexBuffer);
+			}
+
+			if (indexBuffer) {
+				graphics->DestroyBuffer(indexBuffer);
+			}
+			
 		}
 		else {
 			printf("WARNING: Mesh does not have refd to graphics while deleting itself, possible memory leak");
