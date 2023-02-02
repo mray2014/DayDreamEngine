@@ -43,506 +43,12 @@ namespace DreamMath {
 	float Dot(float vec1[], float vec2[]);
 	float FixFloatingPointError(float num);
 
-	struct DreamMatrix3X3 {
-	public:
-		float matrix[3][3] = { 0 };
 
-		DreamMatrix3X3()
-		{
 
-		}
 
-		DreamMatrix3X3(const DreamMatrix3X3& m) {
 
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
-			}
-		}
-
-		void FixFloatingPointError() {
-		
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				float truncatedNum = truncf(this->matrix[curRow][curCol]);
-				if (DreamMath::abs(this->matrix[curRow][curCol] - truncatedNum) < EPSILON) {
-					this->matrix[curRow][curCol] = truncatedNum;
-				}
-			}
-		}
-
-		void Transpose() {
-
-			float store = 0;
-
-			int curRow = 0;
-			for (int i = 1; i < (3 * 3); i++) {
-				int curCol = i % 3;
-
-				store = this->matrix[curRow][curCol];
-				this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
-				this->matrix[curCol][curRow] = store;
-
-				if (curCol == 2) {
-					curRow++;
-					i = (curRow * 3) + curRow;
-				}
-			}
-		}
-
-		float Determinate() {
-
-			float det = 0;
-
-			for (int i = 0; i < 3; i++) {
-				int curRow = 0;
-				int curCol = i;
-
-				int top = 1;
-				int bot = 2;
-				int left = (curCol == 0) ? 1 : 0;
-				int right = (curCol == 2) ? 1 : 2;
-
-
-				float smallDet = (this->matrix[top][left] * this->matrix[bot][right]) - (this->matrix[bot][left] * this->matrix[top][right]);
-				
-				if (i == 1) {
-					det -= this->matrix[curRow][curCol] * smallDet;
-				}
-				else {
-					det += this->matrix[curRow][curCol] * smallDet;
-				}
-			}
-
-			return det;
-		}
-
-		void Inverse() {
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-			
-			float det = this->Determinate();
-			int sign = 1;
-
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-
-				int top = (curRow == 0) ? 1 : 0;
-				int bot = (curRow == 2) ? 1 : 2;
-				int left = (curCol == 0) ? 1 : 0;
-				int right = (curCol == 2) ? 1 : 2;
-
-
-				newMatrix.matrix[curRow][curCol] = (this->matrix[top][left] * this->matrix[bot][right]) - (this->matrix[bot][left] * this->matrix[top][right]);
-				newMatrix.matrix[curRow][curCol] *= sign;
-
-				sign *= -1;
-			}
-
-
-			newMatrix.Transpose();
-
-			newMatrix *= (1 / det);
-
-			newMatrix.FixFloatingPointError();
-
-			*this = newMatrix;
-		}
-
-		static DreamMatrix3X3 Identity() {
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-
-			newMatrix.matrix[0][0] = 1;
-			newMatrix.matrix[1][1] = 1;
-			newMatrix.matrix[2][2] = 1;
-
-			return newMatrix;
-		}
-
-		std::string ToString() {
-
-			std::string finalString = "";
-			int matrixSize = 3;
-
-			for (int i = 0; i < (matrixSize * matrixSize); i++) {
-				int curRow = i / matrixSize;
-				int curCol = i % matrixSize;
-
-				if (finalString != "" && curCol == 0) {
-					finalString += "\n";
-				}
-				if (curCol == 0) {
-					finalString += "[ ";
-				}
-
-				finalString += std::to_string(this->matrix[curRow][curCol]);
-
-				if (curCol == (matrixSize -1)) {
-					finalString += "]";
-				}
-				else {
-					finalString += ", ";
-				}
-			}
-
-			return finalString;
-		}
-
-#pragma region Operator Overload
-
-
-		DreamMatrix3X3 operator*(DreamMatrix3X3 m) {
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
-					+ (this->matrix[curRow][2] * m.matrix[2][curCol]);
-
-			}
-
-			return newMatrix;
-		}
-		void operator*=(DreamMatrix3X3 m) {
-
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
-					+ (this->matrix[curRow][2] * m.matrix[2][curCol]);
-			}
-
-			*this = newMatrix;
-		}
-		DreamMatrix3X3 operator*(int num) {
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-			return newMatrix;
-		}
-		DreamMatrix3X3 operator*(float num) {
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-			return newMatrix;
-		}
-		void operator*=(int num) {
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-		}
-		void operator*=(float num) {
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-		}
-		DreamMatrix3X3 operator/(int num) {
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-			return newMatrix;
-		}
-		DreamMatrix3X3 operator/(float num) {
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-			return newMatrix;
-		}
-		void operator/=(int num) {
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-		}
-		void operator/=(float num) {
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-		}
-
-		bool operator==(DreamMatrix3X3 m) {
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				float num = this->matrix[curRow][curCol] - m.matrix[curRow][curCol];
-
-				if (abs(num) > EPSILON) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-#pragma endregion
-
-	};
-
-
-	struct DreamMatrix4X4 {
-	public:
-		float matrix[4][4] = { 0 };
-
-
-		DreamMatrix4X4()
-		{
-		}
-
-		DreamMatrix4X4(const DreamMatrix4X4& m) {
-
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
-			}
-		}
-		DreamMatrix4X4(const DreamMatrix3X3& m) {
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				this->matrix[curRow][curCol] = m.matrix[curRow][curCol];
-			}
-		}
-		void FixFloatingPointError() {
-
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				float truncatedNum = truncf(this->matrix[curRow][curCol]);
-				if (DreamMath::abs(this->matrix[curRow][curCol] - truncatedNum) < EPSILON) {
-					this->matrix[curRow][curCol] = truncatedNum;
-				}
-			}
-		}
-
-		void Transpose() {
-
-			float store = 0;
-
-			int curRow = 0;
-			for (int i = 1; i < (4 * 4); i++) {
-				int curCol = i % 4;
-
-				store = this->matrix[curRow][curCol];
-				this->matrix[curRow][curCol] = this->matrix[curCol][curRow];
-				this->matrix[curCol][curRow] = store;
-
-				if (curCol == 3) {
-					curRow++;
-					i = (curRow * 4) + curRow;
-				}
-			}
-
-		}
-
-		float Determinate() {
-
-			float det = 0;
-
-			return det;
-		}
-
-		void Inverse() {
-
-		}
-
-		DreamMatrix3X3 Get3X3() {
-
-			DreamMatrix3X3 newMatrix = DreamMatrix3X3();
-
-			for (int i = 0; i < (3 * 3); i++) {
-				int curRow = i / 3;
-				int curCol = i % 3;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol];
-			}
-			return newMatrix;
-		}
-
-		static DreamMatrix4X4 Identity() {
-			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-
-			newMatrix.matrix[0][0] = 1;
-			newMatrix.matrix[1][1] = 1;
-			newMatrix.matrix[2][2] = 1;
-			newMatrix.matrix[3][3] = 1;
-
-			return newMatrix;
-		}
-
-#pragma region Operator Overloads
-
-
-		DreamMatrix4X4 operator*(DreamMatrix4X4 m) {
-			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
-					+ (this->matrix[curRow][2] * m.matrix[2][curCol])
-					+ (this->matrix[curRow][3] * m.matrix[3][curCol]);
-
-			}
-			return newMatrix;
-		}
-
-		void operator*=(DreamMatrix4X4 m) {
-
-			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				newMatrix.matrix[curRow][curCol] = (this->matrix[curRow][0] * m.matrix[0][curCol])
-					+ (this->matrix[curRow][1] * m.matrix[1][curCol])
-					+ (this->matrix[curRow][2] * m.matrix[2][curCol])
-					+ (this->matrix[curRow][3] * m.matrix[3][curCol]);
-
-			}
-
-			*this = newMatrix;
-		}
-		DreamMatrix4X4 operator*(int num) {
-			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-			return newMatrix;
-		}
-		DreamMatrix4X4  operator*(float num) {
-			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-			return newMatrix;
-		}
-		void operator*=(int num) {
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-		}
-		void operator*=(float num) {
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] * num;
-			}
-		}
-		DreamMatrix4X4 operator/(int num) {
-			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-			return newMatrix;
-		}
-		DreamMatrix4X4  operator/(float num) {
-			DreamMatrix4X4 newMatrix = DreamMatrix4X4();
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				newMatrix.matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-			return newMatrix;
-		}
-		void operator/=(int num) {
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-		}
-		void operator/=(float num) {
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				this->matrix[curRow][curCol] = this->matrix[curRow][curCol] / num;
-			}
-		}
-
-		bool operator==(DreamMatrix4X4 m) {
-			for (int i = 0; i < (4 * 4); i++) {
-				int curRow = i / 4;
-				int curCol = i % 4;
-				float num = this->matrix[curRow][curCol] - m.matrix[curRow][curCol];
-
-				if (abs(num) > EPSILON) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-#pragma endregion
-
-		std::string ToString() {
-			std::string finalString = "";
-			int matrixSize = 4;
-
-			for (int i = 0; i < (matrixSize * matrixSize); i++) {
-				int curRow = i / matrixSize;
-				int curCol = i % matrixSize;
-
-				if (finalString != "" && curCol == 0) {
-					finalString += "\n";
-				}
-				if (curCol == 0) {
-					finalString += "[ ";
-				}
-
-				finalString += std::to_string(this->matrix[curRow][curCol]);
-
-				if (curCol == (matrixSize - 1)) {
-					finalString += "]";
-				}
-				else {
-					finalString += ", ";
-				}
-			}
-
-			return finalString;
-		}
-
-	};
-
-
-
-
-
-
+struct DreamMatrix3X3;
+struct DreamMatrix4X4;
 
 
 struct DreamVector2 {
@@ -900,24 +406,8 @@ public:
 		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON) && (abs(this->y - v.y) <= EPSILON);
 	}
 
-	DreamVector3 operator* (DreamMatrix3X3 m) {
-		DreamVector3 newVec = DreamVector3();
-
-		newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]);
-		newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]);
-		newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]);
-
-		return newVec;
-	}
-	void operator*= (DreamMatrix3X3 m) {
-		DreamVector3 newVec = DreamVector3();
-
-		newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]);
-		newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]);
-		newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]);
-
-		*this = newVec;
-	}
+	DreamVector3 operator* (DreamMatrix3X3 m);
+	void operator*= (DreamMatrix3X3 m);
 
 #pragma endregion
 
@@ -937,6 +427,13 @@ public:
 		x = newX;
 		y = newY;
 		z = newZ;
+		w = newW;
+	}
+
+	DreamVector4(DreamVector3& vec, float newW = 0) {
+		x = vec.x;
+		y = vec.y;
+		z = vec.z;
 		w = newW;
 	}
 
@@ -1131,27 +628,10 @@ public:
 		return (abs(this->x - v.x) <= EPSILON) && (abs(this->y - v.y) <= EPSILON) && (abs(this->z - v.z) <= EPSILON) && (abs(this->w - v.w) <= EPSILON);
 	}
 
-	DreamVector4 operator* (DreamMatrix4X4 m) {
-		 DreamVector4 newVec = DreamVector4();
+	DreamVector4 operator* (DreamMatrix4X4 m);
+	void operator*= (DreamMatrix4X4 m);
 
-		 newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]) + (this->w * m.matrix[3][0]);
-		 newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]) + (this->w * m.matrix[3][1]);
-		 newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]) + (this->w * m.matrix[3][2]);
-		 newVec.w = (this->x * m.matrix[0][3]) + (this->y * m.matrix[1][3]) + (this->z * m.matrix[2][3]) + (this->w * m.matrix[3][3]);
 
-		 return newVec;
-	}
-
-	void operator*= (DreamMatrix4X4 m) {
-		DreamVector4 newVec = DreamVector4();
-
-		newVec.x = (this->x * m.matrix[0][0]) + (this->y * m.matrix[1][0]) + (this->z * m.matrix[2][0]) + (this->w * m.matrix[3][0]);
-		newVec.y = (this->x * m.matrix[0][1]) + (this->y * m.matrix[1][1]) + (this->z * m.matrix[2][1]) + (this->w * m.matrix[3][1]);
-		newVec.z = (this->x * m.matrix[0][2]) + (this->y * m.matrix[1][2]) + (this->z * m.matrix[2][2]) + (this->w * m.matrix[3][2]);
-		newVec.w = (this->x * m.matrix[0][3]) + (this->y * m.matrix[1][3]) + (this->z * m.matrix[2][3]) + (this->w * m.matrix[3][3]);
-
-		*this = newVec;
-	}
 #pragma endregion
 
 	std::string ToString() {
@@ -1162,9 +642,521 @@ public:
 
 
 
+union Matrix3 {
+	float data[3][3];
+	struct {
+		DreamVector3 xRow;
+		DreamVector3 yRow;
+		DreamVector3 zRow;
+	};
+};
+
+union Matrix4 {
+	float data[4][4];
+	struct {
+		DreamVector4 xRow;
+		DreamVector4 yRow;
+		DreamVector4 zRow;
+		DreamVector4 wRow;
+	};
+};
+
+struct DreamMatrix3X3 {
+public:
 
 
+	Matrix3 matrix = { 0 };
 
+	DreamMatrix3X3()
+	{
+
+	}
+
+	DreamMatrix3X3(const DreamMatrix3X3& m) {
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix.data[curRow][curCol] = m.matrix.data[curRow][curCol];
+		}
+	}
+
+	void FixFloatingPointError() {
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			float truncatedNum = truncf(this->matrix.data[curRow][curCol]);
+			if (DreamMath::abs(this->matrix.data[curRow][curCol] - truncatedNum) < EPSILON) {
+				this->matrix.data[curRow][curCol] = truncatedNum;
+			}
+		}
+	}
+
+	void Transpose() {
+
+		float store = 0;
+
+		int curRow = 0;
+		for (int i = 1; i < (3 * 3); i++) {
+			int curCol = i % 3;
+
+			store = this->matrix.data[curRow][curCol];
+			this->matrix.data[curRow][curCol] = this->matrix.data[curCol][curRow];
+			this->matrix.data[curCol][curRow] = store;
+
+			if (curCol == 2) {
+				curRow++;
+				i = (curRow * 3) + curRow;
+			}
+		}
+	}
+
+	float Determinate() {
+
+		float det = 0;
+
+		for (int i = 0; i < 3; i++) {
+			int curRow = 0;
+			int curCol = i;
+
+			int top = 1;
+			int bot = 2;
+			int left = (curCol == 0) ? 1 : 0;
+			int right = (curCol == 2) ? 1 : 2;
+
+
+			float smallDet = (this->matrix.data[top][left] * this->matrix.data[bot][right]) - (this->matrix.data[bot][left] * this->matrix.data[top][right]);
+
+			if (i == 1) {
+				det -= this->matrix.data[curRow][curCol] * smallDet;
+			}
+			else {
+				det += this->matrix.data[curRow][curCol] * smallDet;
+			}
+		}
+
+		return det;
+	}
+
+	void Inverse() {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+		float det = this->Determinate();
+		int sign = 1;
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+
+			int top = (curRow == 0) ? 1 : 0;
+			int bot = (curRow == 2) ? 1 : 2;
+			int left = (curCol == 0) ? 1 : 0;
+			int right = (curCol == 2) ? 1 : 2;
+
+
+			newMatrix.matrix.data[curRow][curCol] = (this->matrix.data[top][left] * this->matrix.data[bot][right]) - (this->matrix.data[bot][left] * this->matrix.data[top][right]);
+			newMatrix.matrix.data[curRow][curCol] *= sign;
+
+			sign *= -1;
+		}
+
+
+		newMatrix.Transpose();
+
+		newMatrix *= (1 / det);
+
+		newMatrix.FixFloatingPointError();
+
+		*this = newMatrix;
+	}
+
+	static DreamMatrix3X3 Identity() {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+		newMatrix.matrix.data[0][0] = 1;
+		newMatrix.matrix.data[1][1] = 1;
+		newMatrix.matrix.data[2][2] = 1;
+
+		return newMatrix;
+	}
+
+	std::string ToString() {
+
+		std::string finalString = "";
+		int matrixSize = 3;
+
+		for (int i = 0; i < (matrixSize * matrixSize); i++) {
+			int curRow = i / matrixSize;
+			int curCol = i % matrixSize;
+
+			if (finalString != "" && curCol == 0) {
+				finalString += "\n";
+			}
+			if (curCol == 0) {
+				finalString += "[ ";
+			}
+
+			finalString += std::to_string(this->matrix.data[curRow][curCol]);
+
+			if (curCol == (matrixSize - 1)) {
+				finalString += "]";
+			}
+			else {
+				finalString += ", ";
+			}
+		}
+
+		return finalString;
+	}
+
+#pragma region Operator Overload
+
+
+	DreamMatrix3X3 operator*(DreamMatrix3X3 m) {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix.data[curRow][curCol] = (this->matrix.data[curRow][0] * m.matrix.data[0][curCol])
+				+ (this->matrix.data[curRow][1] * m.matrix.data[1][curCol])
+				+ (this->matrix.data[curRow][2] * m.matrix.data[2][curCol]);
+
+		}
+
+		return newMatrix;
+	}
+	void operator*=(DreamMatrix3X3 m) {
+
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix.data[curRow][curCol] = (this->matrix.data[curRow][0] * m.matrix.data[0][curCol])
+				+ (this->matrix.data[curRow][1] * m.matrix.data[1][curCol])
+				+ (this->matrix.data[curRow][2] * m.matrix.data[2][curCol]);
+		}
+
+		*this = newMatrix;
+	}
+	DreamMatrix3X3 operator*(int num) {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+		return newMatrix;
+	}
+	DreamMatrix3X3 operator*(float num) {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+		return newMatrix;
+	}
+	void operator*=(int num) {
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+	}
+	void operator*=(float num) {
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+	}
+	DreamMatrix3X3 operator/(int num) {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+		return newMatrix;
+	}
+	DreamMatrix3X3 operator/(float num) {
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+		return newMatrix;
+	}
+	void operator/=(int num) {
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+	}
+	void operator/=(float num) {
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+	}
+
+	bool operator==(DreamMatrix3X3 m) {
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			float num = this->matrix.data[curRow][curCol] - m.matrix.data[curRow][curCol];
+
+			if (abs(num) > EPSILON) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+#pragma endregion
+
+};
+
+struct DreamMatrix4X4 {
+public:
+
+	Matrix4 matrix = { 0 };
+
+
+	DreamMatrix4X4()
+	{
+	}
+
+	DreamMatrix4X4(const DreamMatrix4X4& m) {
+
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			this->matrix.data[curRow][curCol] = m.matrix.data[curRow][curCol];
+		}
+	}
+	DreamMatrix4X4(const DreamMatrix3X3& m) {
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			this->matrix.data[curRow][curCol] = m.matrix.data[curRow][curCol];
+		}
+	}
+	void FixFloatingPointError() {
+
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			float truncatedNum = truncf(this->matrix.data[curRow][curCol]);
+			if (DreamMath::abs(this->matrix.data[curRow][curCol] - truncatedNum) < EPSILON) {
+				this->matrix.data[curRow][curCol] = truncatedNum;
+			}
+		}
+	}
+
+	void Transpose() {
+
+		float store = 0;
+
+		int curRow = 0;
+		for (int i = 1; i < (4 * 4); i++) {
+			int curCol = i % 4;
+
+			store = this->matrix.data[curRow][curCol];
+			this->matrix.data[curRow][curCol] = this->matrix.data[curCol][curRow];
+			this->matrix.data[curCol][curRow] = store;
+
+			if (curCol == 3) {
+				curRow++;
+				i = (curRow * 4) + curRow;
+			}
+		}
+
+	}
+
+	float Determinate() {
+
+		float det = 0;
+
+		return det;
+	}
+
+	void Inverse() {
+
+	}
+
+	DreamMatrix3X3 Get3X3() {
+
+		DreamMatrix3X3 newMatrix = DreamMatrix3X3();
+
+		for (int i = 0; i < (3 * 3); i++) {
+			int curRow = i / 3;
+			int curCol = i % 3;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol];
+		}
+		return newMatrix;
+	}
+
+	static DreamMatrix4X4 Identity() {
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+		newMatrix.matrix.data[0][0] = 1;
+		newMatrix.matrix.data[1][1] = 1;
+		newMatrix.matrix.data[2][2] = 1;
+		newMatrix.matrix.data[3][3] = 1;
+
+		return newMatrix;
+	}
+
+#pragma region Operator Overloads
+
+
+	DreamMatrix4X4 operator*(DreamMatrix4X4 m) {
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix.data[curRow][curCol] = (this->matrix.data[curRow][0] * m.matrix.data[0][curCol])
+				+ (this->matrix.data[curRow][1] * m.matrix.data[1][curCol])
+				+ (this->matrix.data[curRow][2] * m.matrix.data[2][curCol])
+				+ (this->matrix.data[curRow][3] * m.matrix.data[3][curCol]);
+
+		}
+		return newMatrix;
+	}
+
+	void operator*=(DreamMatrix4X4 m) {
+
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix.data[curRow][curCol] = (this->matrix.data[curRow][0] * m.matrix.data[0][curCol])
+				+ (this->matrix.data[curRow][1] * m.matrix.data[1][curCol])
+				+ (this->matrix.data[curRow][2] * m.matrix.data[2][curCol])
+				+ (this->matrix.data[curRow][3] * m.matrix.data[3][curCol]);
+
+		}
+
+		*this = newMatrix;
+	}
+	DreamMatrix4X4 operator*(int num) {
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+		return newMatrix;
+	}
+	DreamMatrix4X4  operator*(float num) {
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+		return newMatrix;
+	}
+	void operator*=(int num) {
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+	}
+	void operator*=(float num) {
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] * num;
+		}
+	}
+	DreamMatrix4X4 operator/(int num) {
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+		return newMatrix;
+	}
+	DreamMatrix4X4  operator/(float num) {
+		DreamMatrix4X4 newMatrix = DreamMatrix4X4();
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			newMatrix.matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+		return newMatrix;
+	}
+	void operator/=(int num) {
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+	}
+	void operator/=(float num) {
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			this->matrix.data[curRow][curCol] = this->matrix.data[curRow][curCol] / num;
+		}
+	}
+
+	bool operator==(DreamMatrix4X4 m) {
+		for (int i = 0; i < (4 * 4); i++) {
+			int curRow = i / 4;
+			int curCol = i % 4;
+			float num = this->matrix.data[curRow][curCol] - m.matrix.data[curRow][curCol];
+
+			if (abs(num) > EPSILON) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+#pragma endregion
+
+	std::string ToString() {
+		std::string finalString = "";
+		int matrixSize = 4;
+
+		for (int i = 0; i < (matrixSize * matrixSize); i++) {
+			int curRow = i / matrixSize;
+			int curCol = i % matrixSize;
+
+			if (finalString != "" && curCol == 0) {
+				finalString += "\n";
+			}
+			if (curCol == 0) {
+				finalString += "[ ";
+			}
+
+			finalString += std::to_string(this->matrix.data[curRow][curCol]);
+
+			if (curCol == (matrixSize - 1)) {
+				finalString += "]";
+			}
+			else {
+				finalString += ", ";
+			}
+		}
+
+		return finalString;
+	}
+
+};
 
 
 struct DreamQuaternion {
@@ -1323,18 +1315,18 @@ public:
 	DreamMatrix3X3 GetMatrix() {
 		DreamMatrix3X3 rotMatrix = DreamMatrix3X3();
 
-		rotMatrix.matrix[0][0] = 1 - (2 * (this->qVector.y *this->qVector.y)) - (2 * (this->qVector.z *this->qVector.z));
-		rotMatrix.matrix[1][1] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.z *this->qVector.z));
-		rotMatrix.matrix[2][2] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.y *this->qVector.y));
+		rotMatrix.matrix.data[0][0] = 1 - (2 * (this->qVector.y *this->qVector.y)) - (2 * (this->qVector.z *this->qVector.z));
+		rotMatrix.matrix.data[1][1] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.z *this->qVector.z));
+		rotMatrix.matrix.data[2][2] = 1 - (2 * (this->qVector.x *this->qVector.x)) - (2 * (this->qVector.y *this->qVector.y));
 
-		rotMatrix.matrix[0][1] = (2 * this->qVector.x * this->qVector.y) + (2 * this->qVector.z * this->wScalar);
-		rotMatrix.matrix[1][0] = (2 * this->qVector.x * this->qVector.y) - (2 * this->qVector.z * this->wScalar);
+		rotMatrix.matrix.data[0][1] = (2 * this->qVector.x * this->qVector.y) + (2 * this->qVector.z * this->wScalar);
+		rotMatrix.matrix.data[1][0] = (2 * this->qVector.x * this->qVector.y) - (2 * this->qVector.z * this->wScalar);
 
-		rotMatrix.matrix[0][2] = (2 * this->qVector.x * this->qVector.z) - (2 * this->qVector.y * this->wScalar);
-		rotMatrix.matrix[2][0] = (2 * this->qVector.x * this->qVector.z) + (2 * this->qVector.y * this->wScalar);
+		rotMatrix.matrix.data[0][2] = (2 * this->qVector.x * this->qVector.z) - (2 * this->qVector.y * this->wScalar);
+		rotMatrix.matrix.data[2][0] = (2 * this->qVector.x * this->qVector.z) + (2 * this->qVector.y * this->wScalar);
 
-		rotMatrix.matrix[1][2] = (2 * this->qVector.y * this->qVector.z) + (2 * this->qVector.x * this->wScalar);
-		rotMatrix.matrix[2][1] = (2 * this->qVector.y * this->qVector.z) - (2 * this->qVector.x * this->wScalar);
+		rotMatrix.matrix.data[1][2] = (2 * this->qVector.y * this->qVector.z) + (2 * this->qVector.x * this->wScalar);
+		rotMatrix.matrix.data[2][1] = (2 * this->qVector.y * this->qVector.z) - (2 * this->qVector.x * this->wScalar);
 
 		rotMatrix.FixFloatingPointError();
 
@@ -1422,18 +1414,13 @@ public:
 
 
 
-
-
-
-
-
 // More Static functions
 
 static DreamMatrix4X4 CreateTranslationMatrix(float x, float y, float z) {
 	DreamMatrix4X4 translationMatrix = DreamMatrix4X4::Identity();
-	translationMatrix.matrix[3][0] = x;
-	translationMatrix.matrix[3][1] = y;
-	translationMatrix.matrix[3][2] = z;
+	translationMatrix.matrix.data[3][0] = x;
+	translationMatrix.matrix.data[3][1] = y;
+	translationMatrix.matrix.data[3][2] = z;
 	return translationMatrix;
 }
 static DreamMatrix4X4 CreateRotationMatrix(float x, float y, float z) {
@@ -1441,47 +1428,47 @@ static DreamMatrix4X4 CreateRotationMatrix(float x, float y, float z) {
 	DreamMatrix3X3 rotMatrixY = DreamMatrix3X3();
 	DreamMatrix3X3 rotMatrixZ = DreamMatrix3X3();
 
-	rotMatrixX.matrix[0][0] = 1;
-	rotMatrixX.matrix[1][1] = DreamMath::cos(x);
-	rotMatrixX.matrix[1][2] = DreamMath::sin(x);
-	rotMatrixX.matrix[2][1] = -DreamMath::sin(x);
-	rotMatrixX.matrix[2][2] = DreamMath::cos(x);
+	rotMatrixX.matrix.data[0][0] = 1;
+	rotMatrixX.matrix.data[1][1] = DreamMath::cos(x);
+	rotMatrixX.matrix.data[1][2] = DreamMath::sin(x);
+	rotMatrixX.matrix.data[2][1] = -DreamMath::sin(x);
+	rotMatrixX.matrix.data[2][2] = DreamMath::cos(x);
 
-	rotMatrixY.matrix[1][1] = 1;
-	rotMatrixY.matrix[0][0] = DreamMath::cos(y);
-	rotMatrixY.matrix[0][2] = -DreamMath::sin(y);
-	rotMatrixY.matrix[2][0] = DreamMath::sin(y);
-	rotMatrixY.matrix[2][2] = DreamMath::cos(y);
+	rotMatrixY.matrix.data[1][1] = 1;
+	rotMatrixY.matrix.data[0][0] = DreamMath::cos(y);
+	rotMatrixY.matrix.data[0][2] = -DreamMath::sin(y);
+	rotMatrixY.matrix.data[2][0] = DreamMath::sin(y);
+	rotMatrixY.matrix.data[2][2] = DreamMath::cos(y);
 
-	rotMatrixZ.matrix[2][2] = 1;
-	rotMatrixZ.matrix[0][0] = DreamMath::cos(z);
-	rotMatrixZ.matrix[0][1] = DreamMath::sin(z);
-	rotMatrixZ.matrix[1][0] = -DreamMath::sin(z);
-	rotMatrixZ.matrix[1][1] = DreamMath::cos(z);
+	rotMatrixZ.matrix.data[2][2] = 1;
+	rotMatrixZ.matrix.data[0][0] = DreamMath::cos(z);
+	rotMatrixZ.matrix.data[0][1] = DreamMath::sin(z);
+	rotMatrixZ.matrix.data[1][0] = -DreamMath::sin(z);
+	rotMatrixZ.matrix.data[1][1] = DreamMath::cos(z);
 
 	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
 
 	finalRotMatrix.FixFloatingPointError();
 
 	DreamMatrix4X4 final4X4Mat = finalRotMatrix;
-	final4X4Mat.matrix[3][3] = 1;
+	final4X4Mat.matrix.data[3][3] = 1;
 
 	return final4X4Mat;
 }
 static DreamMatrix4X4 CreateScaleMatrix(float x, float y, float z) {
 	DreamMatrix4X4 scaleMatrix = DreamMatrix4X4();
-	scaleMatrix.matrix[0][0] = x;
-	scaleMatrix.matrix[1][1] = y;
-	scaleMatrix.matrix[2][2] = z;
-	scaleMatrix.matrix[3][3] = 1;
+	scaleMatrix.matrix.data[0][0] = x;
+	scaleMatrix.matrix.data[1][1] = y;
+	scaleMatrix.matrix.data[2][2] = z;
+	scaleMatrix.matrix.data[3][3] = 1;
 	return scaleMatrix;
 }
 
 static DreamMatrix4X4 CreateTranslationMatrix(DreamVector3 translation) {
 	DreamMatrix4X4 translationMatrix = DreamMatrix4X4::Identity();
-	translationMatrix.matrix[3][0] = translation.x;
-	translationMatrix.matrix[3][1] = translation.y;
-	translationMatrix.matrix[3][2] = translation.z;
+	translationMatrix.matrix.data[3][0] = translation.x;
+	translationMatrix.matrix.data[3][1] = translation.y;
+	translationMatrix.matrix.data[3][2] = translation.z;
 	return translationMatrix;
 }
 static DreamMatrix4X4 CreateRotationMatrix(DreamVector3 rotation) {
@@ -1489,45 +1476,45 @@ static DreamMatrix4X4 CreateRotationMatrix(DreamVector3 rotation) {
 	DreamMatrix3X3 rotMatrixY = DreamMatrix3X3();
 	DreamMatrix3X3 rotMatrixZ = DreamMatrix3X3();
 
-	rotMatrixX.matrix[0][0] = 1;
-	rotMatrixX.matrix[1][1] = DreamMath::cos(rotation.x);
-	rotMatrixX.matrix[1][2] = DreamMath::sin(rotation.x);
-	rotMatrixX.matrix[2][1] = -DreamMath::sin(rotation.x);
-	rotMatrixX.matrix[2][2] = DreamMath::cos(rotation.x);
+	rotMatrixX.matrix.data[0][0] = 1;
+	rotMatrixX.matrix.data[1][1] = DreamMath::cos(rotation.x);
+	rotMatrixX.matrix.data[1][2] = DreamMath::sin(rotation.x);
+	rotMatrixX.matrix.data[2][1] = -DreamMath::sin(rotation.x);
+	rotMatrixX.matrix.data[2][2] = DreamMath::cos(rotation.x);
 
-	rotMatrixY.matrix[1][1] = 1;
-	rotMatrixY.matrix[0][0] = DreamMath::cos(rotation.y);
-	rotMatrixY.matrix[0][2] = -DreamMath::sin(rotation.y);
-	rotMatrixY.matrix[2][0] = DreamMath::sin(rotation.y);
-	rotMatrixY.matrix[2][2] = DreamMath::cos(rotation.y);
+	rotMatrixY.matrix.data[1][1] = 1;
+	rotMatrixY.matrix.data[0][0] = DreamMath::cos(rotation.y);
+	rotMatrixY.matrix.data[0][2] = -DreamMath::sin(rotation.y);
+	rotMatrixY.matrix.data[2][0] = DreamMath::sin(rotation.y);
+	rotMatrixY.matrix.data[2][2] = DreamMath::cos(rotation.y);
 
-	rotMatrixZ.matrix[2][2] = 1;
-	rotMatrixZ.matrix[0][0] = DreamMath::cos(rotation.z);
-	rotMatrixZ.matrix[0][1] = DreamMath::sin(rotation.z);
-	rotMatrixZ.matrix[1][0] = -DreamMath::sin(rotation.z);
-	rotMatrixZ.matrix[1][1] = DreamMath::cos(rotation.z);
+	rotMatrixZ.matrix.data[2][2] = 1;
+	rotMatrixZ.matrix.data[0][0] = DreamMath::cos(rotation.z);
+	rotMatrixZ.matrix.data[0][1] = DreamMath::sin(rotation.z);
+	rotMatrixZ.matrix.data[1][0] = -DreamMath::sin(rotation.z);
+	rotMatrixZ.matrix.data[1][1] = DreamMath::cos(rotation.z);
 
 	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
 
 	finalRotMatrix.FixFloatingPointError();
 
 	DreamMatrix4X4 final4X4Mat = finalRotMatrix;
-	final4X4Mat.matrix[3][3] = 1;
+	final4X4Mat.matrix.data[3][3] = 1;
 
 	return final4X4Mat;
 }
 static DreamMatrix4X4 CreateScaleMatrix(DreamVector3 scale) {
 	DreamMatrix4X4 scaleMatrix = DreamMatrix4X4();
-	scaleMatrix.matrix[0][0] = scale.x;
-	scaleMatrix.matrix[1][1] = scale.y;
-	scaleMatrix.matrix[2][2] = scale.z;
-	scaleMatrix.matrix[3][3] = 1;
+	scaleMatrix.matrix.data[0][0] = scale.x;
+	scaleMatrix.matrix.data[1][1] = scale.y;
+	scaleMatrix.matrix.data[2][2] = scale.z;
+	scaleMatrix.matrix.data[3][3] = 1;
 	return scaleMatrix;
 }
 
 
 static DreamVector3 GetEulerFrom3X3Rot(DreamMatrix3X3 mat) {
-
+	return DreamVector3();
 }
 
 
@@ -1543,7 +1530,6 @@ public:
 		scale = DreamVector3(1.0f, 1.0f, 1.0f);
 	}
 	DreamVector3 position;
-	DreamVector3 rotation;
 	DreamVector3 scale;
 
 	DreamMatrix4X4 GetWorldMatrix() {
@@ -1562,19 +1548,43 @@ public:
 		return right;
 	}
 
+	void UpdateAxis() {
+		this->forward.Normalize();
+		this->right = DreamVector3::Cross(this->forward, this->up).GetNormalizedVector();
+		this->up = DreamVector3::Cross(this->right, this->forward).GetNormalizedVector();
+	}
+
+	DreamVector3 GetRotation() {
+		return rotation;
+	}
+
+	void SetRotation(DreamVector3 newRot) {
+		rotation = newRot;
+		DreamQuaternion quat = DreamQuaternion::MakeQuaternionEuler(rotation);
+
+		this->forward = quat.RotateVector(DreamVector3(0.0f, 0.0f, 1.0f));
+		UpdateAxis();
+	}
+
+	void Rotate(DreamVector3 rot) {
+		rotation += rot;
+		DreamQuaternion quat = DreamQuaternion::MakeQuaternionEuler(rotation);
+
+		this->forward = quat.RotateVector(DreamVector3(0.0f, 0.0f, 1.0f));
+		UpdateAxis();
+	}
+
 	void SetForward(DreamVector3 newForward) {
 
 		this->forward = newForward;
-		this->right = DreamVector3::Cross(this->forward, this->up);
-		this->up = DreamVector3::Cross(this->right, this->forward);
+		UpdateAxis();
 
 		SetRotationFromDirections();
 	}
 	void SetUp(DreamVector3 newUp) {
 
 		this->up = newUp;
-		this->forward = DreamVector3::Cross(this->up, this->right);
-		this->right = DreamVector3::Cross(this->forward, this->up);
+		UpdateAxis();
 
 		SetRotationFromDirections();
 	}
@@ -1598,6 +1608,8 @@ public:
 	}
 
 private:
+	DreamVector3 rotation;
+
 	DreamVector3 forward;
 	DreamVector3 up;
 	DreamVector3 right;
@@ -1610,22 +1622,53 @@ private:
 
 		DreamMatrix3X3 newRot = DreamMatrix3X3();
 
-		newRot.matrix[0][0] = this->right.x;
-		newRot.matrix[0][1] = this->right.y;
-		newRot.matrix[0][2] = this->right.z;
+		newRot.matrix.data[0][0] = this->right.x;
+		newRot.matrix.data[0][1] = this->right.y;
+		newRot.matrix.data[0][2] = this->right.z;
 
-		newRot.matrix[1][0] = this->up.x;
-		newRot.matrix[1][1] = this->up.y;
-		newRot.matrix[1][2] = this->up.z;
+		newRot.matrix.data[1][0] = this->up.x;
+		newRot.matrix.data[1][1] = this->up.y;
+		newRot.matrix.data[1][2] = this->up.z;
 
-		newRot.matrix[2][0] = this->forward.x;
-		newRot.matrix[2][1] = this->forward.y;
-		newRot.matrix[2][2] = this->forward.z;
+		newRot.matrix.data[2][0] = this->forward.x;
+		newRot.matrix.data[2][1] = this->forward.y;
+		newRot.matrix.data[2][2] = this->forward.z;
 
 		rotation = DreamMath::GetEulerFrom3X3Rot(newRot);
 	}
 };
 
+static DreamMatrix4X4 CreateProjectionMatix(const float& angleOfView, const float& near, const float& far) {
+
+	DreamMatrix4X4 projMat;
+	// set the basic projection matrix
+	float scale = 1 / DreamMath::tan(angleOfView * 0.5 * PI / 180);
+	projMat.matrix.data[0][0] = scale;  //scale the x coordinates of the projected point 
+	projMat.matrix.data[1][1] = scale;  //scale the y coordinates of the projected point 
+	projMat.matrix.data[2][2] = -far / (far - near);  //used to remap z to [0,1] 
+	projMat.matrix.data[3][2] = -far * near / (far - near);  //used to remap z [0,1] 
+	projMat.matrix.data[2][3] = -1;  //set w = -z 
+	projMat.matrix.data[3][3] = 0;
+
+	return projMat;
+}
+
+static DreamMatrix4X4 LookAtViewMatix(DreamVector3 eye, DreamVector3 target, DreamVector3 up) {
+	DreamVector3 zaxis = (eye - target).GetNormalizedVector();   // The "forward" vector.
+	DreamVector3 xaxis = (DreamVector3::Cross(up, zaxis)).GetNormalizedVector();// The "right" vector.
+	DreamVector3 yaxis = DreamVector3::Cross(zaxis, xaxis);     // The "up" vector.
+
+	DreamVector3 waxis = DreamVector3(-DreamVector3::Dot(xaxis, eye), -DreamVector3::Dot(yaxis, eye), -DreamVector3::Dot(zaxis, eye));
+
+	DreamMatrix4X4 lookAtMat;
+	lookAtMat.matrix.xRow = DreamVector4(xaxis, 0);
+	lookAtMat.matrix.yRow = DreamVector4(yaxis, 0);
+	lookAtMat.matrix.zRow = DreamVector4(zaxis, 0);
+	lookAtMat.Transpose();
+	lookAtMat.matrix.wRow = DreamVector4(waxis, 1);
+
+	return lookAtMat;
+}
 
 };
 

@@ -104,20 +104,20 @@ static void MathUnitTestRun() {
 
 	DreamMatrix4X4 test = DreamMatrix4X4();
 
-	test.matrix[0][0] = 4;
-	test.matrix[0][1] = 4;
-	test.matrix[0][2] = 4;
-	test.matrix[0][3] = 4;
+	test.matrix.data[0][0] = 4;
+	test.matrix.data[0][1] = 4;
+	test.matrix.data[0][2] = 4;
+	test.matrix.data[0][3] = 4;
 
-	test.matrix[1][0] = 4;
-	test.matrix[1][1] = 4;
-	test.matrix[1][2] = 4;
-	test.matrix[1][3] = 4;
+	test.matrix.data[1][0] = 4;
+	test.matrix.data[1][1] = 4;
+	test.matrix.data[1][2] = 4;
+	test.matrix.data[1][3] = 4;
 
-	test.matrix[2][0] = 4;
-	test.matrix[2][1] = 4;
-	test.matrix[2][2] = 4;
-	test.matrix[2][3] = 4;
+	test.matrix.data[2][0] = 4;
+	test.matrix.data[2][1] = 4;
+	test.matrix.data[2][2] = 4;
+	test.matrix.data[2][3] = 4;
 
 	test *= 2;
 	indentity *= 2;
@@ -180,15 +180,15 @@ static void MathUnitTestRun() {
 
 
 	DreamMatrix3X3 testMat = DreamMatrix3X3();
-	testMat.matrix[0][2] = 1;
+	testMat.matrix.data[0][2] = 1;
 
-	testMat.matrix[1][0] = 2;
-	testMat.matrix[1][1] = -1;
-	testMat.matrix[1][2] = 3;
+	testMat.matrix.data[1][0] = 2;
+	testMat.matrix.data[1][1] = -1;
+	testMat.matrix.data[1][2] = 3;
 
-	testMat.matrix[2][0] = 1; 
-	testMat.matrix[2][1] = 1;
-	testMat.matrix[2][2] = 4;
+	testMat.matrix.data[2][0] = 1; 
+	testMat.matrix.data[2][1] = 1;
+	testMat.matrix.data[2][2] = 4;
 
 	DreamMatrix3X3 storeMat = testMat;
 

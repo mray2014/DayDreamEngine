@@ -141,3 +141,45 @@ float DreamMath::FixFloatingPointError(float num)
 }
 
 #endif
+
+DreamMath::DreamVector3 DreamMath::DreamVector3::operator* (DreamMath::DreamMatrix3X3 m) {
+	DreamVector3 newVec = DreamMath::DreamVector3();
+
+	newVec.x = (this->x * m.matrix.data[0][0]) + (this->y * m.matrix.data[1][0]) + (this->z * m.matrix.data[2][0]);
+	newVec.y = (this->x * m.matrix.data[0][1]) + (this->y * m.matrix.data[1][1]) + (this->z * m.matrix.data[2][1]);
+	newVec.z = (this->x * m.matrix.data[0][2]) + (this->y * m.matrix.data[1][2]) + (this->z * m.matrix.data[2][2]);
+
+	return newVec;
+}
+void DreamMath::DreamVector3::operator*= (DreamMath::DreamMatrix3X3 m) {
+	DreamMath::DreamVector3 newVec = DreamMath::DreamVector3();
+
+	newVec.x = (this->x * m.matrix.data[0][0]) + (this->y * m.matrix.data[1][0]) + (this->z * m.matrix.data[2][0]);
+	newVec.y = (this->x * m.matrix.data[0][1]) + (this->y * m.matrix.data[1][1]) + (this->z * m.matrix.data[2][1]);
+	newVec.z = (this->x * m.matrix.data[0][2]) + (this->y * m.matrix.data[1][2]) + (this->z * m.matrix.data[2][2]);
+
+	*this = newVec;
+}
+
+
+DreamMath::DreamVector4 DreamMath::DreamVector4::operator* (DreamMath::DreamMatrix4X4 m) {
+	DreamMath::DreamVector4 newVec = DreamMath::DreamVector4();
+
+	newVec.x = (this->x * m.matrix.data[0][0]) + (this->y * m.matrix.data[1][0]) + (this->z * m.matrix.data[2][0]) + (this->w * m.matrix.data[3][0]);
+	newVec.y = (this->x * m.matrix.data[0][1]) + (this->y * m.matrix.data[1][1]) + (this->z * m.matrix.data[2][1]) + (this->w * m.matrix.data[3][1]);
+	newVec.z = (this->x * m.matrix.data[0][2]) + (this->y * m.matrix.data[1][2]) + (this->z * m.matrix.data[2][2]) + (this->w * m.matrix.data[3][2]);
+	newVec.w = (this->x * m.matrix.data[0][3]) + (this->y * m.matrix.data[1][3]) + (this->z * m.matrix.data[2][3]) + (this->w * m.matrix.data[3][3]);
+
+	return newVec;
+}
+
+void DreamMath::DreamVector4::operator*= (DreamMath::DreamMatrix4X4 m) {
+	DreamMath::DreamVector4 newVec = DreamMath::DreamVector4();
+
+	newVec.x = (this->x * m.matrix.data[0][0]) + (this->y * m.matrix.data[1][0]) + (this->z * m.matrix.data[2][0]) + (this->w * m.matrix.data[3][0]);
+	newVec.y = (this->x * m.matrix.data[0][1]) + (this->y * m.matrix.data[1][1]) + (this->z * m.matrix.data[2][1]) + (this->w * m.matrix.data[3][1]);
+	newVec.z = (this->x * m.matrix.data[0][2]) + (this->y * m.matrix.data[1][2]) + (this->z * m.matrix.data[2][2]) + (this->w * m.matrix.data[3][2]);
+	newVec.w = (this->x * m.matrix.data[0][3]) + (this->y * m.matrix.data[1][3]) + (this->z * m.matrix.data[2][3]) + (this->w * m.matrix.data[3][3]);
+
+	*this = newVec;
+}

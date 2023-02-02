@@ -9,14 +9,17 @@ public:
 
 	virtual void Update() override;
 
+	bool isClicking = false;
 
 	float cameraSpeed = 1.0f;
-	float fieldofView = 25.0f;
-	float NearclipDist = 0.1f;
-	float FarclipDist = 100.0f;
+
+
+	float fieldOfView = 90.0f;
+	float nearClipDist = 0.1f;
+	float farClipDist = 1000.0f;
 
 	DreamMath::DreamMatrix4X4 viewMat;
-	DreamMath::DreamMatrix4X4 ProjectionMat;
+	DreamMath::DreamMatrix4X4 projectionMat;
 private:
 
 

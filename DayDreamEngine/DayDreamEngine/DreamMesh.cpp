@@ -47,9 +47,10 @@ DreamMesh::~DreamMesh()
 
 void DreamMesh::DrawOpaque()
 {
+
 	if (shaderLink) {
 		shaderLink->BindShaderLink();
-		vertArray->Bind();
+		vertArray->Bind();	
 
 		if (vertArray->indexBuffer) {
 			graphics->DrawWithIndex(indicesCount);
