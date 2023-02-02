@@ -124,14 +124,13 @@ int main()
 	while (!graphics->CheckWindowClose())
 	{
 		DreamTimeManager::Update();
-		//printf("%f\n", DreamTimeManager::GetDeltaTime());
 
 		// Controller
 		graphics->CheckInputs();
 
 		// Model
 		camera.Update();
-		printf("%s\n", camera.transform.position.ToString().c_str());
+		//printf("%s\n", camera.transform.position.ToString().c_str());
 
 		// View
 		graphics->ClearScreen();

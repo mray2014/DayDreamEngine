@@ -11,6 +11,9 @@ public:
 
 
 	float cameraSpeed = 1.0f;
+	float fieldofView = 25.0f;
+	float NearclipDist = 0.1f;
+	float FarclipDist = 100.0f;
 
 	DreamMath::DreamMatrix4X4 viewMat;
 	DreamMath::DreamMatrix4X4 ProjectionMat;

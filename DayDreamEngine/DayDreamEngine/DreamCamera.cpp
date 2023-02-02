@@ -1,6 +1,7 @@
 #include "DreamCamera.h"
 #include <DreamInput.h>
 #include <DreamTimeManager.h>
+#include "DreamGraphics.h"
 
 DreamCamera::DreamCamera() : DreamGameObject()
 {
@@ -12,9 +13,9 @@ DreamCamera::~DreamCamera()
 
 void DreamCamera::Update()
 {
-	float deltaTime = DreamTimeManager::GetDeltaTime();
+	float deltaTime = DreamTimeManager::deltaTime;
 
-	if (DreamInput::KeyDown(KeyCode::W)) {
+ 	if (DreamInput::KeyDown(KeyCode::W)) {
 		transform.position += (transform.GetForward() * cameraSpeed) * deltaTime;
 	}
 	if (DreamInput::KeyDown(KeyCode::A)) {
@@ -26,6 +27,8 @@ void DreamCamera::Update()
 	if (DreamInput::KeyDown(KeyCode::D)) {
 		transform.position += (transform.GetRight() * cameraSpeed) * deltaTime;
 	}
+
+	float aspectratio = DreamGraphics::GetAspectRatio();
 
 	// Perspective matrix
 	// Update our projection matrix since the window size changed

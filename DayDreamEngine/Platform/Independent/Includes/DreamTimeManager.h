@@ -1,10 +1,12 @@
 #pragma once
 
-namespace DreamTimeManager {
+class DreamTimeManager {
+public:
+	static void Init();
+	static void Update();
 
-	void Init();
-	void Update();
-
-	float GetDeltaTime();
+	static float timeScale;
+	static float totalTime;
+	static float deltaTime;
 
 };

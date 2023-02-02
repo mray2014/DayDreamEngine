@@ -10,8 +10,6 @@ public:
 	DreamMath::DreamTransform transform;
 
 	virtual void Update() {};
-
-	DreamMath::DreamMatrix4X4 GetWorldMatrix();
 private:
 
 };

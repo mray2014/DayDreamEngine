@@ -73,6 +73,13 @@ DreamShaderLinker* DreamGraphics::GenerateShaderLinker()
 	return link;
 }
 
+float DreamGraphics::GetAspectRatio() {
+	if (myGrpahics)
+	{
+		return (float)myGrpahics->width / (float)myGrpahics->height;
+	}
+}
+
 DreamGraphics::~DreamGraphics()
 {
 }

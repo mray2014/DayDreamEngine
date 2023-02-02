@@ -2,34 +2,32 @@
 #include "DreamMath.h"
 #include <chrono>
 
-namespace DreamTimeManager {
-
-	static float totalTime = 0.0f;
-	static float deltaTime = 0.0f;
+	float DreamTimeManager::totalTime = 0.0f;
+	float DreamTimeManager::deltaTime = 0.0f;
+	float DreamTimeManager::timeScale = 1.0f;
 
 	using TimePoint = std::chrono::steady_clock::time_point;
 
-	static std::chrono::high_resolution_clock clock;
 	static TimePoint startTime;
 	static TimePoint currentTime;
 	static TimePoint prevTime;
 
-	void Init()
+
+	void DreamTimeManager::Init()
 	{
-		currentTime = clock.now();
+		std::chrono::high_resolution_clock clock;
+		startTime = clock.now();
+		currentTime = startTime;
+		prevTime = startTime;
 	}
 
-	void Update()
+	void DreamTimeManager::Update()
 	{
+		static std::chrono::high_resolution_clock clock;
 		prevTime = currentTime;
 		currentTime = clock.now();
 
 		auto time = std::chrono::duration<float>(currentTime - prevTime);
 
-		deltaTime = time.count();
+		deltaTime = time.count() * timeScale;
 	}
-	float GetDeltaTime()
-	{
-		return deltaTime;
-	}
-}

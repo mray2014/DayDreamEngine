@@ -32,6 +32,8 @@ class DreamGraphics
 public:
 	static DreamGraphics* GetInstance();
 	static DreamShaderLinker* GenerateShaderLinker();
+	static float GetAspectRatio();
+
 	~DreamGraphics();
 
 	virtual long InitWindow(int w, int h, const char* title) = 0;
