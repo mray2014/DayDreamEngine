@@ -22,7 +22,7 @@ bool DreamFileIO::OpenFileRead_W(const wchar_t* filePath, int mode)
 	bool fileOpened = readFileStream_W.is_open();
 
 	if (!fileOpened) {
-		printf("FILE DOES NOT EXIST");
+		printf("FILE DOES NOT EXIST"); 
 	}
 	else {
 		line_W = new std::wstring();
