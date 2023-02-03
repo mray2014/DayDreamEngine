@@ -5,6 +5,7 @@
 
 using namespace DreamInput;
 bool allKeys[256];
+//HWND hwnd;
 
 struct ThumbStick {
 	float x;
@@ -402,4 +403,26 @@ void DreamInput::UpdateRStick()
 	{
 		RightStick.normalizedY = 0.0f;
 	}
+}
+
+DreamMath::DreamVector2 DreamInput::GetMousePosScreen()
+{
+	POINT p;
+	if (GetCursorPos(&p))
+	{
+		return DreamMath::DreamVector2((float)p.x, (float)p.y);
+	}
+
+	return DreamMath::DreamVector2();
+}
+
+DreamMath::DreamVector2 DreamInput::GetMousePosWindow()
+{
+	//POINT p;
+	//if (ScreenToClient(hwnd, &p))
+	//{
+		//return DreamMath::DreamVector2(p.x, p.y);
+	//}
+
+	return DreamMath::DreamVector2();
 }

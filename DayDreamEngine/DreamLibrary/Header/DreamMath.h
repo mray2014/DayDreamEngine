@@ -1530,7 +1530,6 @@ public:
 		scale = DreamVector3(1.0f, 1.0f, 1.0f);
 	}
 	DreamVector3 position;
-	DreamVector3 rotation;
 	DreamVector3 scale;
 
 	DreamMatrix4X4 GetWorldMatrix() {
@@ -1549,10 +1548,32 @@ public:
 		return right;
 	}
 
+	void UpdateAxis() {
+		this->forward.Normalize();
+		this->right = DreamVector3::Cross(this->forward, DreamVector3(0.0f, 1.0f, 0.0f));
+		this->up = DreamVector3::Cross(this->right, this->forward);
+	}
+
+	void SetRotation(DreamVector3 newRot) {
+		this->rotation = newRot;
+		DreamQuaternion quat = DreamQuaternion::MakeQuaternionEuler(this->rotation);
+
+		this->forward = quat.RotateVector(0,0,1);
+		UpdateAxis();
+	}
+
+	void Rotate(DreamVector3 rot) {
+		this->rotation += rot;
+		DreamQuaternion quat = DreamQuaternion::MakeQuaternionEuler(this->rotation);
+
+		this->forward = quat.RotateVector(0, 0, 1);
+		UpdateAxis();
+	}
+
 	void SetForward(DreamVector3 newForward) {
 
 		this->forward = newForward;
-		this->right = DreamVector3::Cross(this->forward, this->up);
+		this->right = DreamVector3::Cross(this->forward, DreamVector3(0.0f, 1.0f, 0.0f));
 		this->up = DreamVector3::Cross(this->right, this->forward);
 
 		SetRotationFromDirections();
@@ -1560,7 +1581,7 @@ public:
 	void SetUp(DreamVector3 newUp) {
 
 		this->up = newUp;
-		this->forward = DreamVector3::Cross(this->up, this->right);
+		this->forward = DreamVector3::Cross(this->up, DreamVector3(1.0f, 0.0f, 0.0f));
 		this->right = DreamVector3::Cross(this->forward, this->up);
 
 		SetRotationFromDirections();
@@ -1568,7 +1589,7 @@ public:
 	void SetRight(DreamVector3 newRight) {
 
 		this->right = newRight;
-		this->up = DreamVector3::Cross(this->right, this->forward);
+		this->up = DreamVector3::Cross(this->right, DreamVector3(0.0f, 0.0f, 1.0f));
 		this->forward = DreamVector3::Cross(this->up, this->right);
 
 		SetRotationFromDirections();
@@ -1585,6 +1606,8 @@ public:
 	}
 
 private:
+	DreamVector3 rotation;
+
 	DreamVector3 forward;
 	DreamVector3 up;
 	DreamVector3 right;
@@ -1613,17 +1636,18 @@ private:
 	}
 };
 
-static DreamMatrix4X4 CreateProjectionMatix(const float& angleOfView, const float& near, const float& far) {
+static DreamMatrix4X4 CreateProjectionMatix(const float& angleOfView, const float& near, const float& far, const float& aspectRatio, const float& zoom) {
 
 	DreamMatrix4X4 projMat;
 	// set the basic projection matrix
-	float scale = 1 / DreamMath::tan(angleOfView * 0.5 * PI / 180);
-	projMat.matrix.data[0][0] = scale;  //scale the x coordinates of the projected point 
-	projMat.matrix.data[1][1] = scale;  //scale the y coordinates of the projected point 
-	projMat.matrix.data[2][2] = -far / (far - near);  //used to remap z to [0,1] 
-	projMat.matrix.data[3][2] = -far * near / (far - near);  //used to remap z [0,1] 
-	projMat.matrix.data[2][3] = -1;  //set w = -z 
-	projMat.matrix.data[3][3] = 0;
+	float scale = 1.0f / (DreamMath::tan(angleOfView * 0.5f) / zoom);
+	float zNormalScale = -far / (far - near);
+	float wNormalScale = zNormalScale * near;
+
+	projMat.matrix.xRow = DreamVector4(aspectRatio * scale, 0.0f, 0.0f, 0.0f);
+	projMat.matrix.yRow = DreamVector4(0.0f, scale, 0.0f, 0.0f);
+	projMat.matrix.zRow = DreamVector4(0.0f, 0.0f, zNormalScale, -1.0f);
+	projMat.matrix.wRow = DreamVector4(0.0f, 0.0f, wNormalScale, 0.0f);
 
 	return projMat;
 }
@@ -1636,11 +1660,11 @@ static DreamMatrix4X4 LookAtViewMatix(DreamVector3 eye, DreamVector3 target, Dre
 	DreamVector3 waxis = DreamVector3(-DreamVector3::Dot(xaxis, eye), -DreamVector3::Dot(yaxis, eye), -DreamVector3::Dot(zaxis, eye));
 
 	DreamMatrix4X4 lookAtMat;
-	lookAtMat.matrix.xRow = DreamVector4(xaxis, 0);
-	lookAtMat.matrix.yRow = DreamVector4(yaxis, 0);
-	lookAtMat.matrix.zRow = DreamVector4(zaxis, 0);
+	lookAtMat.matrix.xRow = DreamVector4(xaxis, 0.0f);
+	lookAtMat.matrix.yRow = DreamVector4(yaxis, 0.0f);
+	lookAtMat.matrix.zRow = DreamVector4(zaxis, 0.0f);
 	lookAtMat.Transpose();
-	lookAtMat.matrix.wRow = DreamVector4(waxis, 1);
+	lookAtMat.matrix.wRow = DreamVector4(waxis, 1.0f);
 
 	return lookAtMat;
 }

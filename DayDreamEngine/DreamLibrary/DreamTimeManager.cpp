@@ -29,5 +29,6 @@
 
 		auto time = std::chrono::duration<float>(currentTime - prevTime);
 
+		totalTime = std::chrono::duration<float>(currentTime - startTime).count();
 		deltaTime = time.count() * timeScale;
 	}

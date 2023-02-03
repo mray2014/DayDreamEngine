@@ -4,10 +4,11 @@
 #include <GLFW\glfw3.h>
 #include <vector>
 
-#include <glm\glm.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/euler_angles.hpp>
+//#include <glm\glm.hpp>
+//#include <glm/gtx/transform.hpp>
+//#include <glm/gtx/euler_angles.hpp>
 
+#include <DreamTimeManager.h>
 #include "DreamCameraManager.h"
 
 GLFWwindow* window = nullptr;
@@ -267,78 +268,81 @@ void DreamGLGraphics::DrawWithIndex(size_t size) {
 
 	DreamMath::DreamMatrix4X4 dreamView = camManager->GetCurrentCam_ViewMat();
 	DreamMath::DreamMatrix4X4 dreamProj = camManager->GetCurrentCam_ProjMat();
-	//glUniformMatrix4fv(2, 1, GL_FALSE, &dreamView.matrix.data[0][0]);
-	//glUniformMatrix4fv(3, 1, GL_FALSE, &dreamProj.matrix.data[0][0]);
 
-	float zoom = 1.0f;
-
-	//float fovy = 3.14159f * 0.25f / zoom;
-	//float aspect = DreamGraphics::GetAspectRatio();
-	//float aspect = 1.0f;
-	//float zNear = 0.01f;
-	//float zFar = 1000.0f;
-
-	float aspect = DreamGraphics::GetAspectRatio();
-	float fovy = ((180.0f - camManager->currentCamera->fieldOfView) * DEG2RAD) / zoom;
-	float zNear = camManager->currentCamera->nearClipDist;
-	float zFar = camManager->currentCamera->farClipDist;
-
-	DreamVector3 pos = camManager->currentCamera->transform.position;
-	DreamVector3 forward = camManager->currentCamera->transform.GetForward();
-
-	glm::vec3 camPos = glm::vec3(pos.x, pos.y, pos.z);
-	glm::vec3 camForward = glm::vec3(forward.x, forward.y, -forward.z);
-	glm::vec3 camCenter = camPos + camForward;
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::mat4 view = glm::lookAt(camPos, camCenter, up);
-	glm::mat4 proj = glm::perspective(fovy, aspect, zNear, zFar);
 
 	DreamMath::DreamTransform transform;
 	DreamMath::DreamMatrix4X4 worldMat = transform.GetWorldMatrix();
 
 	glUniformMatrix4fv(1, 1, GL_FALSE, &worldMat.matrix.data[0][0]);
-	glUniformMatrix4fv(2, 1, GL_FALSE, &view[0][0]);
-	glUniformMatrix4fv(3, 1, GL_FALSE, &proj[0][0]);
+	glUniformMatrix4fv(2, 1, GL_FALSE, &dreamView.matrix.data[0][0]);
+	glUniformMatrix4fv(3, 1, GL_FALSE, &dreamProj.matrix.data[0][0]);
+
+	DreamVector4 meshColor(1.0f, 1.0f, 1.0f, 1.0f);
+	float time = DreamTimeManager::totalTime;
+	glUniform4fv(4, 1, &meshColor.x);
+	glUniform1f(5, time);
+	
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, (void*)0);
 }
 
 void DreamGLGraphics::DrawWithVertex(size_t size) {
-
 	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
+
+	{
+		/// ===============================================
+		/// ======Using OpenGL to make a proper Proj Matrix
+		/// ===============================================
+
+		//float fovy = 3.14159f * 0.25f / zoom;
+		//float aspect = DreamGraphics::GetAspectRatio();
+		//float aspect = 1.0f;
+		//float zNear = 0.01f;
+		//float zFar = 1000.0f;
+
+		//float aspect = DreamGraphics::GetAspectRatio();
+		//float fovy = ((180.0f - camManager->currentCamera->fieldOfView) * DEG2RAD) / zoom;
+		//float zNear = camManager->currentCamera->nearClipDist;
+		//float zFar = camManager->currentCamera->farClipDist;
+
+		//glm::mat4 proj = glm::perspective(fovy, aspect, zNear, zFar);
+		//glUniformMatrix4fv(3, 1, GL_FALSE, &proj[0][0]);
+
+
+
+		/// ===============================================
+		/// ======Using OpenGL to make a proper View Matrix
+		/// ===============================================
+		//DreamVector3 pos = camManager->currentCamera->transform.position;
+		//DreamVector3 forward = camManager->currentCamera->transform.GetForward();
+
+		//glm::vec3 camPos = glm::vec3(pos.x, pos.y, pos.z);
+		//glm::vec3 camForward = glm::vec3(forward.x, forward.y, forward.z);
+		//glm::vec3 camCenter = camPos + camForward;
+		//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		//glm::mat4 view = glm::lookAt(camPos, camCenter, up);
+		//glUniformMatrix4fv(2, 1, GL_FALSE, &view[0][0]);
+		//glUniformMatrix4fv(2, 1, GL_FALSE, &view[0][0]);
+	}
+
+
+
 	DreamMath::DreamMatrix4X4 dreamView = camManager->GetCurrentCam_ViewMat();
 	DreamMath::DreamMatrix4X4 dreamProj = camManager->GetCurrentCam_ProjMat();
-	//glUniformMatrix4fv(2, 1, GL_FALSE, &dreamView.matrix.data[0][0]);
-	//glUniformMatrix4fv(3, 1, GL_FALSE, &dreamProj.matrix.data[0][0]);
-
-	float zoom = 1.0f;
 	
-	//float fovy = 3.14159f * 0.25f / zoom;
-	//float aspect = DreamGraphics::GetAspectRatio();
-	//float aspect = 1.0f;
-	//float zNear = 0.01f;
-	//float zFar = 1000.0f;
-
-	float aspect = DreamGraphics::GetAspectRatio();
-	float fovy = ((180.0f - camManager->currentCamera->fieldOfView) * DEG2RAD)/ zoom;
-	float zNear = camManager->currentCamera->nearClipDist;
-	float zFar = camManager->currentCamera->farClipDist;
-
-	DreamVector3 pos = camManager->currentCamera->transform.position;
-	
-	glm::vec3 camPos = glm::vec3(pos.x, pos.y, pos.z);
-	glm::vec3 camCenter = camPos + glm::vec3(0.0f, 0.0f, -1.0f);
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::mat4 view = glm::lookAt(camPos, camCenter, up);
-	glm::mat4 proj = glm::perspective(fovy, aspect, zNear, zFar);
 
 	DreamMath::DreamTransform transform;
 	DreamMath::DreamMatrix4X4 worldMat = transform.GetWorldMatrix();
 
 	glUniformMatrix4fv(1, 1, GL_FALSE, &worldMat.matrix.data[0][0]);
-	glUniformMatrix4fv(2, 1, GL_FALSE, &view[0][0]);
-	glUniformMatrix4fv(3, 1, GL_FALSE, &proj[0][0]);
+	glUniformMatrix4fv(2, 1, GL_FALSE, &dreamView.matrix.data[0][0]);
+	glUniformMatrix4fv(3, 1, GL_FALSE, &dreamProj.matrix.data[0][0]);
+
+	DreamVector4 meshColor(1.0f, 1.0f, 1.0f, 1.0f);
+	float time = DreamTimeManager::totalTime;
+	glUniform4fv(4, 1, &meshColor.x);
+	glUniform1f(5, time);
 
 	//glDepthMask(GL_TRUE);
 	//glEnable(GL_DEPTH_TEST);

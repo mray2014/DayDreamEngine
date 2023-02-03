@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "DreamMath.h"
 #include "KeyCode.h"
 //#include<unordered_map>
 
@@ -51,4 +52,7 @@ namespace DreamInput
 
 	void UpdateLStick();
 	void UpdateRStick();
+
+	DreamMath::DreamVector2 GetMousePosScreen();
+	DreamMath::DreamVector2 GetMousePosWindow();
 };

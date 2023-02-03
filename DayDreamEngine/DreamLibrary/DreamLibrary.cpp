@@ -126,7 +126,7 @@ static void MathUnitTestRun() {
 
 	DreamTransform newTransform = DreamTransform();
 	newTransform.position = DreamVector3(20,19,400);
-	newTransform.rotation = DreamVector3(0, 20, 90);
+	newTransform.SetRotation(DreamVector3(0, 20, 90));
 	newTransform.scale = DreamVector3(1, 1, 1);
 
 	DreamMatrix4X4 worldMatrix = newTransform.GetWorldMatrix();
