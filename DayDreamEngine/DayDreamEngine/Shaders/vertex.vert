@@ -1,14 +1,18 @@
 #version 450
+#include "DefaultShaderUniformData.h"
 
-layout(location = 0) in vec3 pos;
+struct VertToPixelData{
+	vec4 color;
+	float time;
+};
 
-vec3 positions[3] = vec3[](
-    vec3(0.0, -0.5, 0.0),
-    vec3(0.5, 0.5, 0.0),
-    vec3(-0.5, 0.5, 0.0)
-);
+layout (location = 0) in vec3 pos;
+layout (location = 1) out VertToPixelData data;
 
 void main() {
-    gl_Position = vec4(pos, 1.0f);
-	//gl_Position = vec4(positions[gl_VertexIndex], 1.0f);
+	data.color = matInfo.color;
+	data.time = constData.time;
+
+	mat4 worldViewProj = constData.projMat * constData.viewMat * matInfo.worldMat;
+	gl_Position = worldViewProj * vec4(pos, 1.0f);
 }

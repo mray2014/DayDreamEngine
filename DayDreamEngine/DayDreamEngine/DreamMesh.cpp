@@ -3,9 +3,9 @@
 
 DreamGraphics* graphics = nullptr;
 
-DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts) {
+DreamMesh::DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts) {
 	graphics = DreamGraphics::GetInstance();
-	shaderLink = shader;
+	material = DreamMaterial(linker);
 
 	if (graphics) {
 		vertCount = verts.size();
@@ -17,9 +17,9 @@ DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts)
 }
 
 
-DreamMesh::DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices) {
+DreamMesh::DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices) {
 	graphics = DreamGraphics::GetInstance();
-	shaderLink = shader;
+	material = DreamMaterial(linker);
 
 	if (graphics) {
 		vertCount = verts.size();
@@ -38,28 +38,20 @@ DreamMesh::~DreamMesh()
 		delete vertArray;
 		vertArray = nullptr;
 	}
-
-	if (shaderLink) {
-		delete shaderLink;
-		shaderLink = nullptr;
-	}
 }
 
 void DreamMesh::DrawOpaque()
 {
+	material.Bind();
+	vertArray->Bind();	
 
-	if (shaderLink) {
-		shaderLink->BindShaderLink();
-		vertArray->Bind();	
-
-		if (vertArray->indexBuffer) {
-			graphics->DrawWithIndex(indicesCount);
-		}
-		else {
-			graphics->DrawWithVertex(vertCount);
-		}
-
-		vertArray->UnBind();
-		shaderLink->UnBindShaderLink();
+	if (vertArray->indexBuffer) {
+		graphics->DrawWithIndex(indicesCount);
 	}
+	else {
+		graphics->DrawWithVertex(vertCount);
+	}
+
+	vertArray->UnBind();
+	material.UnBind();
 }

@@ -3,6 +3,11 @@
 #include <glad\glad.h>
 #include <GLFW\glfw3.h>
 #include <vector>
+#include <iostream>
+
+#include <SPIRV/spirv_glsl.hpp>
+#pragma comment(lib, "spirv-cross-glsld.lib")
+#pragma comment(lib, "spirv-cross-cored.lib")
 
 //#include <glm\glm.hpp>
 //#include <glm/gtx/transform.hpp>
@@ -18,7 +23,7 @@ void OnWindowResize(GLFWwindow* window, int width, int height) {
 }
 
 
-DreamGLGraphics::DreamGLGraphics()
+DreamGLGraphics::DreamGLGraphics() : DreamGraphics()
 {
 }
 
@@ -51,6 +56,9 @@ long DreamGLGraphics::InitGraphics()
 {
 	glfwMakeContextCurrent(window);
 	InitGlad();
+	matConstDataBuffer = GenerateBuffer(BufferType::UniformBuffer, nullptr, 1, { sizeof(ConstantUniformData) }, { 0 }, VertexDataUsage::StreamDraw);
+	glBindBufferBase(GL_UNIFORM_BUFFER, UniformBufferLayout::ConstantData, matConstDataBuffer->GetBufferPointer().GetStoredHandle());
+
 	return 0;
 }
 
@@ -69,6 +77,13 @@ void DreamGLGraphics::ClearScreen()
 {
 	glClearColor(clearScreenColor.x, clearScreenColor.y, clearScreenColor.z, clearScreenColor.w);
 	glClear(GL_COLOR_BUFFER_BIT);
+
+	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
+	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
+	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
+	matConstData.totalTime = DreamTimeManager::totalTime;
+
+	UpdateBufferData(matConstDataBuffer, &matConstData, sizeof(ConstantUniformData));
 }
 
 void DreamGLGraphics::SwapBuffers()
@@ -104,6 +119,10 @@ DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, void* bufferData, 
 	}
 	case BufferType::ElementArrayBuffer: {
 		buffType = GL_ELEMENT_ARRAY_BUFFER;
+		break;
+	}
+	case BufferType::UniformBuffer: {
+		buffType = GL_UNIFORM_BUFFER;
 		break;
 	}
 	}
@@ -153,8 +172,52 @@ DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, void* bufferData, 
 	glBufferData(buffType,  dataSize, bufferData, drawType);
 	glBindBuffer(buffType, 0);
 
-	return new DreamBuffer(handle, dataSize, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer(handle, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
+
+DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, size_t bufferSize)
+{
+	return GenerateBuffer(type, nullptr, 1, { bufferSize }, {0}, StaticDraw);
+}
+
+void DreamGLGraphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage) 
+{
+	size_t buffType = -1;
+	size_t drawType = -1;
+	size_t handle = buffer->GetBufferPointer().GetStoredHandle();
+
+	switch (buffer->GetBufferType()) {
+	case BufferType::ArrayBuffer: {
+		buffType = GL_ARRAY_BUFFER;
+		break;
+	}
+	case BufferType::ElementArrayBuffer: {
+		buffType = GL_ELEMENT_ARRAY_BUFFER;
+		break;
+	}
+	case BufferType::UniformBuffer: {
+		buffType = GL_UNIFORM_BUFFER;
+		break;
+	}
+	}
+
+	switch (dataUsage) {
+	case VertexDataUsage::StreamDraw:
+		drawType = GL_STREAM_DRAW;
+		break;
+	case VertexDataUsage::StaticDraw:
+		drawType = GL_STATIC_DRAW;
+		break;
+	case VertexDataUsage::DynamicDraw:
+		drawType = GL_DYNAMIC_DRAW;
+		break;
+	}
+
+	glBindBuffer(buffType, handle);
+	glBufferData(buffType, bufSize, bufferData, drawType);
+	glBindBuffer(buffType, 0);
+}
+
 
 void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 {
@@ -168,6 +231,9 @@ void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 		break;
 	case BufferType::ElementArrayBuffer:
 		buffType = GL_ELEMENT_ARRAY_BUFFER;
+		break;
+	case BufferType::UniformBuffer:
+		buffType = GL_UNIFORM_BUFFER;
 		break;
 	}
 
@@ -264,32 +330,11 @@ void DreamGLGraphics::InitGlad()
 }
 
 void DreamGLGraphics::DrawWithIndex(size_t size) {
-	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
-
-	DreamMath::DreamMatrix4X4 dreamView = camManager->GetCurrentCam_ViewMat();
-	DreamMath::DreamMatrix4X4 dreamProj = camManager->GetCurrentCam_ProjMat();
-
-
-	DreamMath::DreamTransform transform;
-	DreamMath::DreamMatrix4X4 worldMat = transform.GetWorldMatrix();
-
-	glUniformMatrix4fv(1, 1, GL_FALSE, &worldMat.matrix.data[0][0]);
-	glUniformMatrix4fv(2, 1, GL_FALSE, &dreamView.matrix.data[0][0]);
-	glUniformMatrix4fv(3, 1, GL_FALSE, &dreamProj.matrix.data[0][0]);
-
-	DreamVector4 meshColor(1.0f, 1.0f, 1.0f, 1.0f);
-	float time = DreamTimeManager::totalTime;
-	glUniform4fv(4, 1, &meshColor.x);
-	glUniform1f(5, time);
-	
-
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, (void*)0);
 }
 
 void DreamGLGraphics::DrawWithVertex(size_t size) {
-	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
-
 	{
 		/// ===============================================
 		/// ======Using OpenGL to make a proper Proj Matrix
@@ -324,25 +369,45 @@ void DreamGLGraphics::DrawWithVertex(size_t size) {
 		//glm::mat4 view = glm::lookAt(camPos, camCenter, up);
 		//glUniformMatrix4fv(2, 1, GL_FALSE, &view[0][0]);
 		//glUniformMatrix4fv(2, 1, GL_FALSE, &view[0][0]);
+
+
+
+
+		/// ===============================================
+		/// ======Using OpenGL to bind uniform buffers to binding points
+		/// ===============================================
+		//DreamCameraManager* camManager = DreamCameraManager::GetInstance();
+		//
+		//DreamVector4 meshColor(1.0f, 1.0f, 1.0f, 1.0f);
+		//float time = DreamTimeManager::totalTime;
+		//
+		//DreamMath::DreamTransform transform;
+		//
+		//GLuint vResult = glGetUniformBlockIndex(3, "ConstantData");
+		//glUniformBlockBinding(3, vResult, UniformBufferLayout::ConstantData);
+		//
+		//
+		//struct PixelexUBOData {
+		//	DreamMath::DreamMatrix4X4 worldMat;
+		//	DreamVector4 meshColor;
+		//	float specular;
+		//};
+		//
+		//PixelexUBOData pData;
+		//pData.worldMat = transform.GetWorldMatrix();
+		//pData.meshColor = DreamVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		//pData.specular = 1;
+		//
+		//size_t pHandle;
+		//size_t pBuffSize = sizeof(PixelexUBOData);
+		//glGenBuffers(1, (GLuint*)&pHandle);
+		//glBindBuffer(GL_UNIFORM_BUFFER, pHandle);
+		//glBufferData(GL_UNIFORM_BUFFER, pBuffSize, &pData, GL_STATIC_DRAW);
+		//glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		//
+		//glUniformBlockBinding(3, 0, 1);
+		//glBindBufferRange(GL_UNIFORM_BUFFER, 1, pHandle, 0, pBuffSize);
 	}
-
-
-
-	DreamMath::DreamMatrix4X4 dreamView = camManager->GetCurrentCam_ViewMat();
-	DreamMath::DreamMatrix4X4 dreamProj = camManager->GetCurrentCam_ProjMat();
-	
-
-	DreamMath::DreamTransform transform;
-	DreamMath::DreamMatrix4X4 worldMat = transform.GetWorldMatrix();
-
-	glUniformMatrix4fv(1, 1, GL_FALSE, &worldMat.matrix.data[0][0]);
-	glUniformMatrix4fv(2, 1, GL_FALSE, &dreamView.matrix.data[0][0]);
-	glUniformMatrix4fv(3, 1, GL_FALSE, &dreamProj.matrix.data[0][0]);
-
-	DreamVector4 meshColor(1.0f, 1.0f, 1.0f, 1.0f);
-	float time = DreamTimeManager::totalTime;
-	glUniform4fv(4, 1, &meshColor.x);
-	glUniform1f(5, time);
 
 	//glDepthMask(GL_TRUE);
 	//glEnable(GL_DEPTH_TEST);
@@ -382,8 +447,6 @@ void DreamGLGraphics::Draw() {
 	//}
 }
 
-
-
 bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) {
 	using namespace std;
 
@@ -396,62 +459,161 @@ bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, Dre
 
 	std::string path = "Shaders/";
 	path.append(convertFile);
+
+	std::string pathSpv = path;
 	path.append(".glsl");
 
-	if (DreamFileIO::OpenFileRead(path.c_str()))
+	pathSpv.append(".spv");
+
+	DreamFileIO::OpenFileRead(pathSpv.c_str(), std::ios::ate | std::ios::binary);
+
+	char* shaderCode = nullptr;
+	size_t length;
+	DreamFileIO::ReadFullFileQuick(&shaderCode, length);
+	DreamFileIO::CloseFileRead();
+
+	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
+
+	// Read SPIR-V from disk or similar.
+	std::vector<uint32_t> spirv_binary;
+	spirv_cross::CompilerGLSL glsl(code, length / sizeof(uint32_t));
+
+	// The SPIR-V is now parsed, and we can perform reflection on it.
+	spirv_cross::ShaderResources resources = glsl.get_shader_resources();
+
+	// Get all sampled images in the shader.
+	for (auto& resource : resources.uniform_buffers)
 	{
-		string fileContent;
+		const spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
+		size_t structSize = glsl.get_declared_struct_size(type);
 
-		if (DreamFileIO::ReadFullFile(fileContent)) {
 
-			switch (shaderType) {
-			case ShaderType::VertexShader: {
-				prog = glCreateShader(GL_VERTEX_SHADER);
-				break;
-			}
-			case ShaderType::PixelShader: {
-				prog = glCreateShader(GL_FRAGMENT_SHADER);
-				break;
-			}
-			case ShaderType::GeometryShader: {
-				prog = glCreateShader(GL_GEOMETRY_SHADER);
-				break;
-			}
-			case ShaderType::ComputeShader: {
-				//prog = glCreateShader(GL_COMPUTE_SHADER);
-				break;
-			}
-			}
-			
-			if (prog != -1) {
-				std::string str(fileContent.begin(), fileContent.end());
-				const char* content = str.c_str();
-				glShaderSource(prog, 1, (const GLchar**)&content, 0);
+		size_t memberSize = glsl.get_declared_struct_member_size(type, 0);
+		std::string memberName = glsl.get_member_name(resource.base_type_id, 0);
 
-				glCompileShader(prog);
+		unsigned set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		unsigned binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
+		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
 
-				GLint result;
-				glGetShaderiv(prog, GL_COMPILE_STATUS, &result);
+		////
+		// 
+		// 
+		// 
+		// Modify the decoration to prepare it for GLSL.
+		glsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
 
-				if (result == 0)
-				{
-
-					glGetShaderiv(prog, GL_INFO_LOG_LENGTH, &result);
-					GLchar* debug = new GLchar[result];
-
-					glGetShaderInfoLog(prog, result, 0, debug);
-					printf(debug);
-					glDeleteShader(prog);
-					delete[] debug; debug = nullptr;
-				}
-				else {
-					ptr = DreamPointer(prog);
-					success = true;
-				}
-			}
-		}
-		DreamFileIO::CloseFileRead();
+		// Some arbitrary remapping if we want.
+		glsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
 	}
+
+	// Set some options.
+	spirv_cross::CompilerGLSL::Options options;
+	options.version = 450;
+	options.es = false;
+	glsl.set_common_options(options);
+
+	// Compile to GLSL, ready to give to GL driver.
+	std::string source = glsl.compile();
+
+	switch (shaderType) {
+	case ShaderType::VertexShader: {
+		prog = glCreateShader(GL_VERTEX_SHADER);
+		break;
+	}
+	case ShaderType::PixelShader: {
+		prog = glCreateShader(GL_FRAGMENT_SHADER);
+		break;
+	}
+	case ShaderType::GeometryShader: {
+		prog = glCreateShader(GL_GEOMETRY_SHADER);
+		break;
+	}
+	case ShaderType::ComputeShader: {
+		//prog = glCreateShader(GL_COMPUTE_SHADER);
+		break;
+	}
+	}
+
+	if (prog != -1) {
+		const char* content = source.c_str();
+		glShaderSource(prog, 1, (const GLchar**)&content, 0);
+
+		glCompileShader(prog);
+
+		GLint result;
+		glGetShaderiv(prog, GL_COMPILE_STATUS, &result);
+
+		if (result == 0)
+		{
+
+			glGetShaderiv(prog, GL_INFO_LOG_LENGTH, &result);
+			GLchar* debug = new GLchar[result];
+
+			glGetShaderInfoLog(prog, result, 0, debug);
+			printf(debug);
+			glDeleteShader(prog);
+			delete[] debug; debug = nullptr;
+		}
+		else {
+			ptr = DreamPointer(prog);
+			success = true;
+		}
+	}
+
+	//if (DreamFileIO::OpenFileRead(path.c_str()))
+	//{
+	//	string fileContent;
+
+	//	if (DreamFileIO::ReadFullFile(fileContent)) {
+
+	//		switch (shaderType) {
+	//		case ShaderType::VertexShader: {
+	//			prog = glCreateShader(GL_VERTEX_SHADER);
+	//			break;
+	//		}
+	//		case ShaderType::PixelShader: {
+	//			prog = glCreateShader(GL_FRAGMENT_SHADER);
+	//			break;
+	//		}
+	//		case ShaderType::GeometryShader: {
+	//			prog = glCreateShader(GL_GEOMETRY_SHADER);
+	//			break;
+	//		}
+	//		case ShaderType::ComputeShader: {
+	//			//prog = glCreateShader(GL_COMPUTE_SHADER);
+	//			break;
+	//		}
+	//		}
+	//		
+	//		if (prog != -1) {
+	//			std::string str(fileContent.begin(), fileContent.end());
+	//			const char* content = str.c_str();
+	//			glShaderSource(prog, 1, (const GLchar**)&content, 0);
+
+	//			glCompileShader(prog);
+
+	//			GLint result;
+	//			glGetShaderiv(prog, GL_COMPILE_STATUS, &result);
+
+	//			if (result == 0)
+	//			{
+
+	//				glGetShaderiv(prog, GL_INFO_LOG_LENGTH, &result);
+	//				GLchar* debug = new GLchar[result];
+
+	//				glGetShaderInfoLog(prog, result, 0, debug);
+	//				printf(debug);
+	//				glDeleteShader(prog);
+	//				delete[] debug; debug = nullptr;
+	//			}
+	//			else {
+	//				ptr = DreamPointer(prog);
+	//				success = true;
+	//			}
+	//		}
+	//	}
+	//	DreamFileIO::CloseFileRead();
+	//}
 
 	
 	return success;
@@ -479,6 +641,8 @@ DreamGLShaderLinker::DreamGLShaderLinker()
 	else {
 		printf("ERROR: Shader Program creation in progress!");
 	}
+
+	matDataBuffer = DreamGraphics::GetInstance()->GenerateBuffer(UniformBuffer, sizeof(MatDataComponent));
 }
 
 void DreamGLShaderLinker::AttachShader(DreamShader* shader)
@@ -524,13 +688,19 @@ void DreamGLShaderLinker::BindShaderLink()
 	}
 	
 	glUseProgram(prog);
+
+	GLuint vResult = glGetUniformBlockIndex(prog, "ConstantData");
+	glUniformBlockBinding(prog, vResult, UniformBufferLayout::ConstantData);
+
+	GLuint pResult = glGetUniformBlockIndex(prog, "MaterialData");
+	glUniformBlockBinding(prog, pResult, UniformBufferLayout::MaterialData);
+	glBindBufferBase(GL_UNIFORM_BUFFER, UniformBufferLayout::MaterialData, matDataBuffer->GetBufferPointer().GetStoredHandle());
 }
 
 void DreamGLShaderLinker::UnBindShaderLink()
 {
 	glUseProgram(0);
 }
-
 
 
 DreamGLVertexArray::DreamGLVertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)

@@ -12,7 +12,7 @@ LRESULT DreamDX11Graphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 	return instance->ProcessMessage(hWnd, uMsg, wParam, lParam);
 }
 
-DreamDX11Graphics::DreamDX11Graphics()
+DreamDX11Graphics::DreamDX11Graphics() : DreamGraphics()
 {
 	clearScreenColor = DreamVector4(0.4f, 0.6f, 0.75f, 0.0f);
 	if (!instance) {
@@ -386,8 +386,19 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 	}
 	}
 
-	return new DreamBuffer((void*)buffer, dataSize, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer((void*)buffer, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
+
+DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, size_t bufferSize)
+{
+	return GenerateBuffer(type, nullptr, 1, { bufferSize }, { 0 }, StaticDraw);
+}
+
+void DreamDX11Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
+{
+
+}
+
 
 //void DreamDX11Graphics::BindVertexLayout(DreamBuffer* layout)
 //{

@@ -25,7 +25,7 @@ void DreamVulkanGraphics::OnWindowResize(GLFWwindow* window, int width, int heig
 	//glViewport(0, 0, width, height);
 }
 
-DreamVulkanGraphics::DreamVulkanGraphics()
+DreamVulkanGraphics::DreamVulkanGraphics() : DreamGraphics()
 {
 }
 
@@ -997,7 +997,17 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferDa
 	//vkDestroyBuffer(device, vertexBuffer, nullptr);
 	//vkFreeMemory(device, vertexBufferMemory, nullptr);
 
-	return new DreamBuffer((void*)buffer, dataSize, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer((void*)buffer, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
+}
+
+DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, size_t bufferSize)
+{
+	return GenerateBuffer(type, nullptr, 1, { bufferSize }, { 0 }, StaticDraw);
+}
+
+void DreamVulkanGraphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
+{
+
 }
 
 void DreamVulkanGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)

@@ -3,7 +3,8 @@
 enum BufferType {
 	//VertexArray,
 	ArrayBuffer,
-	ElementArrayBuffer
+	ElementArrayBuffer,
+	UniformBuffer
 };
 
 struct DreamPointer {
@@ -47,8 +48,8 @@ public:
 	DreamBuffer() {
 		info = DreamPointer();
 	}
-	DreamBuffer(void* newPtr, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
-	DreamBuffer(size_t handle, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(void* newPtr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(size_t handle, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
 
 	~DreamBuffer() {
 		if (stride) {
@@ -78,9 +79,13 @@ public:
 		return offset;
 	}
 
+	BufferType GetBufferType() {
+		return type;
+	}
+
 private:
 
-
+	BufferType type;
 	DreamPointer info;
 	size_t numOfBuffers;
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <DreamMath.h>
-#include "DreamShader.h"
+#include "DreamMaterial.h"
 
 class DreamShaderLinker;
 class DreamVertexArray;
@@ -25,13 +25,15 @@ class DreamMesh {
 
 	DreamVertexArray* vertArray;
 
-	DreamShaderLinker* shaderLink = nullptr;
+
 
 public:
 
-	DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts);
-	DreamMesh(DreamShaderLinker* shader, std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices);
+	DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts);
+	DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices);
 	~DreamMesh();
 
 	void DrawOpaque();
+
+	DreamMaterial material;
 };

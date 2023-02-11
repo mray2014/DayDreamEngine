@@ -69,6 +69,9 @@
     <ClCompile Include="DreamCameraManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DreamMaterial.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h">
@@ -106,6 +109,12 @@
     </ClInclude>
     <ClInclude Include="DreamCameraManager.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamMaterial.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\DefaultShaderUniformData.h">
+      <Filter>Shaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

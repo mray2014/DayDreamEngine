@@ -23,6 +23,7 @@ DreamGraphics* DreamGraphics::myGrpahics = nullptr;
 
 DreamGraphics::DreamGraphics()
 {
+	//matConstData = GenerateBuffer(BufferType::UniformBuffer, nullptr, 1, { sizeof(ConstantUniformData) }, { 0 }, VertexDataUsage::StreamDraw);
 }
 
 

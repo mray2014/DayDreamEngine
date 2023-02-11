@@ -9,6 +9,7 @@
 #include <DreamTimeManager.h>
 #include <Windows.h>
 #include "DreamCameraManager.h"
+#include "DreamMaterial.h"
 
 
 
@@ -95,10 +96,10 @@ int main()
 	DreamShader* vertexShader = new VertexDreamShader(L"vertex");
 	DreamShader* pixelShader = new PixelDreamShader(L"pixel");
 
-	DreamShaderLinker* mainLink = DreamGraphics::GenerateShaderLinker();
-	mainLink->AttachShader(vertexShader);
-	mainLink->AttachShader(pixelShader);
-	mainLink->Finalize();
+	DreamShaderLinker* defaultLinker = DreamGraphics::GenerateShaderLinker();
+	defaultLinker->AttachShader(vertexShader);
+	defaultLinker->AttachShader(pixelShader);
+	defaultLinker->Finalize();
 
 	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
 	std::vector<uint32_t> indices = std::vector<uint32_t>();
@@ -115,8 +116,8 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	DreamMesh* mesh = new DreamMesh(mainLink, vert);
-	//DreamMesh* mesh = new DreamMesh(mainLink, vert, indices);
+	DreamMesh* mesh = new DreamMesh(defaultLinker, vert);
+	//DreamMesh* mesh = new DreamMesh(defaultLinker, vert, indices);
 
 	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
 	DreamCamera* camera = new DreamCamera();

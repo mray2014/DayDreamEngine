@@ -2,8 +2,19 @@
 #include <DreamMath.h>
 #include <vector>
 #include "DreamShader.h"
+#include "DreamMaterial.h"
 
 class DreamVertexArray;
+
+enum UniformBufferLayout {
+	ConstantData = 0,
+	MaterialData = 1
+};
+struct ConstantUniformData {
+	DreamMath::DreamMatrix4X4 viewMat;
+	DreamMath::DreamMatrix4X4 projMat;
+	float totalTime;
+};
 
 enum VertexDataUsage {
 	StreamDraw, // the data is set only once and used by the GPU at most a few times.
@@ -23,6 +34,8 @@ public:
 	virtual void Finalize() = 0;
 	virtual void BindShaderLink() = 0;
 	virtual void UnBindShaderLink() = 0;
+
+	DreamBuffer* matDataBuffer;
 private:
 	//friend class DreamGraphics;
 };
@@ -34,7 +47,7 @@ public:
 	static DreamShaderLinker* GenerateShaderLinker();
 	static float GetAspectRatio();
 
-	~DreamGraphics();
+	~DreamGraphics(); // Virtual?
 
 	virtual long InitWindow(int w, int h, const char* title) = 0;
 	virtual long InitGraphics() = 0;
@@ -45,6 +58,8 @@ public:
 	virtual void CheckInputs() = 0;
 	virtual DreamVertexArray* GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr) = 0;
 	virtual DreamBuffer* GenerateBuffer(BufferType type, void* bufferData = nullptr, size_t numOfElements = 0, std::vector<size_t> strides = { 0 }, std::vector<size_t> offests = { 0 }, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
+	virtual DreamBuffer* GenerateBuffer(BufferType type, size_t bufferSize = 0) = 0;
+	virtual void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
 	virtual void BindBuffer(BufferType type, DreamBuffer* buffer) = 0;
 	virtual void BeginVertexLayout() = 0;
 	virtual void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
@@ -80,6 +95,8 @@ protected:
 	DreamGraphics();
 	DreamVector4 clearScreenColor;
 
+	ConstantUniformData matConstData;
+	DreamBuffer* matConstDataBuffer;
 private:
 	static DreamGraphics* myGrpahics;
 	

@@ -24,7 +24,7 @@ LRESULT DreamDX12Graphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 	
 }
 
-DreamDX12Graphics::DreamDX12Graphics()
+DreamDX12Graphics::DreamDX12Graphics() : DreamGraphics()
 {
 	EnableDebugLayer();
 }
@@ -671,7 +671,17 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, void* bufferData
 
 	buf->SetName(L"Buffer");
 
-	return new DreamBuffer(buf, bufferSize, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer(buf, type, bufferSize, numOfBuffers, &strides[0], &offests[0]);
+}
+
+DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, size_t bufferSize)
+{
+	return GenerateBuffer(type, nullptr, 1, { bufferSize }, { 0 }, StaticDraw);
+}
+
+void DreamDX12Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
+{
+
 }
 
 void DreamDX12Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)

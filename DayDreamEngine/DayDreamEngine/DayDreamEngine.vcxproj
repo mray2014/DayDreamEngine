@@ -1306,6 +1306,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_DebugRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="DreamGraphics.cpp" />
+    <ClCompile Include="DreamMaterial.cpp" />
     <ClCompile Include="DreamMesh.cpp" />
     <ClCompile Include="DreamShader.cpp" />
     <ClCompile Include="DreamVulkanGraphics.cpp">
@@ -1397,6 +1398,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_DebugRelease|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="DreamGraphics.h" />
+    <ClInclude Include="DreamMaterial.h" />
     <ClInclude Include="DreamMesh.h" />
     <ClInclude Include="DreamShader.h" />
     <ClInclude Include="DreamVulkanGraphics.h">
@@ -1420,6 +1422,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="DreamGameObject.h" />
+    <ClInclude Include="Shaders\DefaultShaderUniformData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
