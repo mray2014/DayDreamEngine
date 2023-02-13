@@ -19,18 +19,15 @@ struct MatDataComponent {
 
 class DreamMaterial {
 public:
-	MatDataComponent data;
 	DreamMaterial() {
 		graphicsPipeLine = nullptr;
-		data = MatDataComponent();
 	}
 
 	DreamMaterial(DreamShaderLinker* pipeline) {
 		graphicsPipeLine = pipeline;
-		data = MatDataComponent();
 	}
 
-	void Bind();
+	void Bind(MatDataComponent& data);
 	void UnBind();
 
 private:

@@ -29,11 +29,9 @@ class DreamMesh {
 
 public:
 
-	DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts);
-	DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices);
+	DreamMesh(std::vector<DreamVertex>& verts);
+	DreamMesh(std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices);
 	~DreamMesh();
 
 	void DrawOpaque();
-
-	DreamMaterial material;
 };

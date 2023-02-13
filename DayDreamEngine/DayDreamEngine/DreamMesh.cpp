@@ -3,9 +3,8 @@
 
 DreamGraphics* graphics = nullptr;
 
-DreamMesh::DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts) {
+DreamMesh::DreamMesh(std::vector<DreamVertex>& verts) {
 	graphics = DreamGraphics::GetInstance();
-	material = DreamMaterial(linker);
 
 	if (graphics) {
 		vertCount = verts.size();
@@ -17,9 +16,8 @@ DreamMesh::DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts)
 }
 
 
-DreamMesh::DreamMesh(DreamShaderLinker* linker, std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices) {
+DreamMesh::DreamMesh(std::vector<DreamVertex>& verts, std::vector<uint32_t>& indices) {
 	graphics = DreamGraphics::GetInstance();
-	material = DreamMaterial(linker);
 
 	if (graphics) {
 		vertCount = verts.size();
@@ -40,9 +38,9 @@ DreamMesh::~DreamMesh()
 	}
 }
 
+//TODO: Change the name of this function, move to a different place?
 void DreamMesh::DrawOpaque()
 {
-	material.Bind();
 	vertArray->Bind();	
 
 	if (vertArray->indexBuffer) {
@@ -53,5 +51,4 @@ void DreamMesh::DrawOpaque()
 	}
 
 	vertArray->UnBind();
-	material.UnBind();
 }

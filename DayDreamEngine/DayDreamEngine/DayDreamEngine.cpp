@@ -101,6 +101,8 @@ int main()
 	defaultLinker->AttachShader(pixelShader);
 	defaultLinker->Finalize();
 
+	DreamMaterial* defaultMat = new DreamMaterial(defaultLinker);
+
 	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
 	std::vector<uint32_t> indices = std::vector<uint32_t>();
 
@@ -116,13 +118,21 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	DreamMesh* mesh = new DreamMesh(defaultLinker, vert);
-	//DreamMesh* mesh = new DreamMesh(defaultLinker, vert, indices);
+	DreamMesh* triangleMesh = new DreamMesh(vert);
+	DreamMesh* parallogramMesh = new DreamMesh(vert, indices);
+
+	std::vector<DreamGameObject*> objList;
+	DreamGameObject* triangleObj = new DreamGameObject(triangleMesh, defaultMat);
+	DreamGameObject* parallogramObj = new DreamGameObject(parallogramMesh, defaultMat);
+	objList.push_back(triangleObj);
+	objList.push_back(parallogramObj);
+
+	parallogramObj->transform.position = DreamVector3(0, 0, -5);
+
 
 	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
 	DreamCamera* camera = new DreamCamera();
 	camManager->SetActiveCamera(camera);
-
 
 	DreamTimeManager::Init();
 	while (!graphics->CheckWindowClose())
@@ -141,15 +151,30 @@ int main()
 		//NOTE: there is a black line on the side of the drawn triangle, halp
 		// TODO: Bind Graphic pipelines instead of shaders individually
 		// TODO: Spirv-Cross to handle all shader platform types
-		mesh->DrawOpaque();
+		for (unsigned int i = 0; i < objList.size(); i++) {
+			objList[i]->Draw();
+		}
 		graphics->Draw();
 
 		graphics->SwapBuffers();
 	}
 
-	if (mesh) {
-		delete mesh;
-		mesh = nullptr;
+	for (unsigned int i = 0; i < objList.size(); i++) {
+		if (objList[i]) {
+			delete objList[i];
+			objList[i] = nullptr;
+		}
+		objList.clear();
+	}
+
+	if (triangleMesh) {
+		delete triangleMesh;
+		triangleMesh = nullptr;
+	}
+
+	if (parallogramMesh) {
+		delete parallogramMesh;
+		parallogramMesh = nullptr;
 	}
 
 	// TODO: Garbage Collector? delay deletes till end of frame [MarkForDeletion]
