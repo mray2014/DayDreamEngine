@@ -113,7 +113,13 @@
     <ClInclude Include="DreamMaterial.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Shaders\DefaultShaderUniformData.h">
+    <ClInclude Include="Shaders\MaterialUniformData.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\ShaderStructs.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\VertexLayout.h">
       <Filter>Shaders</Filter>
     </ClInclude>
   </ItemGroup>

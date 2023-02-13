@@ -913,8 +913,14 @@ void DreamDX12Graphics::UnBindBuffer(BufferType type)
 }
 
 
-bool DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr)
+DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shaderType)
 {
+	bool hasMatUniform = false;
+	bool hasConstDataUniform = false;
+
+	UniformList uniforms;
+	UniformMembers uniformMembers;
+
 	std::string outputDir = OUTPUT_DIR;
 	std::wstring path(outputDir.begin(), outputDir.end());
 	path.append(file);
@@ -925,16 +931,16 @@ bool DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, D
 	if (hr != S_OK)
 	{
 		printf("Failed to open/read Shader file");
-		return false;
+		return nullptr;
 
 	}
 
 	void* blobPtr = shaderBlob;
 	size_t blobSize = shaderBlob->GetBufferSize();
 
-	ptr = DreamPointer(blobPtr, blobSize);
+	
 
-	return true;
+	return new DreamShader(shaderType, DreamPointer(blobPtr, blobSize), uniforms, (hasMatUniform && hasConstDataUniform));;
 }
 
 void DreamDX12Graphics::ReleaseShader(DreamShader* shader)

@@ -93,8 +93,8 @@ int main()
 
 	//graphics->SetViewPort(0,0, 200, 200); // TODO: doesnt work halp ;-;
 
-	DreamShader* vertexShader = new VertexDreamShader(L"vertex");
-	DreamShader* pixelShader = new PixelDreamShader(L"pixel");
+	DreamShader* vertexShader = graphics->LoadShader(L"vertex", ShaderType::VertexShader);
+	DreamShader* pixelShader = graphics->LoadShader(L"pixel", ShaderType::PixelShader);
 
 	DreamShaderLinker* defaultLinker = DreamGraphics::GenerateShaderLinker();
 	defaultLinker->AttachShader(vertexShader);

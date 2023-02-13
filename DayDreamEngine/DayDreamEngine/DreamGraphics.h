@@ -23,22 +23,9 @@ enum VertexDataUsage {
 };
 
 using namespace DreamMath;
+using UniformBindingPoints = std::unordered_map<std::string, unsigned int>;
 
-class DreamShaderLinker {
-protected:
-	DreamShaderLinker();
-	std::vector<DreamShader*> linkedShaders;
-public:
-	virtual ~DreamShaderLinker() {}
-	virtual void AttachShader(DreamShader* shader) = 0;
-	virtual void Finalize() = 0;
-	virtual void BindShaderLink() = 0;
-	virtual void UnBindShaderLink() = 0;
-
-	DreamBuffer* matDataBuffer;
-private:
-	//friend class DreamGraphics;
-};
+class DreamShaderLinker;
 
 class DreamGraphics
 {
@@ -65,7 +52,7 @@ public:
 	virtual void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
 	virtual DreamBuffer* FinalizeVertexLayout() = 0;
 	virtual void UnBindBuffer(BufferType type) = 0;
-	virtual bool LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) = 0;
+	virtual DreamShader* LoadShader(const wchar_t* file, ShaderType shaderType) = 0;
 	virtual void ReleaseShader(DreamShader* shader) = 0;
 	virtual void DrawWithIndex(size_t size) = 0;
 	virtual void DrawWithVertex(size_t size) = 0;
@@ -101,6 +88,55 @@ private:
 	static DreamGraphics* myGrpahics;
 	
 };
+
+
+class DreamShaderLinker {
+protected:
+	DreamShaderLinker();
+	std::vector<DreamShader*> linkedShaders;
+	UniformBindingPoints bindingPoints;
+public:
+	virtual ~DreamShaderLinker() {}
+	virtual void AttachShader(DreamShader* shader) = 0;
+	virtual void Finalize() = 0;
+	virtual void BindShaderLink() = 0;
+	virtual void UnBindShaderLink() = 0;
+
+	template <typename T>
+	inline bool UpdateUniform(const std::string& uniformName, T& data) {
+		for (int i = 0; i < linkedShaders.size(); i++) {
+			if (linkedShaders[i]->shaderUniforms.count(uniformName)) {
+				DreamBuffer* buffer = linkedShaders[i]->shaderUniforms[uniformName].buffer;
+				DreamGraphics::GetInstance()->UpdateBufferData(buffer, &data, sizeof(T));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template <typename T>
+	inline bool UpdateUniformMemberData(const std::string& uniformName, const std::string& memberName, T& data) {
+
+		for (int i = 0; i < linkedShaders.size(); i++) {
+			if (linkedShaders[i]->shaderUniforms.count(uniformName)) {
+				UniformMembers memberInfo = linkedShaders[i]->shaderUniforms[uniformName].uniformMembers;
+
+				if (memberInfo.count(uniformName)) {
+					//DreamGraphics::GetInstance()->UpdateBufferData(buffer, &data, sizeof(T));
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	DreamBuffer* matDataBuffer;
+	bool isMaterialRdy = false;
+private:
+	//friend class DreamGraphics;
+};
+
 
 class DreamVertexArray {
 protected:

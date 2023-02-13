@@ -83,7 +83,7 @@ public:
 	void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) override;
 	DreamBuffer* FinalizeVertexLayout() override;
 	void UnBindBuffer(BufferType type) override;
-	bool LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) override;
+	DreamShader* LoadShader(const wchar_t* file, ShaderType shaderType) override;
 	void ReleaseShader(DreamShader* shader) override;
 	void SetShader(DreamShader* shader);
 	void DrawWithIndex(size_t size) override;

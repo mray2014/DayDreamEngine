@@ -1,14 +1,13 @@
 #version 450
-
+#include "ShaderStructs.h"
 
 layout(location = 0) out vec4 fragColor;
-
 
 struct VertToPixelData{
 	vec4 color;
 	float time;
 };
-layout (location = 1) in VertToPixelData data;
+layout (location = VERT_LOCATION_OFFSET) in VertToPixelData data;
 
 void main() {
 	vec4 col = data.color;

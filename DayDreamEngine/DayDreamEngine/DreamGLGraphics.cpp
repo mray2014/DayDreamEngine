@@ -447,10 +447,15 @@ void DreamGLGraphics::Draw() {
 	//}
 }
 
-bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) {
+DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType) {
 	using namespace std;
 
-	bool success = false;
+	bool hasMatUniform = false; 
+	bool hasConstDataUniform = false;
+
+	UniformList uniforms;
+	UniformMembers uniformMembers;
+
 	GLuint prog = -1;
 
 	std::wstring wfile = L"";
@@ -459,13 +464,9 @@ bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, Dre
 
 	std::string path = "Shaders/";
 	path.append(convertFile);
+	path.append(".spv");
 
-	std::string pathSpv = path;
-	path.append(".glsl");
-
-	pathSpv.append(".spv");
-
-	DreamFileIO::OpenFileRead(pathSpv.c_str(), std::ios::ate | std::ios::binary);
+	DreamFileIO::OpenFileRead(path.c_str(), std::ios::ate | std::ios::binary);
 
 	char* shaderCode = nullptr;
 	size_t length;
@@ -484,26 +485,49 @@ bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, Dre
 	// Get all sampled images in the shader.
 	for (auto& resource : resources.uniform_buffers)
 	{
+		std::string name = resource.name;
+
+		//=======Grabbing uniform size and member data
 		const spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
 		size_t structSize = glsl.get_declared_struct_size(type);
 
+		int memberOffset = 0;
+		for (int i = 0; i < type.member_types.size(); i++) {
+			size_t memberSize = glsl.get_declared_struct_member_size(type, i);
+			std::string memberName = glsl.get_member_name(resource.base_type_id, i);
 
-		size_t memberSize = glsl.get_declared_struct_member_size(type, 0);
-		std::string memberName = glsl.get_member_name(resource.base_type_id, 0);
+			uniformMembers[memberName] = memberOffset;
+			memberOffset += memberSize;
+		}
+		
 
+		//=======Grabbing binding index of uniform
 		unsigned set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
 		unsigned binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
 		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
 
-		////
-		// 
-		// 
-		// 
 		// Modify the decoration to prepare it for GLSL.
 		glsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
-
 		// Some arbitrary remapping if we want.
 		glsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+
+		//=======Creating buffer for uniform
+		DreamBuffer* uniformBuffer = nullptr;
+
+		if (name == "ConstantData") {
+			hasConstDataUniform = true;
+			uniformBuffer = matConstDataBuffer;
+		}
+		else if (name == "MaterialData") {
+			hasMatUniform = true;
+		}
+
+		if (!uniformBuffer) {
+			uniformBuffer = GenerateBuffer(UniformBuffer, structSize);
+		}
+
+		//=======Storing uniform
+		uniforms[name] = UniformInfo(uniformBuffer, binding, uniformMembers);
 	}
 
 	// Set some options.
@@ -555,68 +579,11 @@ bool DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, Dre
 			delete[] debug; debug = nullptr;
 		}
 		else {
-			ptr = DreamPointer(prog);
-			success = true;
+			return new DreamShader(shaderType, DreamPointer(prog), uniforms, (hasMatUniform && hasConstDataUniform));
 		}
 	}
-
-	//if (DreamFileIO::OpenFileRead(path.c_str()))
-	//{
-	//	string fileContent;
-
-	//	if (DreamFileIO::ReadFullFile(fileContent)) {
-
-	//		switch (shaderType) {
-	//		case ShaderType::VertexShader: {
-	//			prog = glCreateShader(GL_VERTEX_SHADER);
-	//			break;
-	//		}
-	//		case ShaderType::PixelShader: {
-	//			prog = glCreateShader(GL_FRAGMENT_SHADER);
-	//			break;
-	//		}
-	//		case ShaderType::GeometryShader: {
-	//			prog = glCreateShader(GL_GEOMETRY_SHADER);
-	//			break;
-	//		}
-	//		case ShaderType::ComputeShader: {
-	//			//prog = glCreateShader(GL_COMPUTE_SHADER);
-	//			break;
-	//		}
-	//		}
-	//		
-	//		if (prog != -1) {
-	//			std::string str(fileContent.begin(), fileContent.end());
-	//			const char* content = str.c_str();
-	//			glShaderSource(prog, 1, (const GLchar**)&content, 0);
-
-	//			glCompileShader(prog);
-
-	//			GLint result;
-	//			glGetShaderiv(prog, GL_COMPILE_STATUS, &result);
-
-	//			if (result == 0)
-	//			{
-
-	//				glGetShaderiv(prog, GL_INFO_LOG_LENGTH, &result);
-	//				GLchar* debug = new GLchar[result];
-
-	//				glGetShaderInfoLog(prog, result, 0, debug);
-	//				printf(debug);
-	//				glDeleteShader(prog);
-	//				delete[] debug; debug = nullptr;
-	//			}
-	//			else {
-	//				ptr = DreamPointer(prog);
-	//				success = true;
-	//			}
-	//		}
-	//	}
-	//	DreamFileIO::CloseFileRead();
-	//}
-
 	
-	return success;
+	return nullptr;
 }
 
 void DreamGLGraphics::ReleaseShader(DreamShader* shader)
@@ -659,6 +626,24 @@ void DreamGLShaderLinker::AttachShader(DreamShader* shader)
 
 void DreamGLShaderLinker::Finalize()
 {
+	unsigned int bindingPointIndex = 2;
+	for (int i = 0; i < linkedShaders.size(); i++) {
+		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+			std::string name = uniformData.first;
+
+			if (name == "ConstantData") {
+				bindingPoints[name] = 0;
+			}
+			else if (name == "MaterialData") {
+				bindingPoints[name] = 1;
+			}
+			else {
+				bindingPoints[name] = bindingPointIndex;
+				bindingPointIndex++;
+			}
+		}
+	}
+
 	if (prog != 0) {
 		glLinkProgram(prog);
 
@@ -683,18 +668,26 @@ void DreamGLShaderLinker::Finalize()
 
 void DreamGLShaderLinker::BindShaderLink()
 {
-	for (size_t i = 0; i < linkedShaders.size(); i++) {
-		linkedShaders[i]->BindShaderData();
-	}
-	
+
 	glUseProgram(prog);
 
-	GLuint vResult = glGetUniformBlockIndex(prog, "ConstantData");
-	glUniformBlockBinding(prog, vResult, UniformBufferLayout::ConstantData);
+	for (size_t i = 0; i < linkedShaders.size(); i++) {
+		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
 
-	GLuint pResult = glGetUniformBlockIndex(prog, "MaterialData");
-	glUniformBlockBinding(prog, pResult, UniformBufferLayout::MaterialData);
-	glBindBufferBase(GL_UNIFORM_BUFFER, UniformBufferLayout::MaterialData, matDataBuffer->GetBufferPointer().GetStoredHandle());
+			size_t handle = uniformData.second.buffer->GetBufferPointer().GetStoredHandle();
+
+			std::string name = uniformData.first;
+			unsigned int bindPoint = bindingPoints[name];
+			unsigned int bindIndex = uniformData.second.bindingIndex;
+
+			glUniformBlockBinding(prog, bindIndex, bindPoint);
+
+			if (name != "ConstantData") {
+				glBindBufferBase(GL_UNIFORM_BUFFER, bindPoint, handle);
+			}
+			
+		}
+	}
 }
 
 void DreamGLShaderLinker::UnBindShaderLink()

@@ -1422,7 +1422,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="DreamGameObject.h" />
-    <ClInclude Include="Shaders\DefaultShaderUniformData.h" />
+    <ClInclude Include="Shaders\MaterialUniformData.h" />
+    <ClInclude Include="Shaders\ShaderStructs.h" />
+    <ClInclude Include="Shaders\VertexLayout.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

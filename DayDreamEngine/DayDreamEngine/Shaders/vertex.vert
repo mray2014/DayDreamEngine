@@ -1,13 +1,14 @@
 #version 450
-#include "DefaultShaderUniformData.h"
+#include "ShaderStructs.h"		 // Holds all the structs to use between shaders
+#include "VertexLayout.h"		 // Specifically for vertex shaders to layout vertex info
+#include "MaterialUniformData.h" // If I want materials to use this shader
 
 struct VertToPixelData{
 	vec4 color;
 	float time;
 };
 
-layout (location = 0) in vec3 pos;
-layout (location = 1) out VertToPixelData data;
+layout (location = VERT_LOCATION_OFFSET) out VertToPixelData data;
 
 void main() {
 	data.color = matInfo.color;

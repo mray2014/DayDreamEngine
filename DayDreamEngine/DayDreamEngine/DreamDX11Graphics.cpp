@@ -527,8 +527,15 @@ void DreamDX11Graphics::UnBindBuffer(BufferType type)
 }
 
 
-bool DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr)
+DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType)
 {
+	DreamShader* shader = nullptr;
+	bool hasMatUniform = false;
+	bool hasConstDataUniform = false;
+
+	UniformList uniforms;
+	UniformMembers uniformMembers;
+
 	//$(OutDir)
 	std::string outputDir = OUTPUT_DIR;
 	std::wstring path(outputDir.begin(), outputDir.end());
@@ -561,7 +568,7 @@ bool DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, D
 			blobSize,
 			0,
 			&newShader);
-		ptr = DreamPointer(newShader);
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
 		break;
 	}
 	case ShaderType::PixelShader: {
@@ -571,7 +578,7 @@ bool DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, D
 			blobSize,
 			0,
 			&newShader);
-		ptr = DreamPointer(newShader);
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
 		break;
 	}
 	case ShaderType::GeometryShader: {
@@ -581,7 +588,7 @@ bool DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, D
 			blobSize,
 			0,
 			&newShader);
-		ptr = DreamPointer(newShader);
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
 		break;
 	}
 	case ShaderType::ComputeShader: {
@@ -591,7 +598,8 @@ bool DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, D
 			blobSize,
 			0,
 			&newShader);
-		ptr = DreamPointer(newShader);
+
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
 		break;
 	}
 	}
@@ -606,7 +614,7 @@ bool DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType, D
 		shaderBlob->Release();
 	}
 	
-	return true;
+	return shader;
 }
 
 void DreamDX11Graphics::ReleaseShader(DreamShader* shader)
@@ -888,8 +896,13 @@ void DreamDX11ShaderLinker::BindShaderLink()
 
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
 		if (linkedShaders[i]->GetShaderType() == VertexShader) {
-			DreamBuffer* layout = ((VertexDreamShader*)linkedShaders[i])->GetInputLayout();
-			dxGraphics->BindVertexLayout(layout);
+			DreamBuffer* layout = linkedShaders[i]->GetInputLayout();
+			if (layout) {
+				dxGraphics->BindVertexLayout(layout);
+			}
+			else {
+				printf("Vertex Input lLayout didnt exsist!");
+			}
 		}
 		linkedShaders[i]->BindShaderData();
 		dxGraphics->SetShader(linkedShaders[i]);

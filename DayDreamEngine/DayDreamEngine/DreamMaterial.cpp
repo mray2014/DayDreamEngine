@@ -4,7 +4,7 @@
 void DreamMaterial::Bind()
 {
 	if (graphicsPipeLine) {
-		DreamGraphics::GetInstance()->UpdateBufferData(graphicsPipeLine->matDataBuffer, &data, sizeof(MatDataComponent));
+		graphicsPipeLine->UpdateUniform<MatDataComponent>("MaterialData", data);
 		graphicsPipeLine->BindShaderLink();
 	}
 }
