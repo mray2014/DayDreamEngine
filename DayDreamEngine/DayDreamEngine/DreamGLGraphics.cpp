@@ -1,6 +1,6 @@
 #include "DreamGLGraphics.h"
 #include <DreamFileIO.h>
-#include <glad\glad.h>
+#include <glad/glad.h>
 #include <GLFW\glfw3.h>
 #include <vector>
 #include <iostream>
@@ -22,6 +22,53 @@ void OnWindowResize(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
+void APIENTRY glDebugOutput(GLenum source,
+	GLenum type,
+	unsigned int id,
+	GLenum severity,
+	GLsizei length,
+	const char* message,
+	const void* userParam)
+{
+	// ignore non-significant error/warning codes
+	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+
+	std::cout << "---------------" << std::endl;
+	std::cout << "Debug message (" << id << "): " << message << std::endl;
+
+	switch (source)
+	{
+	case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+	case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+	case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+	} std::cout << std::endl;
+
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
+	case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+	case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+	case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+	case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+	case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+	} std::cout << std::endl;
+
+	switch (severity)
+	{
+	case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+	case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+	case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+	} std::cout << std::endl;
+	std::cout << std::endl;
+}
+
 
 DreamGLGraphics::DreamGLGraphics() : DreamGraphics()
 {
@@ -37,8 +84,11 @@ long DreamGLGraphics::InitWindow(int w, int h, const char* title) {
 	width = w;
 	height = h;
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	window = glfwCreateWindow(width, height, title, NULL, NULL);
 
@@ -48,6 +98,10 @@ long DreamGLGraphics::InitWindow(int w, int h, const char* title) {
 		glfwTerminate();
 		return -1;
 	}
+
+
+
+
 	glfwSetWindowSizeCallback(window, OnWindowResize);
 	return 0;
 }
@@ -56,8 +110,20 @@ long DreamGLGraphics::InitGraphics()
 {
 	glfwMakeContextCurrent(window);
 	InitGlad();
-	matConstDataBuffer = GenerateBuffer(BufferType::UniformBuffer, nullptr, 1, { sizeof(ConstantUniformData) }, { 0 }, VertexDataUsage::StreamDraw);
-	glBindBufferBase(GL_UNIFORM_BUFFER, UniformBufferLayout::ConstantData, matConstDataBuffer->GetBufferPointer().GetStoredHandle());
+
+	int flags;
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+	{
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(glDebugOutput, nullptr);
+
+		glDebugMessageControl(GL_DEBUG_SOURCE_API,
+			GL_DEBUG_TYPE_ERROR,
+			GL_DEBUG_SEVERITY_HIGH,
+			0, nullptr, GL_TRUE);
+	}
 
 	return 0;
 }
@@ -83,7 +149,9 @@ void DreamGLGraphics::ClearScreen()
 	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
 	matConstData.totalTime = DreamTimeManager::totalTime;
 
-	UpdateBufferData(matConstDataBuffer, &matConstData, sizeof(ConstantUniformData));
+	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
+	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, constDataBuffer->GetBufferPointer().GetStoredHandle());
 }
 
 void DreamGLGraphics::SwapBuffers()
@@ -108,7 +176,7 @@ DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, void* bufferData, 
 
 	size_t numOfBuffers = strides.size();
 
-	size_t handle;
+	size_t handle = 0;
 
 	glGenBuffers(numOfBuffers, (GLuint*)&handle);
 
@@ -512,22 +580,20 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 		glsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
 
 		//=======Creating buffer for uniform
-		DreamBuffer* uniformBuffer = nullptr;
-
 		if (name == "ConstantData") {
 			hasConstDataUniform = true;
-			uniformBuffer = matConstDataBuffer;
 		}
 		else if (name == "MaterialData") {
 			hasMatUniform = true;
 		}
 
-		if (!uniformBuffer) {
-			uniformBuffer = GenerateBuffer(UniformBuffer, structSize);
-		}
-
 		//=======Storing uniform
-		uniforms[name] = UniformInfo(uniformBuffer, binding, uniformMembers);
+		if (hasConstDataUniform) {
+			uniforms[name] = constDataBufferInfo;
+		}
+		else {
+			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
+		}
 	}
 
 	// Set some options.
@@ -608,8 +674,6 @@ DreamGLShaderLinker::DreamGLShaderLinker()
 	else {
 		printf("ERROR: Shader Program creation in progress!");
 	}
-
-	matDataBuffer = DreamGraphics::GetInstance()->GenerateBuffer(UniformBuffer, sizeof(MatDataComponent));
 }
 
 void DreamGLShaderLinker::AttachShader(DreamShader* shader)
@@ -652,12 +716,12 @@ void DreamGLShaderLinker::Finalize()
 		if (result == 0)
 		{
 			glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &result);
-			GLchar* debug = new GLchar[result];
-
-			glGetProgramInfoLog(prog, result, 0, debug);
+			GLchar debug[512];
+			GLint size; //gives 0 when checked in debugger
+			glGetProgramInfoLog(prog, 512, &size, debug);
 			printf(debug);
 			glDeleteProgram(prog);
-			delete[] debug; debug = nullptr;
+			//delete[] debug; debug = nullptr;
 
 		}
 	}
@@ -666,16 +730,18 @@ void DreamGLShaderLinker::Finalize()
 	}
 }
 
-void DreamGLShaderLinker::BindShaderLink()
+void DreamGLShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 {
-
 	glUseProgram(prog);
 
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
 		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+			uint32_t frameIndex = DreamGraphics::GetInstance()->currentFrame;
+			uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
+			int index = (indexStore[uniformData.first] * maxFramesInFlight) + frameIndex;
 
-			size_t handle = uniformData.second.buffer->GetBufferPointer().GetStoredHandle();
 
+			size_t handle = uniformData.second.buffers[index]->GetBufferPointer().GetStoredHandle();
 			std::string name = uniformData.first;
 			unsigned int bindPoint = bindingPoints[name];
 			unsigned int bindIndex = uniformData.second.bindingIndex;
@@ -685,7 +751,6 @@ void DreamGLShaderLinker::BindShaderLink()
 			if (name != "ConstantData") {
 				glBindBufferBase(GL_UNIFORM_BUFFER, bindPoint, handle);
 			}
-			
 		}
 	}
 }

@@ -2,8 +2,9 @@
 #include <string>
 #include <unordered_map>
 #include <DreamMath.h>
+#include "DreamShaderLinker.h"
 
-class DreamShaderLinker;
+//class DreamShaderLinker;
 
 struct MatDataComponent {
 	DreamMath::DreamMatrix4X4 worldMat;
@@ -23,13 +24,21 @@ public:
 		graphicsPipeLine = nullptr;
 	}
 
-	DreamMaterial(DreamShaderLinker* pipeline) {
-		graphicsPipeLine = pipeline;
-	}
+	DreamMaterial(DreamShaderLinker* pipeline);
 
-	void Bind(MatDataComponent& data);
+	void LoadUniformIndexs(UniformIndexStore& store);
+	void Bind(UniformIndexStore& indexStore);
 	void UnBind();
 
 private:
 	DreamShaderLinker* graphicsPipeLine;
+
+public:
+	template<typename T>
+	inline void UpdateUniformData(T& data, std::string name, unsigned index)
+	{
+		if (graphicsPipeLine) {
+			graphicsPipeLine->UpdateUniform<T>(name, data, index);
+		}
+	}
 };

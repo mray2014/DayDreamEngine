@@ -18,5 +18,5 @@ public:
 
 	virtual void Update() {};
 private:
-
+	UniformIndexStore indexStore;
 };

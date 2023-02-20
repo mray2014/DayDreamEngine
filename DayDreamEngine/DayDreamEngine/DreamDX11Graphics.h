@@ -85,7 +85,7 @@ protected:
 public:
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;
-	void BindShaderLink() override;
+	void BindShaderLink(UniformIndexStore& indexStore) override;
 	void UnBindShaderLink() override;
 private:
 	DreamGraphics* graphics;

@@ -12,21 +12,27 @@ struct DreamPointer {
 
 	}
 
-	DreamPointer(void* ptr, size_t ptrSize = 0) {
-		store.ptr = ptr;
+	DreamPointer(void* p, size_t ptrSize = 0) {
+		ptr = p;
 		ptrBlockSize = ptrSize;
 	}
 
-	DreamPointer(size_t handle, size_t ptrSize = 0){
-		store.handle = handle;
+	DreamPointer(size_t hand, size_t ptrSize = 0){
+		handle = hand;
 		ptrBlockSize = ptrSize;
 	}
 
-	const void* GetStoredPointer() {
-		return store.ptr;
+	DreamPointer(size_t hand, void* p, size_t ptrSize = 0) {
+		ptr = p;
+		handle = hand;
+		ptrBlockSize = ptrSize;
+	}
+
+	void* GetStoredPointer() {
+		return ptr;
 	}
 	size_t& GetStoredHandle() {
-		return store.handle;
+		return handle;
 	}
 
 	size_t GetPtrBlockSize() {
@@ -34,13 +40,9 @@ struct DreamPointer {
 	}
 
 private:
-	union StoreUnion
-	{
-		void* ptr;
-		size_t handle;
-	};
-	StoreUnion store;
-	size_t ptrBlockSize;
+	void* ptr = nullptr;
+	size_t handle = -1;
+	size_t ptrBlockSize = 0;
 };
 
 class DreamBuffer {
@@ -50,6 +52,7 @@ public:
 	}
 	DreamBuffer(void* newPtr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
 	DreamBuffer(size_t handle, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(size_t handle, void* newPtr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
 
 	~DreamBuffer() {
 		if (stride) {
@@ -87,8 +90,8 @@ private:
 
 	BufferType type;
 	DreamPointer info;
-	size_t numOfBuffers;
+	size_t numOfBuffers = 0;
 
-	size_t* stride;
-	size_t* offset;
+	size_t* stride = nullptr;
+	size_t* offset = nullptr;
 };

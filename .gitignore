@@ -15,6 +15,7 @@
 DebugRelease/
 DayDreamEngine/DebugRelease/
 DayDreamEngine/DayDreamEngine/DebugRelease/
+DayDreamEngine/Platform/Dependent/
 
 # Build results
 [Dd]ebug/
@@ -28,6 +29,7 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

@@ -11,8 +11,6 @@
 #include "DreamCameraManager.h"
 #include "DreamMaterial.h"
 
-
-
 void UnitTestFileIO() {
 
 	std::string testLines[]{
@@ -89,6 +87,7 @@ int main()
 
 	graphics->InitWindow(800, 600, "Hey It's a window!");
 	graphics->InitGraphics();
+	graphics->InitConstData();
 	graphics->SetScreenClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
 	//graphics->SetViewPort(0,0, 200, 200); // TODO: doesnt work halp ;-;
@@ -103,13 +102,20 @@ int main()
 
 	DreamMaterial* defaultMat = new DreamMaterial(defaultLinker);
 
-	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
+
 	std::vector<uint32_t> indices = std::vector<uint32_t>();
 
+	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
 	vert.push_back(DreamVertex(-0.5, -0.5, 0.0f));
 	vert.push_back(DreamVertex(0.0, 0.5, 0.0f));
 	vert.push_back(DreamVertex(0.5, -0.5, 0.0f));
 	vert.push_back(DreamVertex(1.0, 0.5, 0.0f));
+
+	std::vector<DreamVertex> vert2 = std::vector<DreamVertex>();
+	vert2.push_back(DreamVertex(-0.5, -0.5, 0.0f));
+	vert2.push_back(DreamVertex(0.0, 2.0f, 0.0f));
+	vert2.push_back(DreamVertex(0.5, -0.5, 0.0f));
+	vert2.push_back(DreamVertex(1.0, 0.5, 0.0f));
 
 	indices.push_back(0);
 	indices.push_back(1);
@@ -118,14 +124,14 @@ int main()
 	indices.push_back(1);
 	indices.push_back(3);
 
-	DreamMesh* triangleMesh = new DreamMesh(vert);
+	DreamMesh* triangleMesh = new DreamMesh(vert2);
 	DreamMesh* parallogramMesh = new DreamMesh(vert, indices);
 
 	std::vector<DreamGameObject*> objList;
 	DreamGameObject* triangleObj = new DreamGameObject(triangleMesh, defaultMat);
 	DreamGameObject* parallogramObj = new DreamGameObject(parallogramMesh, defaultMat);
-	objList.push_back(triangleObj);
 	objList.push_back(parallogramObj);
+	objList.push_back(triangleObj);
 
 	parallogramObj->transform.position = DreamVector3(0, 0, -5);
 

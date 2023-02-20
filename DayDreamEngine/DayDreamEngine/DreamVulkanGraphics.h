@@ -1,6 +1,8 @@
 #pragma once
 #include "DreamGraphics.h"
-
+#include <SPIRV/spirv_cross.hpp>
+#pragma comment(lib, "spirv-cross-reflectd.lib")
+#pragma comment(lib, "spirv-cross-cored.lib")
 #define VK_USE_PLATFORM_WIN32_KHR
 
 #define GLFW_INCLUDE_VULKAN
@@ -21,12 +23,14 @@ public:
 	~DreamVulkanShaderLinker() override;
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;
-	void BindShaderLink() override;
+	void BindShaderLink(UniformIndexStore& indexStore) override;
 	void UnBindShaderLink() override;
 
 private:
 	DreamVulkanGraphics* vulkanGraphics = nullptr;
 	std::vector<VkPipelineShaderStageCreateInfo> shadersStageInfo;
+	std::vector<VkDescriptorSetLayoutBinding> descriptorBindings;
+	std::vector <VkDescriptorSet> pipelineDescSet;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	friend class DreamGraphics;
@@ -43,6 +47,17 @@ public:
 	DreamBuffer* VAO;
 };
 
+struct VulkanBufferContainer {
+	VkBuffer buffer;
+	VkDeviceMemory bufferMemory;
+	void* mappedMemory;
+
+	VulkanBufferContainer(VkBuffer buf, VkDeviceMemory bufMem, void* mapMem) {
+		buffer = buf;
+		bufferMemory = bufMem;
+		mappedMemory = mapMem;
+	}
+};
 
 class DreamVulkanGraphics : public DreamGraphics
 {
@@ -67,7 +82,7 @@ public:
 	void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) override;
 	DreamBuffer* FinalizeVertexLayout() override;
 	void UnBindBuffer(BufferType type) override;
-	bool LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr) override;
+	DreamShader* LoadShader(const wchar_t* file, ShaderType shaderType) override;
 	void ReleaseShader(DreamShader* shader) override;
 	void DrawWithIndex(size_t size) override;
 	void DrawWithVertex(size_t size) override;
@@ -122,7 +137,7 @@ public:
 	void createImageViews();
 	void createRenderPass();
 
-	VkPipeline CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout);
+	VkPipeline CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout, std::vector<VkDescriptorSet>& pipelineDescSet, std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings);
 
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	void createFramebuffers();
@@ -137,9 +152,11 @@ public:
 	void recreateSwapChain();
 	void cleanupSwapChain();
 
+	void createDescriptorPool();
+	void updateDescriptorSet(VkWriteDescriptorSet& descSet);
+	void BindDescriptorSet(VkDescriptorSet descSet, VkPipelineLayout layout);
+
 private:
-	const int MAX_FRAMES_IN_FLIGHT = 2;
-	uint32_t currentFrame = 0;
 	uint32_t imageIndex;
 	bool framebufferResized = false;
 
@@ -165,6 +182,9 @@ private:
 
 	VkSurfaceKHR surface;
 
+	VkDescriptorPool descriptorPool;
+	std::vector<VkDescriptorSet> descriptorSets;
+
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 
@@ -175,6 +195,8 @@ private:
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
+
+	std::vector<VkDescriptorSetLayout> descSetLayouts;
 
 	GLFWwindow* window = nullptr;
 };

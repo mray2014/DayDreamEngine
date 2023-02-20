@@ -1,5 +1,6 @@
 #pragma once
 #include "DreamBuffer.h"
+#include <DreamMath.h>
 #include <unordered_map>
 #include <string>
 
@@ -11,26 +12,51 @@ enum ShaderType {
 	ComputeShader,
 };
 
-using UniformMembers = std::unordered_map<std::string, unsigned int>;
+#pragma region Uniform Information
+using UniformMembers = std::unordered_map<std::string, int>;
 
 struct UniformInfo {
-	DreamBuffer* buffer;
-	unsigned int bindingIndex;
+	std::vector<DreamBuffer*> buffers;
+	int bindingIndex;
+	int uniformSize;
+	int maxIndex;
 	UniformMembers uniformMembers;
 
-	UniformInfo() {
-		buffer = nullptr;
-		bindingIndex = -1;
-	}
+	UniformInfo();
+	UniformInfo(int index, int size, UniformMembers members);
 
-	UniformInfo(DreamBuffer* buf, unsigned int index, UniformMembers members) {
-		buffer = buf;
-		bindingIndex = index;
-		uniformMembers = members;
-	}
+	int AddUniformBuffer();
+	DreamBuffer* GetUniformBuffer(int index);
 };
 
 using UniformList = std::unordered_map<std::string, UniformInfo>;
+
+using UniformIndexStore = std::unordered_map<std::string, unsigned int>;
+
+using UniformBindingPoints = std::unordered_map<std::string, unsigned int>;
+
+
+enum UniformBufferLayout {
+	ConstantData = 0,
+	MaterialData = 1
+};
+struct ConstantUniformData {
+	DreamMath::DreamMatrix4X4 viewMat;
+	DreamMath::DreamMatrix4X4 projMat;
+	float totalTime;
+
+	UniformMembers GetMemberData() {
+		UniformMembers members;
+		members["viewMat"] = sizeof(DreamMath::DreamMatrix4X4);
+		members["projMat"] = sizeof(DreamMath::DreamMatrix4X4);
+		members["time"] = sizeof(float);
+
+		return members;
+	}
+};
+
+#pragma endregion
+
 class DreamShader {
 public:
 	DreamShader();

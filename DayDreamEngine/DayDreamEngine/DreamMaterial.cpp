@@ -1,11 +1,18 @@
 #include "DreamMaterial.h"
-#include "DreamGraphics.h"
 
-void DreamMaterial::Bind(MatDataComponent& data)
+
+DreamMaterial::DreamMaterial(DreamShaderLinker* pipeline) {
+	graphicsPipeLine = pipeline;
+}
+
+void DreamMaterial::LoadUniformIndexs(UniformIndexStore& store) {
+	graphicsPipeLine->GenerateUniformIndexs(store);
+}
+
+void DreamMaterial::Bind(UniformIndexStore& indexStore)
 {
 	if (graphicsPipeLine) {
-		graphicsPipeLine->UpdateUniform<MatDataComponent>("MaterialData", data);
-		graphicsPipeLine->BindShaderLink();
+		graphicsPipeLine->BindShaderLink(indexStore);
 	}
 }
 

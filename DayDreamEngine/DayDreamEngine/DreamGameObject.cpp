@@ -12,13 +12,16 @@ DreamGameObject::DreamGameObject(DreamMesh* mesh, DreamMaterial* mat) {
 	materialInstanceComp = MatDataComponent();
 	objMesh = mesh;
 	material = mat;
+
+	material->LoadUniformIndexs(indexStore);
 }
 
 void DreamGameObject::Draw()
 {
 	materialInstanceComp.worldMat = transform.GetWorldMatrix();
 	if (material && objMesh) {
-		material->Bind(materialInstanceComp);
+		material->UpdateUniformData<MatDataComponent>(materialInstanceComp, "MaterialData", indexStore["MaterialData"]);
+		material->Bind(indexStore);
 		objMesh->DrawOpaque();
 	}
 }

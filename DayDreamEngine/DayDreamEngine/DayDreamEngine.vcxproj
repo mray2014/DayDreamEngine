@@ -1309,6 +1309,7 @@
     <ClCompile Include="DreamMaterial.cpp" />
     <ClCompile Include="DreamMesh.cpp" />
     <ClCompile Include="DreamShader.cpp" />
+    <ClCompile Include="DreamShaderLinker.cpp" />
     <ClCompile Include="DreamVulkanGraphics.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Debug|Win32'">true</ExcludedFromBuild>
@@ -1401,6 +1402,7 @@
     <ClInclude Include="DreamMaterial.h" />
     <ClInclude Include="DreamMesh.h" />
     <ClInclude Include="DreamShader.h" />
+    <ClInclude Include="DreamShaderLinker.h" />
     <ClInclude Include="DreamVulkanGraphics.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Debug|Win32'">true</ExcludedFromBuild>

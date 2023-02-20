@@ -321,6 +321,9 @@ void DreamDX11Graphics::ClearScreen()
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 		1.0f,
 		0);
+
+	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
+	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
 }
 
 void DreamDX11Graphics::SwapBuffers()
@@ -890,7 +893,7 @@ void DreamDX11ShaderLinker::Finalize()
 {
 }
 
-void DreamDX11ShaderLinker::BindShaderLink()
+void DreamDX11ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 {
 	DreamDX11Graphics* dxGraphics = (DreamDX11Graphics*)graphics;
 

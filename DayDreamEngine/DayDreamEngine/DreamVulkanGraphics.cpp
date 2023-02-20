@@ -1,4 +1,5 @@
 #include "DreamVulkanGraphics.h"
+
 #include <set>
 #include <cstdint> // Necessary for uint32_t
 #include <limits> // Necessary for std::numeric_limits
@@ -6,6 +7,9 @@
 #include <DreamFileIO.h>
 #include <iostream>
 #include "DreamMesh.h"
+
+#include <DreamTimeManager.h>
+#include "DreamCameraManager.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -538,13 +542,46 @@ void DreamVulkanGraphics::createRenderPass() {
 		throw std::runtime_error("failed to create render pass!");
 	}
 }
-VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout) {
+VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout, std::vector<VkDescriptorSet>& pipelineDescSet, std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings) {
 	//VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	//vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	//vertexInputInfo.vertexBindingDescriptionCount = 0;
 	//vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
 	//vertexInputInfo.vertexAttributeDescriptionCount = 0;
 	//vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+
+	VkDescriptorSetLayout descriptorSetLayout = nullptr;
+
+	uint32_t descriptorSize = (uint32_t)descriptorBindings.size();
+	if (descriptorSize > 0) {
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = descriptorSize;
+		layoutInfo.pBindings = &descriptorBindings[0];
+		//layoutInfo.flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT; VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT
+
+
+		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+		
+		//descSetLayouts.push_back(descriptorSetLayout);
+
+		pipelineDescSet.resize(MAX_FRAMES_IN_FLIGHT);
+		std::vector<VkDescriptorSetLayout> descLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+
+
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		allocInfo.pSetLayouts = descLayouts.data();
+
+		if (vkAllocateDescriptorSets(device, &allocInfo, &pipelineDescSet[0]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+	}
+
 
 	// If we are gonna layout vertex input data
 	VkVertexInputBindingDescription bindingDescription{};
@@ -647,8 +684,8 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 	//When i need to set uniform values in shaders 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+	pipelineLayoutInfo.setLayoutCount = 1; // Optional
+	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; // Optional
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -750,6 +787,22 @@ void DreamVulkanGraphics::createSyncObjects() {
 		}
 	}
 }
+void DreamVulkanGraphics::createDescriptorPool() {
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+
+	poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor pool!");
+	}
+}
 
 void DreamVulkanGraphics::recordCommandBuffer(VkCommandBuffer commandBuffer,  size_t imageIndex) {
 	VkCommandBufferBeginInfo beginInfo{};
@@ -790,6 +843,14 @@ void DreamVulkanGraphics::DestroyGraphicsPipeline(VkPipeline pipe, VkPipelineLay
 	}
 }
 
+void DreamVulkanGraphics::updateDescriptorSet(VkWriteDescriptorSet& descSet) {
+	vkUpdateDescriptorSets(device, 1, &descSet, 0, nullptr);
+}
+
+void DreamVulkanGraphics::BindDescriptorSet(VkDescriptorSet descSet, VkPipelineLayout layout) {
+	vkCmdBindDescriptorSets(commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descSet, 0, nullptr);
+}
+
 long DreamVulkanGraphics::InitGraphics()
 {
 
@@ -805,6 +866,7 @@ long DreamVulkanGraphics::InitGraphics()
 	createCommandPool();
 	createCommandBuffer();
 	createSyncObjects();
+	createDescriptorPool();
 
 	return 0;
 }
@@ -857,6 +919,14 @@ void DreamVulkanGraphics::ClearScreen()
 	scissor.offset = { 0, 0 };
 	scissor.extent = swapChainExtent;
 	vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
+
+	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
+	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
+	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
+	matConstData.totalTime = DreamTimeManager::totalTime;
+
+	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
+	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
 }
 
 void DreamVulkanGraphics::SwapBuffers()
@@ -959,6 +1029,10 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferDa
 		flag = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 		break;
 	}
+	case UniformBuffer: {
+		flag = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		break;
+	}
 	}
 
 	VkBufferCreateInfo bufferInfo{};
@@ -991,13 +1065,22 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferDa
 
 	void* data;
 	vkMapMemory(device, bufferMemory, 0, bufferInfo.size, 0, &data);
-	memcpy(data, bufferData, (size_t)bufferInfo.size);
-	vkUnmapMemory(device, bufferMemory);
+
+	if (bufferData) {
+		memcpy(data, bufferData, (size_t)bufferInfo.size);
+	}
+	else {
+		memset(data, 0, (size_t)bufferInfo.size);
+	}
+	
+	if (type != UniformBuffer) {
+		vkUnmapMemory(device, bufferMemory);
+	}
 
 	//vkDestroyBuffer(device, vertexBuffer, nullptr);
 	//vkFreeMemory(device, vertexBufferMemory, nullptr);
-
-	return new DreamBuffer((void*)buffer, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
+	VulkanBufferContainer* container = new VulkanBufferContainer(buffer, bufferMemory, data);
+	return new DreamBuffer(container, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
 
 DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, size_t bufferSize)
@@ -1007,20 +1090,22 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, size_t bufferS
 
 void DreamVulkanGraphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
 {
-
+	VulkanBufferContainer* container = (VulkanBufferContainer*)buffer->GetBufferPointer().GetStoredPointer();	
+	memcpy(container->mappedMemory, bufferData, bufSize);
 }
 
 void DreamVulkanGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 {
+	VulkanBufferContainer* container = (VulkanBufferContainer*)buffer->GetBufferPointer().GetStoredPointer();
 	switch (type) {
 	case ArrayBuffer: {
-		VkBuffer vertexBuffers[] = { (VkBuffer)(buffer->GetBufferPointer().GetStoredPointer()) };
+		VkBuffer vertexBuffers[] = { container->buffer };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
 		break;
 	}
 	case ElementArrayBuffer: {
-		vkCmdBindIndexBuffer(commandBuffers[currentFrame], (VkBuffer)(buffer->GetBufferPointer().GetStoredPointer()), 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(commandBuffers[currentFrame], container->buffer, 0, VK_INDEX_TYPE_UINT32);
 		break;
 	}
 	}
@@ -1043,8 +1128,14 @@ void DreamVulkanGraphics::UnBindBuffer(BufferType type)
 {
 }
 
-bool DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType shaderType, DreamPointer& ptr)
+DreamShader* DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType shaderType)
 {
+	bool hasMatUniform = false;
+	bool hasConstDataUniform = false;
+
+	UniformList uniforms;
+	UniformMembers uniformMembers;
+
 	std::wstring wfile = L"";
 	wfile.append(file);
 	std::string convertFile(wfile.begin(), wfile.end());
@@ -1060,19 +1151,73 @@ bool DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType shaderType,
 	DreamFileIO::ReadFullFileQuick(&shaderCode, length);
 	DreamFileIO::CloseFileRead();
 
+	// Read SPIR-V from disk or similar.
+	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
+	spirv_cross::Compiler refle(code, length / sizeof(uint32_t));
+
+	// The SPIR-V is now parsed, and we can perform reflection on it.
+	spirv_cross::ShaderResources resources = refle.get_shader_resources();
+
+	// Get all sampled images in the shader.
+	for (auto& resource : resources.uniform_buffers)
+	{
+		std::string name = resource.name;
+
+		//=======Grabbing uniform size and member data
+		const spirv_cross::SPIRType type = refle.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
+		size_t structSize = refle.get_declared_struct_size(type);
+
+		int memberOffset = 0;
+		for (int i = 0; i < type.member_types.size(); i++) {
+			size_t memberSize = refle.get_declared_struct_member_size(type, i);
+			std::string memberName = refle.get_member_name(resource.base_type_id, i);
+
+			uniformMembers[memberName] = memberOffset;
+			memberOffset += memberSize;
+		}
+
+
+		//=======Grabbing binding index of uniform
+		unsigned set = refle.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		unsigned binding = refle.get_decoration(resource.id, spv::DecorationBinding);
+		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+
+		// Modify the decoration to prepare it for GLSL.
+		refle.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+		// Some arbitrary remapping if we want.
+		refle.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+
+		//=======Creating buffer for uniform
+
+		if (name == "ConstantData") {
+			hasConstDataUniform = true;
+		}
+		else if (name == "MaterialData") {
+			hasMatUniform = true;
+		}
+
+		//=======Storing uniform
+		if (hasConstDataUniform) {
+			uniforms[name] = constDataBufferInfo;
+		}
+		else {
+			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
+		}
+		
+	}
+
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = length;
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode);
+	createInfo.pCode = code;
 
 	VkShaderModule shaderModule;
 	if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create shader module!");
-		return false;
+		return nullptr;
 	}
 	//vkDestroyShaderModule(device, shaderModule, nullptr);
-	ptr = DreamPointer(shaderModule);
-	return true;
+	return new DreamShader(shaderType, DreamPointer((void*)shaderModule), uniforms, (hasMatUniform && hasConstDataUniform));
 }
 
 void DreamVulkanGraphics::ReleaseShader(DreamShader* shader)
@@ -1123,6 +1268,10 @@ void DreamVulkanGraphics::TerminateGraphics()
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 	}
 
+	for (int i = 0; i < descSetLayouts.size(); i++) {
+		vkDestroyDescriptorSetLayout(device, descSetLayouts[i], nullptr);
+	}
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
 		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -1146,8 +1295,23 @@ void DreamVulkanGraphics::DestroyBuffer(DreamBuffer* buffer)
 {
 	vkDeviceWaitIdle(device);
 
+	VulkanBufferContainer* container = (VulkanBufferContainer*)buffer->GetBufferPointer().GetStoredPointer();
 
-	vkDestroyBuffer(device, (VkBuffer)(buffer->GetBufferPointer().GetStoredHandle()), nullptr);
+	if (buffer->GetBufferType() == UniformBuffer) {
+		vkUnmapMemory(device, container->bufferMemory);
+	}
+	vkDestroyBuffer(device, container->buffer, nullptr);
+	vkFreeMemory(device, container->bufferMemory, nullptr);
+
+	if (container) {
+		delete container;
+		container = nullptr;
+	}
+
+	if (buffer) {
+		delete buffer;
+		buffer = nullptr;
+	}
 }
 
 DreamVulkanShaderLinker::DreamVulkanShaderLinker()
@@ -1179,6 +1343,21 @@ void DreamVulkanShaderLinker::AttachShader(DreamShader* shader)
 		break;
 	}
 	}
+	
+	for(auto& uniformsData : shader->shaderUniforms){
+		VkDescriptorSetLayoutBinding uboLayoutBinding{};
+		uboLayoutBinding.binding = uniformsData.second.bindingIndex;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.stageFlags = flags;
+		uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+		//VkDescriptorBindingFlags flag;
+		//VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo;
+		//bindingFlagsInfo.pBindingFlags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+
+		descriptorBindings.push_back(uboLayoutBinding);
+	}
 
 	VkPipelineShaderStageCreateInfo shaderStageInfo{};
 	shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -1187,16 +1366,74 @@ void DreamVulkanShaderLinker::AttachShader(DreamShader* shader)
 	shaderStageInfo.pName = "main";
 
 	shadersStageInfo.push_back(shaderStageInfo);
+	linkedShaders.push_back(shader);
 }
 
 void DreamVulkanShaderLinker::Finalize()
 {
-	graphicsPipeline = vulkanGraphics->CreateGraphicPipeLine(shadersStageInfo, pipelineLayout);
+	unsigned int bindingPointIndex = 2;
+	for (int i = 0; i < linkedShaders.size(); i++) {
+		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+			std::string name = uniformData.first;
+
+			if (name == "ConstantData") {
+				bindingPoints[name] = 0;
+			}
+			else if (name == "MaterialData") {
+				bindingPoints[name] = 1;
+			}
+			else {
+				bindingPoints[name] = bindingPointIndex;
+				bindingPointIndex++;
+			}
+		}
+	}
+	graphicsPipeline = vulkanGraphics->CreateGraphicPipeLine(shadersStageInfo, pipelineLayout, pipelineDescSet, descriptorBindings);
 }
 
-void DreamVulkanShaderLinker::BindShaderLink()
+void DreamVulkanShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 {
+	uint32_t curFrame = DreamGraphics::GetInstance()->currentFrame;
+	uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
+	for (size_t i = 0; i < linkedShaders.size(); i++) {
+		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+
+
+
+			int index = (indexStore[uniformData.first] * maxFramesInFlight) + curFrame;
+
+
+			VulkanBufferContainer* container = (VulkanBufferContainer*)uniformData.second.buffers[index]->GetBufferPointer().GetStoredPointer();
+			std::string name = uniformData.first;
+			unsigned int bindPoint = bindingPoints[name];
+			unsigned int bindIndex = uniformData.second.bindingIndex;
+
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = container->buffer;
+			bufferInfo.offset = 0;
+			bufferInfo.range = uniformData.second.buffers[index]->GetBufferPointer().GetPtrBlockSize();
+
+			VkWriteDescriptorSet descriptorWrite{};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.dstSet = pipelineDescSet[curFrame];
+			descriptorWrite.dstBinding = bindPoint;
+			descriptorWrite.dstArrayElement = 0;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.pBufferInfo = &bufferInfo;
+			descriptorWrite.pImageInfo = nullptr; // Optional
+			descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+			vulkanGraphics->updateDescriptorSet(descriptorWrite);
+
+			if (name != "ConstantData") {
+				
+			}
+		}
+	}
+
 	vulkanGraphics->BindGraphicsPipeline(graphicsPipeline);
+	vulkanGraphics->BindDescriptorSet(pipelineDescSet[curFrame], pipelineLayout);
 }
 
 void DreamVulkanShaderLinker::UnBindShaderLink()
@@ -1210,6 +1447,7 @@ DreamVulkanVertexArray::DreamVulkanVertexArray(DreamBuffer* vert, DreamBuffer* i
 
 DreamVulkanVertexArray::~DreamVulkanVertexArray()
 {
+
 }
 
 void DreamVulkanVertexArray::Bind()

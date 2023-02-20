@@ -72,6 +72,9 @@
     <ClCompile Include="DreamMaterial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DreamShaderLinker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h">
@@ -121,6 +124,9 @@
     </ClInclude>
     <ClInclude Include="Shaders\VertexLayout.h">
       <Filter>Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="DreamShaderLinker.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
