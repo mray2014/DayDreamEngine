@@ -1,4 +1,16 @@
 
+cbuffer ConstantData : register(b0) {
+	matrix viewMat;
+	matrix projMat;
+	float time;
+};
+
+cbuffer MaterialData : register(b1) {
+	matrix worldMat;
+	float4 color;
+	float specular;
+};
+
 struct VertexShaderInput
 {
 	// Data type
@@ -20,6 +32,8 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 position		: SV_POSITION;	// XYZW position (System Value Position)
+	float4 color		: COLOR0;
+	float time			: TEXCOORD0;
 	//float3 uvw			: TEXCOORD;
 };
 
@@ -28,7 +42,11 @@ VertexToPixel main(VertexShaderInput input)
 {
 	VertexToPixel output;
 
-	output.position = float4(input.position.x, input.position.y, input.position.z, 1.0f);
+	matrix worldViewProj = mul(mul(worldMat, viewMat), projMat);
+
+	output.position = mul(float4(input.position, 1.0f), worldViewProj);
+	output.color = color;
+	output.time = time;
 
 	return output;
 }

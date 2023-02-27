@@ -1,9 +1,17 @@
 struct VertexToPixel
 {
 	float4 position		: SV_POSITION;
+	float4 color		: COLOR0;
+	float time			: TEXCOORD0;
 };
 
-float4 main(VertexToPixel input) : SV_TARGET
+struct PixelOutput {
+	float4 color		: SV_TARGET;
+};
+
+PixelOutput main(VertexToPixel input)
 {
-	return float4(1.0f, 0.5f, 0.0f, 1.0f);
+	PixelOutput output;
+	output.color = float4(input.color.x * abs(sin(input.time)), input.color.y * abs(cos(input.time - 120.0f)), input.color.z * abs(sin(input.time - 240.0f)), 1.0f);
+	return output;
 }

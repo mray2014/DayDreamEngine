@@ -1,10 +1,8 @@
 #pragma once
-#if defined DREAM_OPENGL
+#if defined DREAM_OPENGL || defined DREAM_VULKAN
 #define COL_MAJOR
-#elif defined DREAM_DX
+#elif defined DREAM_DX11 || defined DREAM_DX12
 #define ROW_MAJOR
-#elif defined DREAM_VULKAN
-#define COL_MAJOR
 #endif
 
 #include <string>
@@ -1533,9 +1531,11 @@ public:
 	DreamVector3 scale;
 
 	DreamMatrix4X4 GetWorldMatrix() {
-		return ((DreamMath::CreateScaleMatrix(scale)
+		
+		DreamMatrix4X4 worldMat = ((DreamMath::CreateScaleMatrix(scale)
 			* DreamMath::CreateRotationMatrix(rotation))
 			* DreamMath::CreateTranslationMatrix(position));
+		return worldMat;
 	}
 
 	DreamVector3 GetForward() {

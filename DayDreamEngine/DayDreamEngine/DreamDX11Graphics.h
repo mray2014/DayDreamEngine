@@ -1,4 +1,10 @@
 #pragma once
+#include <SPIRV/spirv_hlsl.hpp>
+#pragma comment(lib, "spirv-cross-hlsld.lib")
+#pragma comment(lib, "spirv-cross-glsld.lib")
+#pragma comment(lib, "spirv-cross-cored.lib")
+
+
 #include "DreamGraphics.h"
 #include <Windows.h>
 
@@ -49,6 +55,8 @@ public:
 
 	void BindVertexLayout(DreamBuffer* layout);
 	void UnBindVertexLayout();
+
+	void BindUniformBuffer(ShaderType shaderType, DreamBuffer* buffer, unsigned int slotNum);
 
 
 	static LRESULT CALLBACK WindowProc(

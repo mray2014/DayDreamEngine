@@ -1,9 +1,15 @@
 #include "DreamDX11Graphics.h"
 #include <iostream>
 #include <d3dcompiler.h>
+#include <DreamFileIO.h>
+#include <string_view>
+#include <algorithm>
 
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+
+#include <DreamTimeManager.h>
+#include "DreamCameraManager.h"
 
 DreamDX11Graphics* instance = nullptr;
 
@@ -322,6 +328,12 @@ void DreamDX11Graphics::ClearScreen()
 		1.0f,
 		0);
 
+	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
+	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
+	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
+
+	matConstData.totalTime = DreamTimeManager::totalTime;
+
 	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
 	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
 }
@@ -351,6 +363,9 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 		dataSize += strides[i];
 	}
 	dataSize *= numOfElements;
+
+	dataSize += 16 - (dataSize % 16);
+
 	// Create the proper struct to hold the initial vertex data
 	// - This is how we put the initial data into the buffer
 	D3D11_SUBRESOURCE_DATA initialBufferData;
@@ -387,6 +402,22 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 		device->CreateBuffer(&vbd, &initialBufferData, &buffer);
 		break;
 	}
+	case BufferType::UniformBuffer: {
+		D3D11_BUFFER_DESC vbd;
+
+		vbd.Usage = D3D11_USAGE_DEFAULT;
+		vbd.ByteWidth = dataSize;       // 3 = number of vertices in the buffer
+		vbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER; // Tells DirectX this is a vertex buffer
+		vbd.CPUAccessFlags = 0;
+		vbd.MiscFlags = 0;
+		vbd.StructureByteStride = 0;
+
+
+		// Actually create the buffer with the initial data
+		// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
+		device->CreateBuffer(&vbd, 0, &buffer);
+		break;
+	}
 	}
 
 	return new DreamBuffer((void*)buffer, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
@@ -399,7 +430,8 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, size_t bufferSiz
 
 void DreamDX11Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
 {
-
+	ID3D11Buffer* buff = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
+	context->UpdateSubresource(buff, 0, 0, bufferData, bufSize, 0);
 }
 
 
@@ -426,7 +458,32 @@ void DreamDX11Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 	}
 	}
 }
-
+void DreamDX11Graphics::BindUniformBuffer(ShaderType shaderType, DreamBuffer* buffer, unsigned int slotNum) {
+	ID3D11Buffer* buff = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
+	unsigned int numOfBuffers = buffer->GetNumOfBuffers();
+	switch (shaderType) {
+	case ShaderType::VertexShader: {
+		context->VSSetConstantBuffers(slotNum, numOfBuffers, &buff);
+		break;
+	}
+	case ShaderType::PixelShader: {
+		context->PSSetConstantBuffers(slotNum, numOfBuffers, &buff);
+		break;
+	}
+	case ShaderType::GeometryShader: {
+		context->GSSetConstantBuffers(slotNum, numOfBuffers, &buff);
+		break;
+	}
+	case ShaderType::TessalationShader: {
+		//context->VSSetConstantBuffers(slotNum, numOfBuffers, &buff);
+		break;
+	}
+	case ShaderType::ComputeShader: {
+		context->CSSetConstantBuffers(slotNum, numOfBuffers, &buff);
+		break;
+	}
+	}
+}
 
 ID3DBlob* shaderBlob;
 
@@ -532,6 +589,8 @@ void DreamDX11Graphics::UnBindBuffer(BufferType type)
 
 DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shaderType)
 {
+
+#pragma region ShaderReflection
 	DreamShader* shader = nullptr;
 	bool hasMatUniform = false;
 	bool hasConstDataUniform = false;
@@ -539,18 +598,139 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	UniformList uniforms;
 	UniformMembers uniformMembers;
 
-	//$(OutDir)
-	std::string outputDir = OUTPUT_DIR;
-	std::wstring path(outputDir.begin(), outputDir.end());
-	path.append(file);
-	path.append(L".cso");
 
-	HRESULT hr = D3DReadFileToBlob(path.c_str(), &shaderBlob);
+	//  Loading SpirV shader file
+	std::wstring wfile = L"";
+	wfile.append(file);
+	std::string convertFile(wfile.begin(), wfile.end());
+
+	std::string spirv_Path = "Shaders/";
+	spirv_Path.append(convertFile);
+	spirv_Path.append(".spv");
+
+
+	DreamFileIO::OpenFileRead(spirv_Path.c_str(), std::ios::ate | std::ios::binary);
+
+	char* shaderCode = nullptr;
+	size_t length;
+	DreamFileIO::ReadFullFileQuick(&shaderCode, length);
+	DreamFileIO::CloseFileRead();
+
+	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
+	// Read SPIR-V from disk or similar.
+	std::vector<uint32_t> spirv_binary;
+	spirv_cross::CompilerHLSL hlsl(code, length / sizeof(uint32_t));
+
+
+	// Shader Reflection
+	// The SPIR-V is now parsed, and we can perform reflection on it.
+	spirv_cross::ShaderResources resources = hlsl.get_shader_resources();
+
+	spirv_cross::SmallVector<spirv_cross::Resource> outputs = resources.stage_outputs;
+	//hlsl.set_hlsl_semantic(outputs[0].id, "SV_Target");
+
+	// Get all sampled images in the shader.
+	for (auto& resource : resources.uniform_buffers)
+	{
+		std::string name = resource.name;
+
+		//=======Grabbing uniform size and member data
+		const spirv_cross::SPIRType type = hlsl.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
+		size_t structSize = hlsl.get_declared_struct_size(type);
+
+		int memberOffset = 0;
+		for (int i = 0; i < type.member_types.size(); i++) {
+			size_t memberSize = hlsl.get_declared_struct_member_size(type, i);
+			std::string memberName = hlsl.get_member_name(resource.base_type_id, i);
+
+			uniformMembers[memberName] = memberOffset;
+			memberOffset += memberSize;
+		}
+
+
+		//=======Grabbing binding index of uniform
+		unsigned set = hlsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		unsigned binding = hlsl.get_decoration(resource.id, spv::DecorationBinding);
+		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+
+		// Modify the decoration to prepare it for GLSL.
+		hlsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+		// Some arbitrary remapping if we want.
+		hlsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+
+		//=======Creating buffer for uniform
+		if (name == "ConstantData") {
+			hasConstDataUniform = true;
+		}
+		else if (name == "MaterialData") {
+			hasMatUniform = true;
+		}
+
+		//=======Storing uniform
+		if (name == "ConstantData") {
+			uniforms[name] = constDataBufferInfo;
+		}
+		else {
+			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
+		}
+	}
+
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+	#if defined( DEBUG ) || defined( _DEBUG )
+	flags |= D3DCOMPILE_DEBUG;
+	#endif
+
+	std::string version = "";
+	switch (shaderType) {
+	case ShaderType::VertexShader: {
+		version = "vs";
+		break;
+	}
+	case ShaderType::PixelShader: {
+		version = "ps";
+		break;
+	}
+	case ShaderType::GeometryShader: {
+		version = "gs";
+		break;
+	}
+	case ShaderType::TessalationShader: { // TODO: tessalation is Domain and Hull shaders... break into seperate enums
+		//version = "vs";
+		break;
+	}
+	case ShaderType::ComputeShader: {
+		version = "cs";
+		break;
+	}
+	}
+
+	version.append("_5_0");
+
+	// Set some options.
+	spirv_cross::CompilerHLSL::Options options;
+	options.shader_model = 50;
+	hlsl.set_hlsl_options(options);
+
+	//Compiling Shader
+	std::string source = hlsl.compile();
+	HRESULT hr = D3DCompile(source.c_str(), source.size(), nullptr, nullptr, nullptr, "main", version.c_str(), flags, 0, &shaderBlob, nullptr);
 	if (hr != S_OK)
 	{
 		printf("Failed to open/read Shader file");
-
 	}
+#pragma endregion
+
+#pragma region ShaderCompiling
+	//std::string outputDir = OUTPUT_DIR;
+	//std::wstring path(outputDir.begin(), outputDir.end());
+	//path.append(wfile);
+	//path.append(L".cso");
+	//
+	//HRESULT hr = D3DReadFileToBlob(path.c_str(), &shaderBlob);
+	//if (hr != S_OK)
+	//{
+	//	printf("Failed to open/read Shader file");
+	//}
 
 	// Create the shader - Calls an overloaded version of this abstract
 	// method in the appropriate child class
@@ -616,7 +796,8 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	if (shaderType != ShaderType::VertexShader) {
 		shaderBlob->Release();
 	}
-	
+#pragma endregion
+
 	return shader;
 }
 
@@ -907,6 +1088,28 @@ void DreamDX11ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 				printf("Vertex Input lLayout didnt exsist!");
 			}
 		}
+
+		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+			uint32_t frameIndex = DreamGraphics::GetInstance()->currentFrame;
+			uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
+			int index = (indexStore[uniformData.first] * maxFramesInFlight) + frameIndex;
+
+
+			DreamBuffer* buffer = uniformData.second.buffers[index];
+			std::string name = uniformData.first;
+			unsigned int bindPoint = bindingPoints[name];
+			unsigned int bindIndex = uniformData.second.bindingIndex;
+
+			
+			dxGraphics->BindUniformBuffer(linkedShaders[i]->GetShaderType(), buffer, bindIndex);
+
+			if (name != "ConstantData") {
+				
+			}
+		}
+
+
+
 		linkedShaders[i]->BindShaderData();
 		dxGraphics->SetShader(linkedShaders[i]);
 	}

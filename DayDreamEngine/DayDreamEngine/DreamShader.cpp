@@ -21,7 +21,7 @@ void DreamShader::CreateVertexInputLayout()
 {
 	DreamGraphics* graphics = DreamGraphics::GetInstance();
 	graphics->BeginVertexLayout();
-	graphics->AddVertexLayoutData("POSITION", 3, 0, false, sizeof(DreamVector3));
+	graphics->AddVertexLayoutData("TEXCOORD", 3, 0, false, sizeof(DreamVector3));
 	layout = graphics->FinalizeVertexLayout();
 }
 
