@@ -50,12 +50,10 @@ public:
 struct VulkanBufferContainer {
 	VkBuffer buffer;
 	VkDeviceMemory bufferMemory;
-	void* mappedMemory;
 
-	VulkanBufferContainer(VkBuffer buf, VkDeviceMemory bufMem, void* mapMem) {
+	VulkanBufferContainer(VkBuffer buf, VkDeviceMemory bufMem) {
 		buffer = buf;
 		bufferMemory = bufMem;
-		mappedMemory = mapMem;
 	}
 };
 

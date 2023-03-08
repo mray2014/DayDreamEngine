@@ -50,9 +50,9 @@ public:
 	DreamBuffer() {
 		info = DreamPointer();
 	}
-	DreamBuffer(void* newPtr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
-	DreamBuffer(size_t handle, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
-	DreamBuffer(size_t handle, void* newPtr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(void* newPtr, void* memPtr = nullptr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(size_t handle, void* memPtr = nullptr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
+	DreamBuffer(size_t handle, void* newPtr, void* memPtr = nullptr, BufferType t = BufferType::ArrayBuffer, size_t ptrBlockSize = 0, size_t numOfBuffs = 1, size_t* s = nullptr, size_t* o = nullptr);
 
 	~DreamBuffer() {
 		if (stride) {
@@ -86,10 +86,15 @@ public:
 		return type;
 	}
 
+	void* GetMemoryPointer() {
+		return bufferMemoryPtr;
+	}
+
 private:
 
 	BufferType type;
 	DreamPointer info;
+	void* bufferMemoryPtr = nullptr;
 	size_t numOfBuffers = 0;
 
 	size_t* stride = nullptr;

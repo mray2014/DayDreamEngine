@@ -1079,8 +1079,8 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, void* bufferDa
 
 	//vkDestroyBuffer(device, vertexBuffer, nullptr);
 	//vkFreeMemory(device, vertexBufferMemory, nullptr);
-	VulkanBufferContainer* container = new VulkanBufferContainer(buffer, bufferMemory, data);
-	return new DreamBuffer(container, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
+	VulkanBufferContainer* container = new VulkanBufferContainer(buffer, bufferMemory);
+	return new DreamBuffer(container, data, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
 
 DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, size_t bufferSize)
@@ -1090,8 +1090,7 @@ DreamBuffer* DreamVulkanGraphics::GenerateBuffer(BufferType type, size_t bufferS
 
 void DreamVulkanGraphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
 {
-	VulkanBufferContainer* container = (VulkanBufferContainer*)buffer->GetBufferPointer().GetStoredPointer();	
-	memcpy(container->mappedMemory, bufferData, bufSize);
+	memcpy(buffer->GetMemoryPointer(), bufferData, bufSize);
 }
 
 void DreamVulkanGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)

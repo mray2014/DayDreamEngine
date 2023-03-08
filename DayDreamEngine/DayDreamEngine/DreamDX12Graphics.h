@@ -1,6 +1,11 @@
 #pragma once
 #include "DreamGraphics.h"
 
+#include <SPIRV/spirv_hlsl.hpp>
+#pragma comment(lib, "spirv-cross-hlsld.lib")
+#pragma comment(lib, "spirv-cross-glsld.lib")
+#pragma comment(lib, "spirv-cross-cored.lib")
+
 #define WIN32_LEAN_AND_MEAN
 
 #include <Windows.h>
@@ -111,7 +116,7 @@ public:
 	ComPtr<ID3D12CommandQueue> CreateCommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type);
 	bool CheckTearingSupport();
 	ComPtr<IDXGISwapChain4> CreateSwapChain(HWND hWnd, ComPtr<ID3D12CommandQueue> commandQueue, uint32_t width, uint32_t height, uint32_t bufferCount);
-	ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ComPtr<ID3D12Device2> device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors);
+	ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, uint32_t numDescriptors);
 	void UpdateRenderTargetViews(ComPtr<ID3D12Device2> device, ComPtr<IDXGISwapChain4> swapChain, ComPtr<ID3D12DescriptorHeap> descriptorHeap);
 	ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type);
 	ComPtr<ID3D12GraphicsCommandList> CreateCommandList(ComPtr<ID3D12Device2> device, ComPtr<ID3D12CommandAllocator> commandAllocator, D3D12_COMMAND_LIST_TYPE type);
@@ -124,8 +129,9 @@ public:
 	void Render();
 	void SetFullscreen(bool fullscreen); // Add this graphic platorm
 	ID3D12PipelineState* CreateGraphicPipeLine(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeLineDesc);
-	void BindGraphicPipeLine(ID3D12PipelineState* pipeline, ID3D12RootSignature* rootSig);
+	void BindGraphicPipeLine(ID3D12PipelineState* pipeline, ID3D12RootSignature* rootSig, unsigned int heapCount = 0);
 
+	void BindDescriptorTable(unsigned int index, unsigned int heapIndex);
 
 protected:
 	
@@ -153,6 +159,7 @@ private:
 	ComPtr<ID3D12CommandAllocator> g_CommandAllocators[g_NumFrames];
 	ComPtr<ID3D12DescriptorHeap> g_RTVDescriptorHeap;
 	ComPtr<ID3D12DescriptorHeap> g_DTVDescriptorHeap;
+	ComPtr<ID3D12DescriptorHeap> CBV_SRV_UAV_Heap;
 	UINT g_RTVDescriptorSize;
 	UINT g_DTVDescriptorSize;
 	UINT g_CurrentBackBufferIndex;
@@ -182,7 +189,7 @@ protected:
 public:
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;
-	void BindShaderLink() override;
+	void BindShaderLink(UniformIndexStore& indexStore) override;
 	void UnBindShaderLink() override;
 private:
 	DreamDX12Graphics* dx12Graphics;

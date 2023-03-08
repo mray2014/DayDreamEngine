@@ -1,9 +1,10 @@
 #include "DreamBuffer.h"
 #include <memory>
 
-DreamBuffer::DreamBuffer(void* newPtr, BufferType t, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
+DreamBuffer::DreamBuffer(void* newPtr, void* memPtr, BufferType t, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
 	type = t;
 	info = DreamPointer(newPtr, ptrBlockSize);
+	bufferMemoryPtr = memPtr;
 	numOfBuffers = numOfBuffs;
 
 	if (s) {
@@ -17,9 +18,10 @@ DreamBuffer::DreamBuffer(void* newPtr, BufferType t, size_t ptrBlockSize, size_t
 	}
 }
 
-DreamBuffer::DreamBuffer(size_t handle, BufferType t, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
+DreamBuffer::DreamBuffer(size_t handle, void* memPtr, BufferType t, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
 	type = t;
 	info = DreamPointer(handle, ptrBlockSize);
+	bufferMemoryPtr = memPtr;
 	numOfBuffers = numOfBuffs;
 
 	if (s) {
@@ -33,9 +35,10 @@ DreamBuffer::DreamBuffer(size_t handle, BufferType t, size_t ptrBlockSize, size_
 	}
 }
 
-DreamBuffer::DreamBuffer(size_t handle, void* newPtr, BufferType t, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
+DreamBuffer::DreamBuffer(size_t handle, void* newPtr, void* memPtr, BufferType t, size_t ptrBlockSize, size_t numOfBuffs, size_t* s, size_t* o) {
 	type = t;
 	info = DreamPointer(handle, newPtr, ptrBlockSize);
+	bufferMemoryPtr = memPtr;
 	numOfBuffers = numOfBuffs;
 
 	if (s) {

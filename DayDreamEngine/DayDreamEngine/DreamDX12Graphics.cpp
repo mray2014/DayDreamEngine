@@ -1,11 +1,15 @@
 #include "DreamDX12Graphics.h"
 #include <iostream>
+#include <DreamFileIO.h>
 
 // D3D12 extension library.
 #include "d3dx12/d3dx12.h"
 #include <dxgidebug.h>
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
+
+#include <DreamTimeManager.h>
+#include "DreamCameraManager.h"
 
 
 DreamDX12Graphics* instance = nullptr;
@@ -26,6 +30,7 @@ LRESULT DreamDX12Graphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 
 DreamDX12Graphics::DreamDX12Graphics() : DreamGraphics()
 {
+	MAX_FRAMES_IN_FLIGHT = g_NumFrames;
 	EnableDebugLayer();
 }
 
@@ -287,15 +292,16 @@ ComPtr<IDXGISwapChain4> DreamDX12Graphics::CreateSwapChain(HWND hWnd, ComPtr<ID3
 	return dxgiSwapChain4;
 }
 
-ComPtr<ID3D12DescriptorHeap> DreamDX12Graphics::CreateDescriptorHeap(ComPtr<ID3D12Device2> device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptors)
+ComPtr<ID3D12DescriptorHeap> DreamDX12Graphics::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, uint32_t numDescriptors)
 {
 	ComPtr<ID3D12DescriptorHeap> descriptorHeap;
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 	desc.NumDescriptors = numDescriptors;
+	desc.Flags = flags;
 	desc.Type = type;
 
-	ThrowIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
+	ThrowIfFailed(g_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&descriptorHeap)));
 
 	descriptorHeap->SetName(L"Descriptor Heap");
 
@@ -429,8 +435,10 @@ long DreamDX12Graphics::InitGraphics()
 
 	g_CurrentBackBufferIndex = g_SwapChain->GetCurrentBackBufferIndex();
 
-	g_RTVDescriptorHeap = CreateDescriptorHeap(g_Device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, g_NumFrames);
+	g_RTVDescriptorHeap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, g_NumFrames);
 	g_RTVDescriptorSize = g_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	CBV_SRV_UAV_Heap = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 1000000);
 
 	UpdateRenderTargetViews(g_Device, g_SwapChain, g_RTVDescriptorHeap);
 
@@ -582,6 +590,15 @@ void DreamDX12Graphics::ClearScreen()
 	g_CommandList->RSSetScissorRects(1, &scissorRect);
 	g_CommandList->OMSetRenderTargets(1, &rtv, FALSE, NULL);
 
+	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
+	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
+	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
+
+	matConstData.totalTime = DreamTimeManager::totalTime;
+
+	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(currentFrame);
+	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
+
 }
 
 void DreamDX12Graphics::SwapBuffers()
@@ -642,7 +659,7 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, void* bufferData
 	}
 
 	bufferSize *= numOfElements;
-
+	bufferSize = (bufferSize + 255) & ~255; // CB size is required to be 256-byte aligned.
 
 	D3D12_RESOURCE_DESC bufferDesc{
 	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
@@ -658,20 +675,43 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, void* bufferData
 	bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE
 	};
 
-	g_Device->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&buf));
+	HRESULT hr = g_Device->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&buf));
+	if (!SUCCEEDED(hr))
+		printf("Create committed resource failed (0x%08X)", hr);
+
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = buf->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = bufferSize;   
+
+	static int offset = 0;
+	int size = g_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvHandle0(CBV_SRV_UAV_Heap->GetCPUDescriptorHandleForHeapStart(), offset, size);
+	g_Device->CreateConstantBufferView(&cbvDesc, cbvHandle0);
+
+	//g_Device->CreateConstantBufferView(&cbvDesc, CBV_SRV_UAV_Heap->GetCPUDescriptorHandleForHeapStart());
 
 	void* vbibData;
 	HRESULT result = buf->Map(0, NULL, &vbibData);
 	if (!SUCCEEDED(result))
 		printf("Map failed (0x%08X)", result);
 
-	memcpy(vbibData, bufferData, bufferSize);
-
-	buf->Unmap(0, NULL);
+	if (bufferData) {
+		memcpy(vbibData, bufferData, bufferSize);
+	}
+	else {
+		memcpy(vbibData, bufferData, 0);
+	}
+	
+	if (type != UniformBuffer) {
+		buf->Unmap(0, NULL);
+	}
 
 	buf->SetName(L"Buffer");
 
-	return new DreamBuffer(buf, type, bufferSize, numOfBuffers, &strides[0], &offests[0]);
+	DreamBuffer* newBuffer = new DreamBuffer(offset, buf, vbibData, type, bufferSize, numOfBuffers, &strides[0], &offests[0]);
+	offset += 1;
+	return newBuffer;
 }
 
 DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, size_t bufferSize)
@@ -681,7 +721,19 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, size_t bufferSiz
 
 void DreamDX12Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
 {
+	if (buffer->GetBufferType() == UniformBuffer) {
+		memcpy(buffer->GetMemoryPointer(), bufferData, bufSize);
+	}
+	else {
+		D3D12_RANGE range;
+		range.Begin = 0;
+		range.End = bufSize;
+		ID3D12Resource* buff = (ID3D12Resource*)buffer->GetBufferPointer().GetStoredPointer();
+		buff->WriteToSubresource(0, nullptr, bufferData, bufSize, 0);
+	}
 
+	
+	//g_CommandList->resource(buff, 0, 0, bufferData, bufSize, 0);
 }
 
 void DreamDX12Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
@@ -718,6 +770,13 @@ void DreamDX12Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 		break;
 	}			
 	}
+}
+
+void DreamDX12Graphics::BindDescriptorTable(unsigned int index, unsigned int heapIndex) {
+	int size = g_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvHandle0(CBV_SRV_UAV_Heap->GetGPUDescriptorHandleForHeapStart(), size, heapIndex);
+	g_CommandList->SetGraphicsRootDescriptorTable(index, cbvHandle0);
+	//g_CommandList->SetGraphicsRootDescriptorTable(index, CBV_SRV_UAV_Heap->GetGPUDescriptorHandleForHeapStart());
 }
 
 bool layoutStarted = false;
@@ -782,26 +841,31 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 
 		// Creating root signiture
 		{
-			//D3D12_DESCRIPTOR_RANGE tableRange[1] = {};
-			//tableRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-			//tableRange[0].NumDescriptors = 128;
-			//
+			CD3DX12_DESCRIPTOR_RANGE  tableRange[2] = {};
+			tableRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+			tableRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+
+			CD3DX12_ROOT_PARAMETER rootParameters[2] = {};
+			rootParameters[0].InitAsDescriptorTable(1, &tableRange[0], D3D12_SHADER_VISIBILITY_VERTEX);
+			rootParameters[1].InitAsDescriptorTable(1, &tableRange[1], D3D12_SHADER_VISIBILITY_VERTEX);
+			
+
 			//D3D12_ROOT_DESCRIPTOR_TABLE table;
 			//table.NumDescriptorRanges = 1;
 			//table.pDescriptorRanges = tableRange;
-			//
-			//
-			//D3D12_ROOT_PARAMETER rootParam[3] = {};
+			
+			//D3D12_ROOT_PARAMETER rootParam[1] = {};
 			//rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-			//rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-			//rootParam[0].Constants.Num32BitValues = 50;
+			//rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			//rootParam[0].DescriptorTable = table;
+
 			//rootParam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 			//rootParam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 			//rootParam[1].DescriptorTable = table;
 			//rootParam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 			//rootParam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 			//rootParam[2].Constants.Num32BitValues = 1;
-			//
+			
 			//D3D12_STATIC_SAMPLER_DESC sampleDec[1] = {};
 			//sampleDec[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 			//sampleDec[0].Filter = D3D12_FILTER_ANISOTROPIC;
@@ -812,8 +876,8 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 			//sampleDec[0].MaxAnisotropy = 16;
 
 			D3D12_ROOT_SIGNATURE_DESC signature;
-			signature.NumParameters = 0;
-			signature.pParameters = NULL;
+			signature.NumParameters = 2;
+			signature.pParameters = rootParameters;
 			signature.NumStaticSamplers = 0;
 			signature.pStaticSamplers = NULL;
 			signature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // D3D12_ROOT_SIGNATURE_FLAG_NONE;
@@ -827,6 +891,7 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 			{
 				err = (const char*)errorBlob->GetBufferPointer();
 				printf("D3D12SerializeRootSignature failed (0x%08X) (%s)", hr, (char*)(errorBlob->GetBufferPointer()));
+				
 			}
 
 			hr = g_Device->CreateRootSignature(
@@ -902,9 +967,10 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 	return nullptr;
 }
 
-void DreamDX12Graphics::BindGraphicPipeLine(ID3D12PipelineState* pipeline, ID3D12RootSignature* rootSig) {
+void DreamDX12Graphics::BindGraphicPipeLine(ID3D12PipelineState* pipeline, ID3D12RootSignature* rootSig, unsigned int heapCount) {
 	g_CommandList->SetGraphicsRootSignature(rootSig);
-	g_CommandList->SetPipelineState(pipeline);
+	g_CommandList->SetPipelineState(pipeline); 
+	g_CommandList->SetDescriptorHeaps(1, CBV_SRV_UAV_Heap.GetAddressOf());
 }
 
 void DreamDX12Graphics::UnBindBuffer(BufferType type)
@@ -915,30 +981,141 @@ void DreamDX12Graphics::UnBindBuffer(BufferType type)
 
 DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shaderType)
 {
+#pragma region ShaderReflection
+	DreamShader* shader = nullptr;
 	bool hasMatUniform = false;
 	bool hasConstDataUniform = false;
 
 	UniformList uniforms;
 	UniformMembers uniformMembers;
 
-	std::string outputDir = OUTPUT_DIR;
-	std::wstring path(outputDir.begin(), outputDir.end());
-	path.append(file);
-	path.append(L".cso");
 
+	//  Loading SpirV shader file
+	std::wstring wfile = L"";
+	wfile.append(file);
+	std::string convertFile(wfile.begin(), wfile.end());
+
+	std::string spirv_Path = "Shaders/";
+	spirv_Path.append(convertFile);
+	spirv_Path.append(".spv");
+
+
+	DreamFileIO::OpenFileRead(spirv_Path.c_str(), std::ios::ate | std::ios::binary);
+
+	char* shaderCode = nullptr;
+	size_t length;
+	DreamFileIO::ReadFullFileQuick(&shaderCode, length);
+	DreamFileIO::CloseFileRead();
+
+	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
+	// Read SPIR-V from disk or similar.
+	std::vector<uint32_t> spirv_binary;
+	spirv_cross::CompilerHLSL hlsl(code, length / sizeof(uint32_t));
+
+
+	// Shader Reflection
+	// The SPIR-V is now parsed, and we can perform reflection on it.
+	spirv_cross::ShaderResources resources = hlsl.get_shader_resources();
+
+	spirv_cross::SmallVector<spirv_cross::Resource> outputs = resources.stage_outputs;
+	//hlsl.set_hlsl_semantic(outputs[0].id, "SV_Target");
+
+	// Get all sampled images in the shader.
+	for (auto& resource : resources.uniform_buffers)
+	{
+		std::string name = resource.name;
+
+		//=======Grabbing uniform size and member data
+		const spirv_cross::SPIRType type = hlsl.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
+		size_t structSize = hlsl.get_declared_struct_size(type);
+
+		int memberOffset = 0;
+		for (int i = 0; i < type.member_types.size(); i++) {
+			size_t memberSize = hlsl.get_declared_struct_member_size(type, i);
+			std::string memberName = hlsl.get_member_name(resource.base_type_id, i);
+
+			uniformMembers[memberName] = memberOffset;
+			memberOffset += memberSize;
+		}
+
+
+		//=======Grabbing binding index of uniform
+		unsigned set = hlsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		unsigned binding = hlsl.get_decoration(resource.id, spv::DecorationBinding);
+		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+
+		// Modify the decoration to prepare it for GLSL.
+		hlsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+		// Some arbitrary remapping if we want.
+		hlsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+
+		//=======Creating buffer for uniform
+		if (name == "ConstantData") {
+			hasConstDataUniform = true;
+		}
+		else if (name == "MaterialData") {
+			hasMatUniform = true;
+		}
+
+		//=======Storing uniform
+		if (name == "ConstantData") {
+			uniforms[name] = constDataBufferInfo;
+		}
+		else {
+			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
+		}
+	}
+
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#if defined( DEBUG ) || defined( _DEBUG )
+	flags |= D3DCOMPILE_DEBUG;
+#endif
+
+	std::string version = "";
+	switch (shaderType) {
+	case ShaderType::VertexShader: {
+		version = "vs";
+		break;
+	}
+	case ShaderType::PixelShader: {
+		version = "ps";
+		break;
+	}
+	case ShaderType::GeometryShader: {
+		version = "gs";
+		break;
+	}
+	case ShaderType::TessalationShader: { // TODO: tessalation is Domain and Hull shaders... break into seperate enums
+		//version = "vs";
+		break;
+	}
+	case ShaderType::ComputeShader: {
+		version = "cs";
+		break;
+	}
+	}
+
+	version.append("_5_0");
+
+	// Set some options.
+	spirv_cross::CompilerHLSL::Options options;
+	options.shader_model = 50;
+	hlsl.set_hlsl_options(options);
+
+	//Compiling Shader
 	ID3DBlob* shaderBlob;
-	HRESULT hr = D3DReadFileToBlob(path.c_str(), &shaderBlob);
+	std::string source = hlsl.compile();
+	HRESULT hr = D3DCompile(source.c_str(), source.size(), nullptr, nullptr, nullptr, "main", version.c_str(), flags, 0, &shaderBlob, nullptr);
 	if (hr != S_OK)
 	{
 		printf("Failed to open/read Shader file");
 		return nullptr;
-
 	}
+#pragma endregion
+
 
 	void* blobPtr = shaderBlob;
 	size_t blobSize = shaderBlob->GetBufferSize();
-
-	
 
 	return new DreamShader(shaderType, DreamPointer(blobPtr, blobSize), uniforms, (hasMatUniform && hasConstDataUniform));;
 }
@@ -1002,7 +1179,6 @@ void DreamDX12Graphics::TerminateGraphics()
 	g_RTVDescriptorHeap = nullptr;
 	g_DTVDescriptorHeap = nullptr;
 	g_Fence = nullptr;
-
 
 	g_DebugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL | D3D12_RLDO_IGNORE_INTERNAL);
 	g_dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
@@ -1128,13 +1304,39 @@ void DreamDX12ShaderLinker::AttachShader(DreamShader* shader)
 
 void DreamDX12ShaderLinker::Finalize()
 {
+
+	uint32_t curFrame = DreamGraphics::GetInstance()->currentFrame;
+	uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
+	int numOfBuffers = 0;
+	for (int i = 0; i < linkedShaders.size(); i++) {
+		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+			numOfBuffers += uniformData.second.buffers.size();
+		}
+	}
+
 	pipelineState = dx12Graphics->CreateGraphicPipeLine(pipeLineDesc);
 }
 
 // TODO: Make a SetGraphicsPipeline function
-void DreamDX12ShaderLinker::BindShaderLink()
+void DreamDX12ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 {
-		dx12Graphics->BindGraphicPipeLine(pipelineState, pipeLineDesc.pRootSignature);
+	dx12Graphics->BindGraphicPipeLine(pipelineState, pipeLineDesc.pRootSignature);
+
+	uint32_t curFrame = DreamGraphics::GetInstance()->currentFrame;
+	uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
+	for (size_t i = 0; i < linkedShaders.size(); i++) {
+		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+			int index = (indexStore[uniformData.first] * maxFramesInFlight) + curFrame;
+
+
+			ID3D12Resource* container = (ID3D12Resource*)uniformData.second.buffers[index]->GetBufferPointer().GetStoredPointer();
+			std::string name = uniformData.first;
+			unsigned int bindPoint = bindingPoints[name];
+			unsigned int bindIndex = uniformData.second.bindingIndex;
+
+			dx12Graphics->BindDescriptorTable(bindIndex, uniformData.second.buffers[index]->GetBufferPointer().GetStoredHandle());
+		}
+	}
 }
 
 void DreamDX12ShaderLinker::UnBindShaderLink()

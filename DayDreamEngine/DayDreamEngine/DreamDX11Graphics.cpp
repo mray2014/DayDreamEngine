@@ -420,7 +420,7 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, void* bufferData
 	}
 	}
 
-	return new DreamBuffer((void*)buffer, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
+	return new DreamBuffer((void*)buffer, nullptr, type, dataSize, numOfBuffers, &strides[0], &offests[0]);
 }
 
 DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, size_t bufferSize)
