@@ -27,6 +27,8 @@ public:
 	~DreamGraphics(); // Virtual?
 	void InitConstData();
 
+	virtual void Update();
+
 	virtual long InitWindow(int w, int h, const char* title) = 0;
 	virtual long InitGraphics() = 0;
 	virtual void SetViewPort(int posX, int posY, int w, int h) = 0;
@@ -68,6 +70,16 @@ public:
 		return MAX_FRAMES_IN_FLIGHT;
 	}
 
+	DreamBuffer* CreateVertexInputLayout()
+	{
+		BeginVertexLayout();
+		AddVertexLayoutData("TEXCOORD", 3, 0, false, sizeof(DreamVector3));
+		AddVertexLayoutData("TEXCOORD", 3, 1, false, sizeof(DreamVector3));
+		AddVertexLayoutData("TEXCOORD", 2, 2, false, sizeof(DreamVector2));
+		return FinalizeVertexLayout();
+	}
+
+
 	// Size of the window's client area
 	unsigned int width = 800;
 	unsigned int height = 600;
@@ -79,7 +91,9 @@ protected:
 	DreamGraphics();
 	DreamVector4 clearScreenColor;
 	ConstantUniformData matConstData;
+	LightUniformData lightData;
 	UniformInfo constDataBufferInfo;
+	UniformInfo lightBufferInfo;
 	int MAX_FRAMES_IN_FLIGHT = 1;
 private:
 	static DreamGraphics* myGrpahics;

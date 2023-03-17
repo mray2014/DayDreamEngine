@@ -9,14 +9,21 @@ using namespace DreamMath;
 
 struct DreamVertex {
 	DreamVector3 pos;
+	DreamVector3 normal;
+	DreamVector2 uv;
 
 	DreamVertex(DreamVector3 p) {
 		pos = p;
+		normal = DreamVector3(0, 0, 1);
+		uv = DreamVector2(0, 0);
 	}
 	DreamVertex(float x, float y, float z) {
 		pos.x = x;
 		pos.y = y;
 		pos.z = z;
+
+		normal = DreamVector3(0, 0, 1);
+		uv = DreamVector2(0, 0);
 	}
 };
 class DreamMesh {

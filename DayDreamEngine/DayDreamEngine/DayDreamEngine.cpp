@@ -144,7 +144,7 @@ int main()
 	while (!graphics->CheckWindowClose())
 	{
 		DreamTimeManager::Update();
-
+		
 		// Controller
 		graphics->CheckInputs(); //TODO: needs to be on input manager
 
@@ -153,6 +153,7 @@ int main()
 
 		// View
 		graphics->ClearScreen();
+		graphics->Update();
 
 		//NOTE: there is a black line on the side of the drawn triangle, halp
 		// TODO: Bind Graphic pipelines instead of shaders individually

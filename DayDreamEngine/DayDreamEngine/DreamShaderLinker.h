@@ -20,7 +20,7 @@ public:
 
 		for (auto& shaderInfo : linkedShaders) {
 			for (auto& uniformInfo : shaderInfo->shaderUniforms) {
-				if (uniformInfo.first != "ConstantData") {
+				if (uniformInfo.first != "ConstantData" && uniformInfo.first != "LightData") {
 					indexStore[uniformInfo.first] = uniformInfo.second.AddUniformBuffer();
 				}	
 			}

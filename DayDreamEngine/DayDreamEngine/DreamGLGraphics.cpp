@@ -9,10 +9,6 @@
 #pragma comment(lib, "spirv-cross-glsld.lib")
 #pragma comment(lib, "spirv-cross-cored.lib")
 
-//#include <glm\glm.hpp>
-//#include <glm/gtx/transform.hpp>
-//#include <glm/gtx/euler_angles.hpp>
-
 #include <DreamTimeManager.h>
 #include "DreamCameraManager.h"
 
@@ -148,10 +144,6 @@ void DreamGLGraphics::ClearScreen()
 	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
 	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
 	matConstData.totalTime = DreamTimeManager::totalTime;
-
-	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
-	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, constDataBuffer->GetBufferPointer().GetStoredHandle());
 }
 
 void DreamGLGraphics::SwapBuffers()
@@ -314,17 +306,15 @@ void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 	
 }
 
-size_t vertLayoutHandle = -1;
-
-size_t vertexArrayIndex = -1;
-size_t vertexArrayStrideCount = 0;
+GLuint vertLayoutHandle = -1;
+GLuint vertexArrayIndex = -1;
+GLuint vertexArrayStrideCount = 0;
 
 void DreamGLGraphics::BeginVertexLayout()
 {
 	if (vertLayoutHandle == -1)
 	{
 		glGenVertexArrays(1, (GLuint*)&vertLayoutHandle);
-
 		glBindVertexArray(vertLayoutHandle);
 	}
 	else {
@@ -339,7 +329,7 @@ void DreamGLGraphics::AddVertexLayoutData(std::string dataName, int size, unsign
 		vertexArrayIndex++;
 		glEnableVertexAttribArray(vertexArrayIndex);
 		//TODO: Take out GL_FLOAT
-		glVertexAttribPointer(vertexArrayIndex, size, GL_FLOAT, shouldNormalize ? GL_FALSE : GL_TRUE, sizeOf, (void*)vertexArrayStrideCount);
+		glVertexAttribPointer(vertexArrayIndex, size, GL_FLOAT, shouldNormalize ? GL_FALSE : GL_TRUE, sizeof(DreamVertex), (void*)vertexArrayStrideCount);
 		vertexArrayStrideCount += sizeOf;
 	}
 	else {
@@ -591,6 +581,9 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 		if (hasConstDataUniform) {
 			uniforms[name] = constDataBufferInfo;
 		}
+		else if (name == "LightData") {
+			uniforms[name] = lightBufferInfo;
+		}
 		else {
 			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
 		}
@@ -746,11 +739,8 @@ void DreamGLShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 			unsigned int bindPoint = bindingPoints[name];
 			unsigned int bindIndex = uniformData.second.bindingIndex;
 
-			glUniformBlockBinding(prog, bindIndex, bindPoint);
-
-			if (name != "ConstantData") {
-				glBindBufferBase(GL_UNIFORM_BUFFER, bindPoint, handle);
-			}
+			//glUniformBlockBinding(prog, bindIndex, bindPoint);
+			glBindBufferBase(GL_UNIFORM_BUFFER, bindPoint, handle);
 		}
 	}
 }
@@ -764,9 +754,7 @@ void DreamGLShaderLinker::UnBindShaderLink()
 DreamGLVertexArray::DreamGLVertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)
 {
 	graphics->BindBuffer(ArrayBuffer, vertexBuffer);
-	graphics->BeginVertexLayout();
-	graphics->AddVertexLayoutData("POSITION", 3, 0, false, sizeof(DreamVector3));
-	VAO = graphics->FinalizeVertexLayout();
+	VAO = graphics->CreateVertexInputLayout();
 }
 
 DreamGLVertexArray::~DreamGLVertexArray()

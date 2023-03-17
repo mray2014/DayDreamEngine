@@ -1,6 +1,6 @@
 
 #include <pch.h>
-
+#include <DreamInput.h>
 
 #ifdef DREAM_OPENGL
 #include "DreamGLGraphics.h"
@@ -27,9 +27,37 @@ DreamGraphics::DreamGraphics()
 }
 void DreamGraphics::InitConstData() {
 	//matConstData = GenerateBuffer(BufferType::UniformBuffer, nullptr, 1, { sizeof(ConstantUniformData) }, { 0 }, VertexDataUsage::StreamDraw);
-	UniformMembers members = matConstData.GetMemberData();
-	constDataBufferInfo = UniformInfo(0, sizeof(ConstantUniformData), members);
+	UniformMembers constMembers = matConstData.GetMemberData();
+	constDataBufferInfo = UniformInfo(0, sizeof(ConstantUniformData), constMembers);
 	constDataBufferInfo.AddUniformBuffer();
+
+	UniformMembers lightMembers = lightData.GetMemberData();
+	lightBufferInfo = UniformInfo(2, sizeof(LightUniformData), lightMembers);
+	lightBufferInfo.AddUniformBuffer();
+
+	lightData.light = DreamDirectionalLight(DreamVector3(0, 0, 1));
+	lightData.ambient = 1.0f;
+}
+
+void DreamGraphics::Update()
+{
+	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(currentFrame);
+	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
+
+	DreamBuffer* lightBuffer = lightBufferInfo.GetUniformBuffer(currentFrame);
+	UpdateBufferData(lightBuffer, &lightData, sizeof(LightUniformData));
+
+	if (DreamInput::KeyDown(KeyCode::O)) {
+		lightData.light.direction.x += 0.01f;
+		lightData.light.direction.z -= 0.01f;
+	}
+	if (DreamInput::KeyDown(KeyCode::P)) {
+		lightData.light.direction.x -= 0.01f;
+		lightData.light.direction.z += 0.01f;
+	}
+
+	printf(lightData.light.direction.ToString().c_str());
+	printf("\n");
 }
 
 DreamGraphics * DreamGraphics::GetInstance()

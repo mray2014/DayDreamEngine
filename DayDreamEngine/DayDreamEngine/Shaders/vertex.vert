@@ -5,7 +5,9 @@
 
 struct VertToPixelData{
 	vec4 color;
+	vec3 normal;
 	float time;
+	vec2 uv;
 };
 
 layout (location = VERT_LOCATION_OFFSET) out VertToPixelData data;
@@ -13,6 +15,9 @@ layout (location = VERT_LOCATION_OFFSET) out VertToPixelData data;
 void main() {
 	data.color = matInfo.color;
 	data.time = constData.time;
+
+	data.normal = normal;
+	data.uv = uv;
 
 	mat4 worldViewProj = constData.projMat * constData.viewMat * matInfo.worldMat;
 	gl_Position = worldViewProj * vec4(pos, 1.0f);

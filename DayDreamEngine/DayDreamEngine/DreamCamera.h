@@ -16,7 +16,7 @@ public:
 	float cameraSpeed = 2.0f;
 	float cameraSpeedMultiplier = 1.0f;
 	float cameraSpeedMaxMultiplier = 2.0f;
-	float cameraRotSpeed = 20.0f;
+	float cameraRotSpeed = 0.2f;
 
 	bool instantZoom = false;
 	float zoomSpeed = 15.0f;

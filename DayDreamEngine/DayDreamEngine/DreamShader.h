@@ -3,6 +3,7 @@
 #include <DreamMath.h>
 #include <unordered_map>
 #include <string>
+#include "DreamLight.h"
 
 enum ShaderType {
 	VertexShader,
@@ -55,6 +56,18 @@ struct ConstantUniformData {
 	}
 };
 
+struct LightUniformData {
+	DreamDirectionalLight light;
+	float ambient;
+
+	UniformMembers GetMemberData() {
+		UniformMembers members;
+		members["light"] = sizeof(DreamDirectionalLight);
+		members["ambient"] = sizeof(float);
+
+		return members;
+	}
+};
 #pragma endregion
 
 class DreamShader {
@@ -67,7 +80,7 @@ public:
 		hasMaterialUniform = hasMat;
 
 		if (type == VertexShader) {
-			CreateVertexInputLayout();
+			//CreateVertexInputLayout();
 		}
 	}
 	~DreamShader();

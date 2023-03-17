@@ -1399,6 +1399,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_DebugRelease|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="DreamGraphics.h" />
+    <ClInclude Include="DreamLight.h" />
     <ClInclude Include="DreamMaterial.h" />
     <ClInclude Include="DreamMesh.h" />
     <ClInclude Include="DreamShader.h" />

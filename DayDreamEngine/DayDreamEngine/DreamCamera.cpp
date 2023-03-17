@@ -104,7 +104,7 @@ void DreamCamera::Update()
 		DreamMath::DreamVector2 distDragged = mouseCurPos - mouseStartPos;
 		mouseStartPos = mouseCurPos;
 
-		distDragged *= deltaTime * cameraRotSpeed;
+		distDragged *= cameraRotSpeed;
 
 		transform.Rotate(DreamMath::DreamVector3(distDragged.y, -distDragged.x, 0.0f));
 	}
