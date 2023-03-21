@@ -1,6 +1,11 @@
 
 #include <pch.h>
 #include <DreamInput.h>
+#include <DreamTimeManager.h>
+#include "DreamCameraManager.h"
+
+#pragma comment(lib, "spirv-cross-reflectd.lib")
+#pragma comment(lib, "spirv-cross-cored.lib")
 
 #ifdef DREAM_OPENGL
 #include "DreamGLGraphics.h"
@@ -20,11 +25,74 @@
 
 
 DreamGraphics* DreamGraphics::myGrpahics = nullptr;
+using namespace spirv_cross;
+
 
 DreamGraphics::DreamGraphics()
 {
 
 }
+void DreamGraphics::LoadShaderResources(spirv_cross::Compiler& spirvCompiler, UniformList& uniList, bool& hasMat)
+{
+	UniformMembers uniformMembers;
+	bool hasMatUniform = false;
+	bool hasConstDataUniform = false;
+
+	// The SPIR-V is now parsed, and we can perform reflection on it.
+	spirv_cross::ShaderResources resources = spirvCompiler.get_shader_resources();
+
+	// Get all sampled images in the shader.
+	for (auto& resource : resources.uniform_buffers)
+	{
+		std::string name = resource.name;
+
+		//=======Grabbing uniform size and member data
+		const spirv_cross::SPIRType type = spirvCompiler.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
+		size_t structSize = spirvCompiler.get_declared_struct_size(type);
+
+		int memberOffset = 0;
+		for (int i = 0; i < type.member_types.size(); i++) {
+			size_t memberSize = spirvCompiler.get_declared_struct_member_size(type, i);
+			std::string memberName = spirvCompiler.get_member_name(resource.base_type_id, i);
+
+			uniformMembers[memberName] = memberOffset;
+			memberOffset += memberSize;
+		}
+
+
+		//=======Grabbing binding index of uniform
+		unsigned set = spirvCompiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		unsigned binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
+		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+
+		// Modify the decoration to prepare it for GLSL.
+		spirvCompiler.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+		// Some arbitrary remapping if we want.
+		spirvCompiler.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+
+		//=======Creating buffer for uniform
+		if (name == "ConstantData") {
+			hasConstDataUniform = true;
+		}
+		else if (name == "MaterialData") {
+			hasMatUniform = true;
+		}
+
+		//=======Storing uniform
+		if (hasConstDataUniform) {
+			uniList[name] = constDataBufferInfo;
+		}
+		else if (name == "LightData") {
+			uniList[name] = lightBufferInfo;
+		}
+		else {
+			uniList[name] = UniformInfo(binding, structSize, uniformMembers);
+		}
+	}
+
+	hasMat = (hasMatUniform && hasConstDataUniform);
+}
+
 void DreamGraphics::InitConstData() {
 	//matConstData = GenerateBuffer(BufferType::UniformBuffer, nullptr, 1, { sizeof(ConstantUniformData) }, { 0 }, VertexDataUsage::StreamDraw);
 	UniformMembers constMembers = matConstData.GetMemberData();
@@ -41,11 +109,10 @@ void DreamGraphics::InitConstData() {
 
 void DreamGraphics::Update()
 {
-	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(currentFrame);
-	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
-
-	DreamBuffer* lightBuffer = lightBufferInfo.GetUniformBuffer(currentFrame);
-	UpdateBufferData(lightBuffer, &lightData, sizeof(LightUniformData));
+	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
+	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
+	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
+	matConstData.totalTime = DreamTimeManager::totalTime;
 
 	if (DreamInput::KeyDown(KeyCode::O)) {
 		lightData.light.direction.x += 0.01f;
@@ -55,6 +122,12 @@ void DreamGraphics::Update()
 		lightData.light.direction.x -= 0.01f;
 		lightData.light.direction.z += 0.01f;
 	}
+
+	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(currentFrame);
+	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
+
+	DreamBuffer* lightBuffer = lightBufferInfo.GetUniformBuffer(currentFrame);
+	UpdateBufferData(lightBuffer, &lightData, sizeof(LightUniformData));
 
 	printf(lightData.light.direction.ToString().c_str());
 	printf("\n");

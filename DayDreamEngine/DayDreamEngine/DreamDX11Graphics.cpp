@@ -8,9 +8,6 @@
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-#include <DreamTimeManager.h>
-#include "DreamCameraManager.h"
-
 DreamDX11Graphics* instance = nullptr;
 
 LRESULT DreamDX11Graphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -327,15 +324,6 @@ void DreamDX11Graphics::ClearScreen()
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 		1.0f,
 		0);
-
-	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
-	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
-	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
-
-	matConstData.totalTime = DreamTimeManager::totalTime;
-
-	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
-	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
 }
 
 void DreamDX11Graphics::SwapBuffers()
@@ -523,7 +511,7 @@ void DreamDX11Graphics::AddVertexLayoutData(std::string dataName, int size, unsi
 		}
 		}
 		//D3D11_APPEND_ALIGNED_ELEMENT;
-		vertDesc.push_back({"", 0, (DXGI_FORMAT)format, 0, (const UINT)vertexStrideCount, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+		vertDesc.push_back({"", dataType, (DXGI_FORMAT)format, 0, (const UINT)vertexStrideCount, D3D11_INPUT_PER_VERTEX_DATA, 0 });
 
 		vertDesc[vertDesc.size() - 1].SemanticName = new char[dataName.size() + 1];
 		memcpy((void*)(vertDesc[vertDesc.size() - 1].SemanticName), dataName.c_str(), sizeof(char) * (dataName.size() + 1));
@@ -592,11 +580,8 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 
 #pragma region ShaderReflection
 	DreamShader* shader = nullptr;
-	bool hasMatUniform = false;
-	bool hasConstDataUniform = false;
-
+	bool hasMat = false;
 	UniformList uniforms;
-	UniformMembers uniformMembers;
 
 
 	//  Loading SpirV shader file
@@ -621,59 +606,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	std::vector<uint32_t> spirv_binary;
 	spirv_cross::CompilerHLSL hlsl(code, length / sizeof(uint32_t));
 
-
-	// Shader Reflection
-	// The SPIR-V is now parsed, and we can perform reflection on it.
-	spirv_cross::ShaderResources resources = hlsl.get_shader_resources();
-
-	spirv_cross::SmallVector<spirv_cross::Resource> outputs = resources.stage_outputs;
-	//hlsl.set_hlsl_semantic(outputs[0].id, "SV_Target");
-
-	// Get all sampled images in the shader.
-	for (auto& resource : resources.uniform_buffers)
-	{
-		std::string name = resource.name;
-
-		//=======Grabbing uniform size and member data
-		const spirv_cross::SPIRType type = hlsl.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
-		size_t structSize = hlsl.get_declared_struct_size(type);
-
-		int memberOffset = 0;
-		for (int i = 0; i < type.member_types.size(); i++) {
-			size_t memberSize = hlsl.get_declared_struct_member_size(type, i);
-			std::string memberName = hlsl.get_member_name(resource.base_type_id, i);
-
-			uniformMembers[memberName] = memberOffset;
-			memberOffset += memberSize;
-		}
-
-
-		//=======Grabbing binding index of uniform
-		unsigned set = hlsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		unsigned binding = hlsl.get_decoration(resource.id, spv::DecorationBinding);
-		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
-
-		// Modify the decoration to prepare it for GLSL.
-		hlsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
-		// Some arbitrary remapping if we want.
-		hlsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
-
-		//=======Creating buffer for uniform
-		if (name == "ConstantData") {
-			hasConstDataUniform = true;
-		}
-		else if (name == "MaterialData") {
-			hasMatUniform = true;
-		}
-
-		//=======Storing uniform
-		if (name == "ConstantData") {
-			uniforms[name] = constDataBufferInfo;
-		}
-		else {
-			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
-		}
-	}
+	LoadShaderResources(hlsl, uniforms, hasMat);
 
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 	#if defined( DEBUG ) || defined( _DEBUG )
@@ -751,7 +684,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			blobSize,
 			0,
 			&newShader);
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
 		break;
 	}
 	case ShaderType::PixelShader: {
@@ -761,7 +694,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			blobSize,
 			0,
 			&newShader);
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
 		break;
 	}
 	case ShaderType::GeometryShader: {
@@ -771,7 +704,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			blobSize,
 			0,
 			&newShader);
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
 		break;
 	}
 	case ShaderType::ComputeShader: {
@@ -782,7 +715,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			0,
 			&newShader);
 
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, (hasMatUniform && hasConstDataUniform));
+		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
 		break;
 	}
 	}
@@ -798,6 +731,9 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	}
 #pragma endregion
 
+	if (shaderType == VertexShader) {
+		shader->CreateVertexInputLayout();
+	}
 	return shader;
 }
 
@@ -1090,21 +1026,24 @@ void DreamDX11ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 		}
 
 		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
-			uint32_t frameIndex = DreamGraphics::GetInstance()->currentFrame;
-			uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
-			int index = (indexStore[uniformData.first] * maxFramesInFlight) + frameIndex;
+
+			if (uniformData.second.buffers.size() > 0) {
+				uint32_t frameIndex = DreamGraphics::GetInstance()->currentFrame;
+				uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
+				int index = (indexStore[uniformData.first] * maxFramesInFlight) + frameIndex;
 
 
-			DreamBuffer* buffer = uniformData.second.buffers[index];
-			std::string name = uniformData.first;
-			unsigned int bindPoint = bindingPoints[name];
-			unsigned int bindIndex = uniformData.second.bindingIndex;
+				DreamBuffer* buffer = uniformData.second.buffers[index];
+				std::string name = uniformData.first;
+				unsigned int bindPoint = bindingPoints[name];
+				unsigned int bindIndex = uniformData.second.bindingIndex;
 
-			
-			dxGraphics->BindUniformBuffer(linkedShaders[i]->GetShaderType(), buffer, bindIndex);
 
-			if (name != "ConstantData") {
-				
+				dxGraphics->BindUniformBuffer(linkedShaders[i]->GetShaderType(), buffer, bindIndex);
+
+				if (name != "ConstantData") {
+
+				}
 			}
 		}
 

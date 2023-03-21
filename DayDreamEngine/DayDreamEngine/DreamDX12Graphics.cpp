@@ -8,10 +8,6 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 
-#include <DreamTimeManager.h>
-#include "DreamCameraManager.h"
-
-
 DreamDX12Graphics* instance = nullptr;
 
 LRESULT DreamDX12Graphics::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -391,31 +387,6 @@ void DreamDX12Graphics::Flush(ComPtr<ID3D12CommandQueue> commandQueue, ComPtr<ID
 	WaitForFenceValue(fence, fenceValueForSignal, fenceEvent);
 }
 
-
-void DreamDX12Graphics::Update() {
-	static uint64_t frameCounter = 0;
-	static double elapsedSeconds = 0.0;
-	static std::chrono::high_resolution_clock clock;
-	static auto t0 = clock.now();
-
-	frameCounter++;
-	auto t1 = clock.now();
-	auto deltaTime = t1 - t0;
-	t0 = t1;
-	elapsedSeconds += deltaTime.count() * 1e-9;
-	if (elapsedSeconds > 1.0)
-	{
-		char buffer[500];
-		auto fps = frameCounter / elapsedSeconds;
-		sprintf_s(buffer, 500, "FPS: %f\n", fps);
-		std::wstring debugBuffer(buffer[0], buffer[499]);
-		//OutputDebugString(debugBuffer.c_str());
-
-		frameCounter = 0;
-		elapsedSeconds = 0.0;
-	}
-}
-
 void DreamDX12Graphics::Render() {
 
 }
@@ -589,16 +560,6 @@ void DreamDX12Graphics::ClearScreen()
 	g_CommandList->RSSetViewports(1, &viewPort);
 	g_CommandList->RSSetScissorRects(1, &scissorRect);
 	g_CommandList->OMSetRenderTargets(1, &rtv, FALSE, NULL);
-
-	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
-	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
-	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
-
-	matConstData.totalTime = DreamTimeManager::totalTime;
-
-	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(currentFrame);
-	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
-
 }
 
 void DreamDX12Graphics::SwapBuffers()
@@ -815,7 +776,7 @@ void DreamDX12Graphics::AddVertexLayoutData(std::string dataName, int size, unsi
 		}
 		}
 		//D3D11_APPEND_ALIGNED_ELEMENT;
-		vertDesc.push_back({ "", 0, (DXGI_FORMAT)format, 0, (const UINT)vertexStrideCount, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+		vertDesc.push_back({ "", dataType, (DXGI_FORMAT)format, 0, (const UINT)vertexStrideCount, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 
 		vertDesc[vertDesc.size() - 1].SemanticName = new char[dataName.size() + 1];
 		memcpy((void*)(vertDesc[vertDesc.size() - 1].SemanticName), dataName.c_str(), sizeof(char) * (dataName.size() + 1));
@@ -841,13 +802,15 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 
 		// Creating root signiture
 		{
-			CD3DX12_DESCRIPTOR_RANGE  tableRange[2] = {};
+			CD3DX12_DESCRIPTOR_RANGE  tableRange[3] = {};
 			tableRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 			tableRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+			tableRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
 
-			CD3DX12_ROOT_PARAMETER rootParameters[2] = {};
+			CD3DX12_ROOT_PARAMETER rootParameters[3] = {};
 			rootParameters[0].InitAsDescriptorTable(1, &tableRange[0], D3D12_SHADER_VISIBILITY_VERTEX);
 			rootParameters[1].InitAsDescriptorTable(1, &tableRange[1], D3D12_SHADER_VISIBILITY_VERTEX);
+			rootParameters[2].InitAsDescriptorTable(1, &tableRange[2], D3D12_SHADER_VISIBILITY_PIXEL);
 			
 
 			//D3D12_ROOT_DESCRIPTOR_TABLE table;
@@ -876,7 +839,7 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 			//sampleDec[0].MaxAnisotropy = 16;
 
 			D3D12_ROOT_SIGNATURE_DESC signature;
-			signature.NumParameters = 2;
+			signature.NumParameters = 3;
 			signature.pParameters = rootParameters;
 			signature.NumStaticSamplers = 0;
 			signature.pStaticSamplers = NULL;
@@ -983,11 +946,8 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 {
 #pragma region ShaderReflection
 	DreamShader* shader = nullptr;
-	bool hasMatUniform = false;
-	bool hasConstDataUniform = false;
-
+	bool hasMat = false;
 	UniformList uniforms;
-	UniformMembers uniformMembers;
 
 
 	//  Loading SpirV shader file
@@ -1012,59 +972,7 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	std::vector<uint32_t> spirv_binary;
 	spirv_cross::CompilerHLSL hlsl(code, length / sizeof(uint32_t));
 
-
-	// Shader Reflection
-	// The SPIR-V is now parsed, and we can perform reflection on it.
-	spirv_cross::ShaderResources resources = hlsl.get_shader_resources();
-
-	spirv_cross::SmallVector<spirv_cross::Resource> outputs = resources.stage_outputs;
-	//hlsl.set_hlsl_semantic(outputs[0].id, "SV_Target");
-
-	// Get all sampled images in the shader.
-	for (auto& resource : resources.uniform_buffers)
-	{
-		std::string name = resource.name;
-
-		//=======Grabbing uniform size and member data
-		const spirv_cross::SPIRType type = hlsl.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
-		size_t structSize = hlsl.get_declared_struct_size(type);
-
-		int memberOffset = 0;
-		for (int i = 0; i < type.member_types.size(); i++) {
-			size_t memberSize = hlsl.get_declared_struct_member_size(type, i);
-			std::string memberName = hlsl.get_member_name(resource.base_type_id, i);
-
-			uniformMembers[memberName] = memberOffset;
-			memberOffset += memberSize;
-		}
-
-
-		//=======Grabbing binding index of uniform
-		unsigned set = hlsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		unsigned binding = hlsl.get_decoration(resource.id, spv::DecorationBinding);
-		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
-
-		// Modify the decoration to prepare it for GLSL.
-		hlsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
-		// Some arbitrary remapping if we want.
-		hlsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
-
-		//=======Creating buffer for uniform
-		if (name == "ConstantData") {
-			hasConstDataUniform = true;
-		}
-		else if (name == "MaterialData") {
-			hasMatUniform = true;
-		}
-
-		//=======Storing uniform
-		if (name == "ConstantData") {
-			uniforms[name] = constDataBufferInfo;
-		}
-		else {
-			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
-		}
-	}
+	LoadShaderResources(hlsl, uniforms, hasMat);
 
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( DEBUG ) || defined( _DEBUG )
@@ -1117,7 +1025,12 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	void* blobPtr = shaderBlob;
 	size_t blobSize = shaderBlob->GetBufferSize();
 
-	return new DreamShader(shaderType, DreamPointer(blobPtr, blobSize), uniforms, (hasMatUniform && hasConstDataUniform));;
+	shader = new DreamShader(shaderType, DreamPointer(blobPtr, blobSize), uniforms, hasMat);
+
+	if (shaderType == VertexShader) {
+		shader->CreateVertexInputLayout();
+	}
+	return shader;
 }
 
 void DreamDX12Graphics::ReleaseShader(DreamShader* shader)

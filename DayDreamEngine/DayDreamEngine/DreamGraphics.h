@@ -4,6 +4,8 @@
 #include "DreamShader.h"
 #include "DreamMaterial.h"
 #include "DreamShaderLinker.h"
+#include "DreamMesh.h"
+#include <SPIRV/spirv_cross.hpp>
 
 class DreamVertexArray;
 
@@ -89,6 +91,7 @@ public:
 
 protected:
 	DreamGraphics();
+	void LoadShaderResources(spirv_cross::Compiler& glsl, UniformList& uniList, bool& hasMat);
 	DreamVector4 clearScreenColor;
 	ConstantUniformData matConstData;
 	LightUniformData lightData;

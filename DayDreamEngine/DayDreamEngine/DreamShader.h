@@ -78,10 +78,6 @@ public:
 		shaderPtr = ptr;
 		shaderUniforms = uniforms;
 		hasMaterialUniform = hasMat;
-
-		if (type == VertexShader) {
-			//CreateVertexInputLayout();
-		}
 	}
 	~DreamShader();
 
@@ -96,10 +92,11 @@ public:
 		return layout;
 	}
 
+	void CreateVertexInputLayout();
+
 	UniformList  shaderUniforms;
 
 protected:
-	void CreateVertexInputLayout();
 
 	ShaderType type;
 	DreamPointer shaderPtr;

@@ -8,9 +8,6 @@
 #include <iostream>
 #include "DreamMesh.h"
 
-#include <DreamTimeManager.h>
-#include "DreamCameraManager.h"
-
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -594,6 +591,16 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 		0,//binding;
 		VK_FORMAT_R32G32B32_SFLOAT,//format;
 		offsetof(DreamVertex, pos)//offset;
+		},
+		{1,//location;
+		0,//binding;
+		VK_FORMAT_R32G32B32_SFLOAT,//format;
+		offsetof(DreamVertex, normal)//offset;
+		},
+		{2,//location;
+		0,//binding;
+		VK_FORMAT_R32G32_SFLOAT,//format;
+		offsetof(DreamVertex, uv)//offset;
 		}
 	};
 
@@ -919,14 +926,6 @@ void DreamVulkanGraphics::ClearScreen()
 	scissor.offset = { 0, 0 };
 	scissor.extent = swapChainExtent;
 	vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
-
-	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
-	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
-	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
-	matConstData.totalTime = DreamTimeManager::totalTime;
-
-	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
-	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
 }
 
 void DreamVulkanGraphics::SwapBuffers()
@@ -1129,11 +1128,8 @@ void DreamVulkanGraphics::UnBindBuffer(BufferType type)
 
 DreamShader* DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType shaderType)
 {
-	bool hasMatUniform = false;
-	bool hasConstDataUniform = false;
-
+	bool hasMat = false;
 	UniformList uniforms;
-	UniformMembers uniformMembers;
 
 	std::wstring wfile = L"";
 	wfile.append(file);
@@ -1154,56 +1150,7 @@ DreamShader* DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType sha
 	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
 	spirv_cross::Compiler refle(code, length / sizeof(uint32_t));
 
-	// The SPIR-V is now parsed, and we can perform reflection on it.
-	spirv_cross::ShaderResources resources = refle.get_shader_resources();
-
-	// Get all sampled images in the shader.
-	for (auto& resource : resources.uniform_buffers)
-	{
-		std::string name = resource.name;
-
-		//=======Grabbing uniform size and member data
-		const spirv_cross::SPIRType type = refle.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
-		size_t structSize = refle.get_declared_struct_size(type);
-
-		int memberOffset = 0;
-		for (int i = 0; i < type.member_types.size(); i++) {
-			size_t memberSize = refle.get_declared_struct_member_size(type, i);
-			std::string memberName = refle.get_member_name(resource.base_type_id, i);
-
-			uniformMembers[memberName] = memberOffset;
-			memberOffset += memberSize;
-		}
-
-
-		//=======Grabbing binding index of uniform
-		unsigned set = refle.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		unsigned binding = refle.get_decoration(resource.id, spv::DecorationBinding);
-		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
-
-		// Modify the decoration to prepare it for GLSL.
-		refle.unset_decoration(resource.id, spv::DecorationDescriptorSet);
-		// Some arbitrary remapping if we want.
-		refle.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
-
-		//=======Creating buffer for uniform
-
-		if (name == "ConstantData") {
-			hasConstDataUniform = true;
-		}
-		else if (name == "MaterialData") {
-			hasMatUniform = true;
-		}
-
-		//=======Storing uniform
-		if (hasConstDataUniform) {
-			uniforms[name] = constDataBufferInfo;
-		}
-		else {
-			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
-		}
-		
-	}
+	LoadShaderResources(refle, uniforms, hasMat);
 
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -1216,7 +1163,7 @@ DreamShader* DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType sha
 		return nullptr;
 	}
 	//vkDestroyShaderModule(device, shaderModule, nullptr);
-	return new DreamShader(shaderType, DreamPointer((void*)shaderModule), uniforms, (hasMatUniform && hasConstDataUniform));
+	return new DreamShader(shaderType, DreamPointer((void*)shaderModule), uniforms, hasMat);
 }
 
 void DreamVulkanGraphics::ReleaseShader(DreamShader* shader)

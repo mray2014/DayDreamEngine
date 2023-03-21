@@ -9,9 +9,6 @@
 #pragma comment(lib, "spirv-cross-glsld.lib")
 #pragma comment(lib, "spirv-cross-cored.lib")
 
-#include <DreamTimeManager.h>
-#include "DreamCameraManager.h"
-
 GLFWwindow* window = nullptr;
 
 void OnWindowResize(GLFWwindow* window, int width, int height) {
@@ -139,11 +136,6 @@ void DreamGLGraphics::ClearScreen()
 {
 	glClearColor(clearScreenColor.x, clearScreenColor.y, clearScreenColor.z, clearScreenColor.w);
 	glClear(GL_COLOR_BUFFER_BIT);
-
-	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
-	matConstData.viewMat = camManager->GetCurrentCam_ViewMat();
-	matConstData.projMat = camManager->GetCurrentCam_ProjMat();
-	matConstData.totalTime = DreamTimeManager::totalTime;
 }
 
 void DreamGLGraphics::SwapBuffers()
@@ -508,13 +500,14 @@ void DreamGLGraphics::Draw() {
 DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderType) {
 	using namespace std;
 
-	bool hasMatUniform = false; 
-	bool hasConstDataUniform = false;
-
+	bool hasMat = false; 
 	UniformList uniforms;
-	UniformMembers uniformMembers;
-
 	GLuint prog = -1;
+
+
+	///================================================
+	/// SPIR-V  LOADING
+	///================================================
 
 	std::wstring wfile = L"";
 	wfile.append(file);
@@ -530,64 +523,11 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 	size_t length;
 	DreamFileIO::ReadFullFileQuick(&shaderCode, length);
 	DreamFileIO::CloseFileRead();
-
 	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
 
 	// Read SPIR-V from disk or similar.
 	std::vector<uint32_t> spirv_binary;
 	spirv_cross::CompilerGLSL glsl(code, length / sizeof(uint32_t));
-
-	// The SPIR-V is now parsed, and we can perform reflection on it.
-	spirv_cross::ShaderResources resources = glsl.get_shader_resources();
-
-	// Get all sampled images in the shader.
-	for (auto& resource : resources.uniform_buffers)
-	{
-		std::string name = resource.name;
-
-		//=======Grabbing uniform size and member data
-		const spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
-		size_t structSize = glsl.get_declared_struct_size(type);
-
-		int memberOffset = 0;
-		for (int i = 0; i < type.member_types.size(); i++) {
-			size_t memberSize = glsl.get_declared_struct_member_size(type, i);
-			std::string memberName = glsl.get_member_name(resource.base_type_id, i);
-
-			uniformMembers[memberName] = memberOffset;
-			memberOffset += memberSize;
-		}
-		
-
-		//=======Grabbing binding index of uniform
-		unsigned set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
-		unsigned binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
-		printf("Uniform Buffer %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
-
-		// Modify the decoration to prepare it for GLSL.
-		glsl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
-		// Some arbitrary remapping if we want.
-		glsl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
-
-		//=======Creating buffer for uniform
-		if (name == "ConstantData") {
-			hasConstDataUniform = true;
-		}
-		else if (name == "MaterialData") {
-			hasMatUniform = true;
-		}
-
-		//=======Storing uniform
-		if (hasConstDataUniform) {
-			uniforms[name] = constDataBufferInfo;
-		}
-		else if (name == "LightData") {
-			uniforms[name] = lightBufferInfo;
-		}
-		else {
-			uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
-		}
-	}
 
 	// Set some options.
 	spirv_cross::CompilerGLSL::Options options;
@@ -598,6 +538,13 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 	// Compile to GLSL, ready to give to GL driver.
 	std::string source = glsl.compile();
 
+	LoadShaderResources(glsl, uniforms, hasMat);
+
+
+	///================================================
+	/// SHADER CREATION
+	///================================================
+	
 	switch (shaderType) {
 	case ShaderType::VertexShader: {
 		prog = glCreateShader(GL_VERTEX_SHADER);
@@ -638,7 +585,7 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 			delete[] debug; debug = nullptr;
 		}
 		else {
-			return new DreamShader(shaderType, DreamPointer(prog), uniforms, (hasMatUniform && hasConstDataUniform));
+			return new DreamShader(shaderType, DreamPointer(prog), uniforms, hasMat);
 		}
 	}
 	
