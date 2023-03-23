@@ -299,8 +299,6 @@ void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 }
 
 GLuint vertLayoutHandle = -1;
-GLuint vertexArrayIndex = -1;
-GLuint vertexArrayStrideCount = 0;
 
 void DreamGLGraphics::BeginVertexLayout()
 {
@@ -315,13 +313,12 @@ void DreamGLGraphics::BeginVertexLayout()
 	
 }
 
-void DreamGLGraphics::AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+void DreamGLGraphics::AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf)
 {
 	if (vertLayoutHandle != -1) {
-		vertexArrayIndex++;
-		glEnableVertexAttribArray(vertexArrayIndex);
+		glEnableVertexAttribArray(location);
 		//TODO: Take out GL_FLOAT
-		glVertexAttribPointer(vertexArrayIndex, size, GL_FLOAT, shouldNormalize ? GL_FALSE : GL_TRUE, sizeof(DreamVertex), (void*)vertexArrayStrideCount);
+		glVertexAttribPointer(location, size, GL_FLOAT, shouldNormalize ? GL_FALSE : GL_TRUE, sizeof(DreamVertex), (void*)vertexArrayStrideCount);
 		vertexArrayStrideCount += sizeOf;
 	}
 	else {
@@ -338,7 +335,6 @@ DreamBuffer* DreamGLGraphics::FinalizeVertexLayout()
 
 
 		vertLayoutHandle = -1;
-		vertexArrayIndex = -1;
 		vertexArrayStrideCount = 0;
 
 		return buff;

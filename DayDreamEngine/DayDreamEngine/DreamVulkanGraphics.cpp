@@ -586,30 +586,30 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 	bindingDescription.stride = sizeof(DreamVertex);
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-	std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
-		{0,//location;
-		0,//binding;
-		VK_FORMAT_R32G32B32_SFLOAT,//format;
-		offsetof(DreamVertex, pos)//offset;
-		},
-		{1,//location;
-		0,//binding;
-		VK_FORMAT_R32G32B32_SFLOAT,//format;
-		offsetof(DreamVertex, normal)//offset;
-		},
-		{2,//location;
-		0,//binding;
-		VK_FORMAT_R32G32_SFLOAT,//format;
-		offsetof(DreamVertex, uv)//offset;
-		}
-	};
+	//std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {
+	//	{0,//location;
+	//	0,//binding;
+	//	VK_FORMAT_R32G32B32_SFLOAT,//format;
+	//	offsetof(DreamVertex, pos)//offset;
+	//	},
+	//	{1,//location;
+	//	0,//binding;
+	//	VK_FORMAT_R32G32B32_SFLOAT,//format;
+	//	offsetof(DreamVertex, normal)//offset;
+	//	},
+	//	{2,//location;
+	//	0,//binding;
+	//	VK_FORMAT_R32G32_SFLOAT,//format;
+	//	offsetof(DreamVertex, uv)//offset;
+	//	}
+	//};
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDesc.size());
 	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDesc.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -723,6 +723,9 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
+
+	vertexArrayStrideCount = 0;
+	attributeDesc.clear();
 	return graphicsPipeline;
 }
 
@@ -1113,8 +1116,34 @@ void DreamVulkanGraphics::BeginVertexLayout()
 {
 }
 
-void DreamVulkanGraphics::AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+void DreamVulkanGraphics::AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf)
 {
+	VkFormat format = VkFormat::VK_FORMAT_UNDEFINED;
+
+	switch (size) {
+	case 2: {
+		format = VK_FORMAT_R32G32_SFLOAT;
+		break;
+	}
+	case 3: {
+		format = VK_FORMAT_R32G32B32_SFLOAT;
+		break;
+	}
+	case 4: {
+		format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		break;
+	}
+	}
+
+	VkVertexInputAttributeDescription desc;
+	desc.location = location;
+	desc.binding = 0;
+	desc.format = format;
+	desc.offset = vertexArrayStrideCount;
+
+	attributeDesc.push_back(desc);
+
+	vertexArrayStrideCount += sizeOf;
 }
 
 DreamBuffer* DreamVulkanGraphics::FinalizeVertexLayout()
@@ -1163,7 +1192,12 @@ DreamShader* DreamVulkanGraphics::LoadShader(const wchar_t* file, ShaderType sha
 		return nullptr;
 	}
 	//vkDestroyShaderModule(device, shaderModule, nullptr);
-	return new DreamShader(shaderType, DreamPointer((void*)shaderModule), uniforms, hasMat);
+
+	DreamShader* shader = new DreamShader(shaderType, DreamPointer((void*)shaderModule), uniforms, hasMat);
+	if (shaderType == VertexShader) {
+		shader->CreateVertexInputLayout();
+	}
+	return shader;
 }
 
 void DreamVulkanGraphics::ReleaseShader(DreamShader* shader)

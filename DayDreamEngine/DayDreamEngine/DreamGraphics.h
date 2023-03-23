@@ -44,7 +44,7 @@ public:
 	virtual void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
 	virtual void BindBuffer(BufferType type, DreamBuffer* buffer) = 0;
 	virtual void BeginVertexLayout() = 0;
-	virtual void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) = 0;
+	virtual void AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf) = 0;
 	virtual DreamBuffer* FinalizeVertexLayout() = 0;
 	virtual void UnBindBuffer(BufferType type) = 0;
 	virtual DreamShader* LoadShader(const wchar_t* file, ShaderType shaderType) = 0;
@@ -98,6 +98,7 @@ protected:
 	UniformInfo constDataBufferInfo;
 	UniformInfo lightBufferInfo;
 	int MAX_FRAMES_IN_FLIGHT = 1;
+	uint32_t vertexArrayStrideCount = 0;
 private:
 	static DreamGraphics* myGrpahics;
 	

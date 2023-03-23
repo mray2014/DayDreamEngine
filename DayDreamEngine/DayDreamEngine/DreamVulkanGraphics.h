@@ -77,7 +77,7 @@ public:
 	void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) override;
 	void BindBuffer(BufferType type, DreamBuffer* buffer) override;
 	void BeginVertexLayout() override;
-	void AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf) override;
+	void AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf) override;
 	DreamBuffer* FinalizeVertexLayout() override;
 	void UnBindBuffer(BufferType type) override;
 	DreamShader* LoadShader(const wchar_t* file, ShaderType shaderType) override;
@@ -162,6 +162,7 @@ private:
 	"VK_LAYER_KHRONOS_validation"
 	};
 
+	std::vector<VkVertexInputAttributeDescription> attributeDesc;
 #ifdef NDEBUG
 	const bool enableValidationLayers = false;
 #else

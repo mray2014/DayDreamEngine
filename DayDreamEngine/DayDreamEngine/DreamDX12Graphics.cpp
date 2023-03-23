@@ -755,7 +755,7 @@ void DreamDX12Graphics::BeginVertexLayout()
 
 }
 
-void DreamDX12Graphics::AddVertexLayoutData(std::string dataName, int size, unsigned int dataType, bool shouldNormalize, unsigned int sizeOf)
+void DreamDX12Graphics::AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf)
 {
 	if (layoutStarted) {
 
@@ -776,7 +776,7 @@ void DreamDX12Graphics::AddVertexLayoutData(std::string dataName, int size, unsi
 		}
 		}
 		//D3D11_APPEND_ALIGNED_ELEMENT;
-		vertDesc.push_back({ "", dataType, (DXGI_FORMAT)format, 0, (const UINT)vertexStrideCount, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+		vertDesc.push_back({ "", location, (DXGI_FORMAT)format, 0, (const UINT)vertexStrideCount, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 
 		vertDesc[vertDesc.size() - 1].SemanticName = new char[dataName.size() + 1];
 		memcpy((void*)(vertDesc[vertDesc.size() - 1].SemanticName), dataName.c_str(), sizeof(char) * (dataName.size() + 1));
@@ -795,6 +795,8 @@ DreamBuffer* DreamDX12Graphics::FinalizeVertexLayout()
 	return nullptr;
 }
 
+std::vector<CD3DX12_DESCRIPTOR_RANGE> tableRangeList;
+std::vector<CD3DX12_ROOT_PARAMETER> rootParametersList;
 ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeLineDesc) {
 	if (layoutStarted) {
 
@@ -802,15 +804,15 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 
 		// Creating root signiture
 		{
-			CD3DX12_DESCRIPTOR_RANGE  tableRange[3] = {};
-			tableRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-			tableRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-			tableRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
-
-			CD3DX12_ROOT_PARAMETER rootParameters[3] = {};
-			rootParameters[0].InitAsDescriptorTable(1, &tableRange[0], D3D12_SHADER_VISIBILITY_VERTEX);
-			rootParameters[1].InitAsDescriptorTable(1, &tableRange[1], D3D12_SHADER_VISIBILITY_VERTEX);
-			rootParameters[2].InitAsDescriptorTable(1, &tableRange[2], D3D12_SHADER_VISIBILITY_PIXEL);
+			//CD3DX12_DESCRIPTOR_RANGE  tableRange[3] = {};
+			//tableRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+			//tableRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+			//tableRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
+			//
+			//CD3DX12_ROOT_PARAMETER rootParameters[3] = {};
+			//rootParameters[0].InitAsDescriptorTable(1, &tableRange[0], D3D12_SHADER_VISIBILITY_VERTEX);
+			//rootParameters[1].InitAsDescriptorTable(1, &tableRange[1], D3D12_SHADER_VISIBILITY_VERTEX);
+			//rootParameters[2].InitAsDescriptorTable(1, &tableRange[2], D3D12_SHADER_VISIBILITY_PIXEL);
 			
 
 			//D3D12_ROOT_DESCRIPTOR_TABLE table;
@@ -838,9 +840,14 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 			//sampleDec[0].MaxLOD = 1000.0f;
 			//sampleDec[0].MaxAnisotropy = 16;
 
+			for (int i = 0; i < tableRangeList.size(); i++) {
+				rootParametersList.push_back(CD3DX12_ROOT_PARAMETER());
+				rootParametersList[i].InitAsDescriptorTable(1, &tableRangeList[i]);
+			}
+
 			D3D12_ROOT_SIGNATURE_DESC signature;
-			signature.NumParameters = 3;
-			signature.pParameters = rootParameters;
+			signature.NumParameters = rootParametersList.size();
+			signature.pParameters = &rootParametersList[0];
 			signature.NumStaticSamplers = 0;
 			signature.pStaticSamplers = NULL;
 			signature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // D3D12_ROOT_SIGNATURE_FLAG_NONE;
@@ -920,6 +927,8 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 		vertDesc.clear();
 		vertexStrideCount = 0;
 
+		tableRangeList.clear();
+		rootParametersList.clear();
 
 		return graphicsPipeline;
 	}
@@ -974,6 +983,8 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 
 	LoadShaderResources(hlsl, uniforms, hasMat);
 
+	//D3D12_SHADER_VISIBILITY shaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( DEBUG ) || defined( _DEBUG )
 	flags |= D3DCOMPILE_DEBUG;
@@ -1002,6 +1013,14 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 		break;
 	}
 	}
+
+	for (int i = 0; i < uniforms.size(); i++) {
+		uint32_t location = tableRangeList.size();
+
+		tableRangeList.push_back(CD3DX12_DESCRIPTOR_RANGE());
+		tableRangeList[location].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, location);
+	}
+
 
 	version.append("_5_0");
 
