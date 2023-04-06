@@ -32,7 +32,7 @@ DreamGraphics::DreamGraphics()
 {
 
 }
-void DreamGraphics::LoadShaderResources(spirv_cross::Compiler& spirvCompiler, UniformList& uniList, bool& hasMat)
+void DreamGraphics::LoadShaderResources(spirv_cross::Compiler& spirvCompiler, DreamShaderResources& shaderResources, bool& hasMat)
 {
 	UniformMembers uniformMembers;
 	bool hasMatUniform = false;
@@ -40,6 +40,26 @@ void DreamGraphics::LoadShaderResources(spirv_cross::Compiler& spirvCompiler, Un
 
 	// The SPIR-V is now parsed, and we can perform reflection on it.
 	spirv_cross::ShaderResources resources = spirvCompiler.get_shader_resources();
+
+	for (auto& resource : resources.sampled_images)
+	{
+		std::string name = resource.name;
+
+		//=======Grabbing uniform size and member data
+		const spirv_cross::SPIRType type = spirvCompiler.get_type(resource.base_type_id); // What is the difference between base_type_ID and type_Id
+
+		//=======Grabbing binding index of uniform
+		unsigned set = spirvCompiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+		unsigned binding = spirvCompiler.get_decoration(resource.id, spv::DecorationBinding);
+		printf("Texture2D Sampler %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+
+		// Modify the decoration to prepare it for GLSL.
+		spirvCompiler.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+		// Some arbitrary remapping if we want.
+		spirvCompiler.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+
+		shaderResources.samplerBindings[name] = binding;
+	}
 
 	// Get all sampled images in the shader.
 	for (auto& resource : resources.uniform_buffers)
@@ -80,13 +100,13 @@ void DreamGraphics::LoadShaderResources(spirv_cross::Compiler& spirvCompiler, Un
 
 		//=======Storing uniform
 		if (hasConstDataUniform) {
-			uniList[name] = constDataBufferInfo;
+			shaderResources.uniforms[name] = constDataBufferInfo;
 		}
 		else if (name == "LightData") {
-			uniList[name] = lightBufferInfo;
+			shaderResources.uniforms[name] = lightBufferInfo;
 		}
 		else {
-			uniList[name] = UniformInfo(binding, structSize, uniformMembers);
+			shaderResources.uniforms[name] = UniformInfo(binding, structSize, uniformMembers);
 		}
 	}
 
@@ -123,14 +143,11 @@ void DreamGraphics::Update()
 		lightData.light.direction.z += 0.01f;
 	}
 
-	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(currentFrame);
+	DreamBuffer* constDataBuffer = constDataBufferInfo.GetUniformBuffer(0);
 	UpdateBufferData(constDataBuffer, &matConstData, sizeof(ConstantUniformData));
 
-	DreamBuffer* lightBuffer = lightBufferInfo.GetUniformBuffer(currentFrame);
+	DreamBuffer* lightBuffer = lightBufferInfo.GetUniformBuffer(0);
 	UpdateBufferData(lightBuffer, &lightData, sizeof(LightUniformData));
-
-	printf(lightData.light.direction.ToString().c_str());
-	printf("\n");
 }
 
 DreamGraphics * DreamGraphics::GetInstance()

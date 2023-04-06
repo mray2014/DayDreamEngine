@@ -21,22 +21,22 @@ namespace DreamMath {
 #define DEG2RAD (float)(PI / 180)
 
 
-	float sin(float degrees);
-	float cos(float degrees);
-	float tan(float degrees);
-	float asin(float num);
-	float acos(float num);
-	float atan(float num);
-	float abs(float num);
-	float pow(float num, float exp);
-	float floor(float a);
-	float ceiling(float a);
-	float rad2deg(float radians);
-	float deg2rad(float degrees);
-	float sqrtf(float num);
-	float truncf(float num);
-	float round(float num, int decimal = 2);
-	float lerp(float A, float B, float time);
+	float D_sin(float degrees);
+	float D_cos(float degrees);
+	float D_tan(float degrees);
+	float D_asin(float num);
+	float D_acos(float num);
+	float D_atan(float num);
+	float D_abs(float num);
+	float D_pow(float num, float exp);
+	float D_floor(float a);
+	float D_ceiling(float a);
+	float D_rad2deg(float radians);
+	float D_deg2rad(float degrees);
+	float D_sqrtf(float num);
+	float D_truncf(float num);
+	float D_round(float num, int decimal = 2);
+	float D_lerp(float A, float B, float time);
 	float Dot(float* vec1, float* vec2, int size);
 	float Dot(float vec1[], float vec2[]);
 	float FixFloatingPointError(float num);
@@ -63,14 +63,14 @@ public:
 		return (x * x) + (y * y);
 	}
 	float GetMagnitude() {
-		return DreamMath::sqrtf((x * x) + (y * y));
+		return DreamMath::D_sqrtf((x * x) + (y * y));
 	}
 
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+		if (DreamMath::D_abs(this->x - truncf(this->x)) < EPSILON) {
 			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+		if (DreamMath::D_abs(this->y - truncf(this->y)) < EPSILON) {
 			this->y = truncf(this->y);
 		}
 	}
@@ -229,16 +229,16 @@ public:
 		return (x * x) + (y * y) + (z * z);
 	}
 	float GetMagnitude() {
-		return DreamMath::sqrtf((x * x) + (y * y) + (z * z));
+		return DreamMath::D_sqrtf((x * x) + (y * y) + (z * z));
 	}
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+		if (DreamMath::D_abs(this->x - truncf(this->x)) < EPSILON) {
 			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+		if (DreamMath::D_abs(this->y - truncf(this->y)) < EPSILON) {
 			this->y = truncf(this->y);
 		}
-		if (DreamMath::abs(this->z - truncf(this->z)) < EPSILON) {
+		if (DreamMath::D_abs(this->z - truncf(this->z)) < EPSILON) {
 			this->z = truncf(this->z);
 		}
 	}
@@ -439,19 +439,19 @@ public:
 		return (x * x) + (y * y) + (z * z) + (w * w);
 	}
 	float GetMagnitude() {
-		return DreamMath::sqrtf((x * x) + (y * y) + (z * z) + (w * w));
+		return DreamMath::D_sqrtf((x * x) + (y * y) + (z * z) + (w * w));
 	}
 	void FixFloatingPointError() {
-		if (DreamMath::abs(this->x - truncf(this->x)) < EPSILON) {
+		if (DreamMath::D_abs(this->x - truncf(this->x)) < EPSILON) {
 			this->x = truncf(this->x);
 		}
-		if (DreamMath::abs(this->y - truncf(this->y)) < EPSILON) {
+		if (DreamMath::D_abs(this->y - truncf(this->y)) < EPSILON) {
 			this->y = truncf(this->y);
 		}
-		if (DreamMath::abs(this->z - truncf(this->z)) < EPSILON) {
+		if (DreamMath::D_abs(this->z - truncf(this->z)) < EPSILON) {
 			this->z = truncf(this->z);
 		}
-		if (DreamMath::abs(this->w - truncf(this->w)) < EPSILON) {
+		if (DreamMath::D_abs(this->w - truncf(this->w)) < EPSILON) {
 			this->w = truncf(this->w);
 		}
 	}
@@ -685,7 +685,7 @@ public:
 			int curRow = i / 3;
 			int curCol = i % 3;
 			float truncatedNum = truncf(this->matrix.data[curRow][curCol]);
-			if (DreamMath::abs(this->matrix.data[curRow][curCol] - truncatedNum) < EPSILON) {
+			if (DreamMath::D_abs(this->matrix.data[curRow][curCol] - truncatedNum) < EPSILON) {
 				this->matrix.data[curRow][curCol] = truncatedNum;
 			}
 		}
@@ -952,7 +952,7 @@ public:
 			int curRow = i / 4;
 			int curCol = i % 4;
 			float truncatedNum = truncf(this->matrix.data[curRow][curCol]);
-			if (DreamMath::abs(this->matrix.data[curRow][curCol] - truncatedNum) < EPSILON) {
+			if (DreamMath::D_abs(this->matrix.data[curRow][curCol] - truncatedNum) < EPSILON) {
 				this->matrix.data[curRow][curCol] = truncatedNum;
 			}
 		}
@@ -1168,8 +1168,8 @@ public:
 	}
 	DreamQuaternion(DreamVector3 axisOfRot, float degrees) {
 
-		float vecDegree = DreamMath::sin(degrees / 2);
-		float scalDegree = DreamMath::cos(degrees / 2);
+		float vecDegree = DreamMath::D_sin(degrees / 2);
+		float scalDegree = DreamMath::D_cos(degrees / 2);
 
 		this->qVector = axisOfRot * vecDegree;
 		this->wScalar = scalDegree;
@@ -1189,7 +1189,7 @@ public:
 		this->wScalar = DreamMath::FixFloatingPointError(this->wScalar);
 	}
 	float GetMagnitude() {
-		return DreamMath::sqrtf(this->qVector.GetSqrMagnitude() + (this->wScalar * this->wScalar));
+		return DreamMath::D_sqrtf(this->qVector.GetSqrMagnitude() + (this->wScalar * this->wScalar));
 	}
 	void Normalize() {
 		float mag = this->GetMagnitude();
@@ -1391,10 +1391,10 @@ public:
 	static DreamQuaternion slerp(DreamQuaternion A, DreamQuaternion B, float time) {
 
 		float cosAngle = DreamQuaternion::Dot(A, B);
-		float angle = DreamMath::acos(cosAngle);
+		float angle = DreamMath::D_acos(cosAngle);
 
-		float wA = DreamMath::sin((1 - time) * angle) / DreamMath::sin(angle);
-		float wB = DreamMath::sin(time * angle) / DreamMath::sin(angle);
+		float wA = DreamMath::D_sin((1 - time) * angle) / DreamMath::D_sin(angle);
+		float wB = DreamMath::D_sin(time * angle) / DreamMath::D_sin(angle);
 
 		DreamQuaternion slerpQuat = (A * wA) + (B * wB);
 
@@ -1427,22 +1427,22 @@ static DreamMatrix4X4 CreateRotationMatrix(float x, float y, float z) {
 	DreamMatrix3X3 rotMatrixZ = DreamMatrix3X3();
 
 	rotMatrixX.matrix.data[0][0] = 1;
-	rotMatrixX.matrix.data[1][1] = DreamMath::cos(x);
-	rotMatrixX.matrix.data[1][2] = DreamMath::sin(x);
-	rotMatrixX.matrix.data[2][1] = -DreamMath::sin(x);
-	rotMatrixX.matrix.data[2][2] = DreamMath::cos(x);
+	rotMatrixX.matrix.data[1][1] = DreamMath::D_cos(x);
+	rotMatrixX.matrix.data[1][2] = DreamMath::D_sin(x);
+	rotMatrixX.matrix.data[2][1] = -DreamMath::D_sin(x);
+	rotMatrixX.matrix.data[2][2] = DreamMath::D_cos(x);
 
 	rotMatrixY.matrix.data[1][1] = 1;
-	rotMatrixY.matrix.data[0][0] = DreamMath::cos(y);
-	rotMatrixY.matrix.data[0][2] = -DreamMath::sin(y);
-	rotMatrixY.matrix.data[2][0] = DreamMath::sin(y);
-	rotMatrixY.matrix.data[2][2] = DreamMath::cos(y);
+	rotMatrixY.matrix.data[0][0] = DreamMath::D_cos(y);
+	rotMatrixY.matrix.data[0][2] = -DreamMath::D_sin(y);
+	rotMatrixY.matrix.data[2][0] = DreamMath::D_sin(y);
+	rotMatrixY.matrix.data[2][2] = DreamMath::D_cos(y);
 
 	rotMatrixZ.matrix.data[2][2] = 1;
-	rotMatrixZ.matrix.data[0][0] = DreamMath::cos(z);
-	rotMatrixZ.matrix.data[0][1] = DreamMath::sin(z);
-	rotMatrixZ.matrix.data[1][0] = -DreamMath::sin(z);
-	rotMatrixZ.matrix.data[1][1] = DreamMath::cos(z);
+	rotMatrixZ.matrix.data[0][0] = DreamMath::D_cos(z);
+	rotMatrixZ.matrix.data[0][1] = DreamMath::D_sin(z);
+	rotMatrixZ.matrix.data[1][0] = -DreamMath::D_sin(z);
+	rotMatrixZ.matrix.data[1][1] = DreamMath::D_cos(z);
 
 	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
 
@@ -1475,22 +1475,22 @@ static DreamMatrix4X4 CreateRotationMatrix(DreamVector3 rotation) {
 	DreamMatrix3X3 rotMatrixZ = DreamMatrix3X3();
 
 	rotMatrixX.matrix.data[0][0] = 1;
-	rotMatrixX.matrix.data[1][1] = DreamMath::cos(rotation.x);
-	rotMatrixX.matrix.data[1][2] = DreamMath::sin(rotation.x);
-	rotMatrixX.matrix.data[2][1] = -DreamMath::sin(rotation.x);
-	rotMatrixX.matrix.data[2][2] = DreamMath::cos(rotation.x);
+	rotMatrixX.matrix.data[1][1] = DreamMath::D_cos(rotation.x);
+	rotMatrixX.matrix.data[1][2] = DreamMath::D_sin(rotation.x);
+	rotMatrixX.matrix.data[2][1] = -DreamMath::D_sin(rotation.x);
+	rotMatrixX.matrix.data[2][2] = DreamMath::D_cos(rotation.x);
 
 	rotMatrixY.matrix.data[1][1] = 1;
-	rotMatrixY.matrix.data[0][0] = DreamMath::cos(rotation.y);
-	rotMatrixY.matrix.data[0][2] = -DreamMath::sin(rotation.y);
-	rotMatrixY.matrix.data[2][0] = DreamMath::sin(rotation.y);
-	rotMatrixY.matrix.data[2][2] = DreamMath::cos(rotation.y);
+	rotMatrixY.matrix.data[0][0] = DreamMath::D_cos(rotation.y);
+	rotMatrixY.matrix.data[0][2] = -DreamMath::D_sin(rotation.y);
+	rotMatrixY.matrix.data[2][0] = DreamMath::D_sin(rotation.y);
+	rotMatrixY.matrix.data[2][2] = DreamMath::D_cos(rotation.y);
 
 	rotMatrixZ.matrix.data[2][2] = 1;
-	rotMatrixZ.matrix.data[0][0] = DreamMath::cos(rotation.z);
-	rotMatrixZ.matrix.data[0][1] = DreamMath::sin(rotation.z);
-	rotMatrixZ.matrix.data[1][0] = -DreamMath::sin(rotation.z);
-	rotMatrixZ.matrix.data[1][1] = DreamMath::cos(rotation.z);
+	rotMatrixZ.matrix.data[0][0] = DreamMath::D_cos(rotation.z);
+	rotMatrixZ.matrix.data[0][1] = DreamMath::D_sin(rotation.z);
+	rotMatrixZ.matrix.data[1][0] = -DreamMath::D_sin(rotation.z);
+	rotMatrixZ.matrix.data[1][1] = DreamMath::D_cos(rotation.z);
 
 	DreamMatrix3X3 finalRotMatrix = ((rotMatrixX * rotMatrixY) * rotMatrixZ);
 
@@ -1640,7 +1640,7 @@ static DreamMatrix4X4 CreateProjectionMatix(const float& angleOfView, const floa
 
 	DreamMatrix4X4 projMat;
 	// set the basic projection matrix
-	float scale = 1.0f / (DreamMath::tan(angleOfView * 0.5f) / zoom);
+	float scale = 1.0f / (DreamMath::D_tan(angleOfView * 0.5f) / zoom);
 	float zNormalScale = -far / (far - near);
 	float wNormalScale = zNormalScale * near;
 

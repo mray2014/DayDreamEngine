@@ -416,6 +416,11 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, size_t bufferSiz
 	return GenerateBuffer(type, nullptr, 1, { bufferSize }, { 0 }, StaticDraw);
 }
 
+DreamPointer* DreamDX11Graphics::GenerateTexture(unsigned char* textureData, int texWidth, int texHeight)
+{
+	return nullptr;
+}
+
 void DreamDX11Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
 {
 	ID3D11Buffer* buff = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
@@ -445,6 +450,9 @@ void DreamDX11Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 		break;
 	}
 	}
+}
+void DreamDX11Graphics::BindTexture(DreamTexture* texture, int bindingPoint)
+{
 }
 void DreamDX11Graphics::BindUniformBuffer(ShaderType shaderType, DreamBuffer* buffer, unsigned int slotNum) {
 	ID3D11Buffer* buff = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
@@ -523,7 +531,7 @@ void DreamDX11Graphics::AddVertexLayoutData(std::string dataName, int size, unsi
 	}
 }
 
-DreamBuffer* DreamDX11Graphics::FinalizeVertexLayout()
+DreamPointer* DreamDX11Graphics::FinalizeVertexLayout()
 {
 	if (layoutStarted && shaderBlob) {
 		ID3D11InputLayout* vInputLayout;
@@ -553,7 +561,7 @@ DreamBuffer* DreamDX11Graphics::FinalizeVertexLayout()
 
 		shaderBlob->Release();
 
-		return new DreamBuffer(vInputLayout);
+		return new DreamPointer(vInputLayout);
 	}
 	else {
 		printf("ERROR: No Vertex Layout creation process has started! Can't Finalize Data");
@@ -581,7 +589,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 #pragma region ShaderReflection
 	DreamShader* shader = nullptr;
 	bool hasMat = false;
-	UniformList uniforms;
+	DreamShaderResources resources;
 
 
 	//  Loading SpirV shader file
@@ -606,7 +614,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	std::vector<uint32_t> spirv_binary;
 	spirv_cross::CompilerHLSL hlsl(code, length / sizeof(uint32_t));
 
-	LoadShaderResources(hlsl, uniforms, hasMat);
+	LoadShaderResources(hlsl, resources, hasMat);
 
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 	#if defined( DEBUG ) || defined( _DEBUG )
@@ -684,7 +692,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			blobSize,
 			0,
 			&newShader);
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
+		shader = new DreamShader(shaderType, DreamPointer(newShader), resources, hasMat);
 		break;
 	}
 	case ShaderType::PixelShader: {
@@ -694,7 +702,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			blobSize,
 			0,
 			&newShader);
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
+		shader = new DreamShader(shaderType, DreamPointer(newShader), resources, hasMat);
 		break;
 	}
 	case ShaderType::GeometryShader: {
@@ -704,7 +712,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			blobSize,
 			0,
 			&newShader);
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
+		shader = new DreamShader(shaderType, DreamPointer(newShader), resources, hasMat);
 		break;
 	}
 	case ShaderType::ComputeShader: {
@@ -715,7 +723,7 @@ DreamShader* DreamDX11Graphics::LoadShader(const wchar_t* file, ShaderType shade
 			0,
 			&newShader);
 
-		shader = new DreamShader(shaderType, DreamPointer(newShader), uniforms, hasMat);
+		shader = new DreamShader(shaderType, DreamPointer(newShader), resources, hasMat);
 		break;
 	}
 	}
@@ -1025,7 +1033,7 @@ void DreamDX11ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 			}
 		}
 
-		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+		for (auto& uniformData : linkedShaders[i]->shaderResources.uniforms) {
 
 			if (uniformData.second.buffers.size() > 0) {
 				uint32_t frameIndex = DreamGraphics::GetInstance()->currentFrame;

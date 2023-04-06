@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <DreamMath.h>
 #include "DreamShaderLinker.h"
+#include "DreamTexture.h"
 
 //class DreamShaderLinker;
 
@@ -26,12 +27,14 @@ public:
 
 	DreamMaterial(DreamShaderLinker* pipeline);
 
+	void StoreTexture(const std::string& texName, DreamTexture* texture);
 	void LoadUniformIndexs(UniformIndexStore& store);
 	void Bind(UniformIndexStore& indexStore);
 	void UnBind();
 
 private:
 	DreamShaderLinker* graphicsPipeLine;
+	std::unordered_map<std::string, DreamTexture*> textureMap;
 
 public:
 	template<typename T>

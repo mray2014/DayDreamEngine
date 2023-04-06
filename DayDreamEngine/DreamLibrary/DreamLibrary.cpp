@@ -141,7 +141,7 @@ static void MathUnitTestRun() {
 
 	DreamMatrix4X4 rot4X4 = rot;
 
-	float lerpedNum = DreamMath::lerp(4, 5, 0.8f);
+	float lerpedNum = DreamMath::D_lerp(4, 5, 0.8f);
 	assert(DreamMath::FixFloatingPointError(lerpedNum - 4.8f) == 0);
 
 	DreamVector3 vecA = DreamVector3();
@@ -198,16 +198,16 @@ static void MathUnitTestRun() {
 
 	DreamMatrix3X3 finalMat =  testMat * storeMat;
 
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 1", 0.8660254f, DreamMath::sin(60));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 2", 0.5f, DreamMath::cos(60));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 3", 1.732050f, DreamMath::tan(60));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 4", -1.0f, DreamMath::asin(60), false);
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 5", 1.18100003f, DreamMath::acos(0.38f));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 6", 0.363147009f, DreamMath::atan(0.38f));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 7", 1.0f, DreamMath::ceiling(0.5f));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 8", 64.0f, DreamMath::pow(4,3));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 9", 0.0f, DreamMath::floor(0.2f));
-	DreamUnitTest::FloatUnitTest("Math Library Unit Test 10", 4.0f, DreamMath::sqrtf(16));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 1", 0.8660254f, DreamMath::D_sin(60));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 2", 0.5f, DreamMath::D_cos(60));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 3", 1.732050f, DreamMath::D_tan(60));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 4", -1.0f, DreamMath::D_asin(60), false);
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 5", 1.18100003f, DreamMath::D_acos(0.38f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 6", 0.363147009f, DreamMath::D_atan(0.38f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 7", 1.0f, DreamMath::D_ceiling(0.5f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 8", 64.0f, DreamMath::D_pow(4,3));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 9", 0.0f, DreamMath::D_floor(0.2f));
+	DreamUnitTest::FloatUnitTest("Math Library Unit Test 10", 4.0f, DreamMath::D_sqrtf(16));
 }
 
 static void UnitTest() {

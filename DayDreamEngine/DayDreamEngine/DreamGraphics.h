@@ -41,11 +41,13 @@ public:
 	virtual DreamVertexArray* GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr) = 0;
 	virtual DreamBuffer* GenerateBuffer(BufferType type, void* bufferData = nullptr, size_t numOfElements = 0, std::vector<size_t> strides = { 0 }, std::vector<size_t> offests = { 0 }, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
 	virtual DreamBuffer* GenerateBuffer(BufferType type, size_t bufferSize = 0) = 0;
+	virtual DreamPointer* GenerateTexture(unsigned char* textureData, int texWidth, int texHeight) = 0;
 	virtual void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
 	virtual void BindBuffer(BufferType type, DreamBuffer* buffer) = 0;
+	virtual void BindTexture(DreamTexture* texture, int bindingPoint) = 0;
 	virtual void BeginVertexLayout() = 0;
 	virtual void AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf) = 0;
-	virtual DreamBuffer* FinalizeVertexLayout() = 0;
+	virtual DreamPointer* FinalizeVertexLayout() = 0;
 	virtual void UnBindBuffer(BufferType type) = 0;
 	virtual DreamShader* LoadShader(const wchar_t* file, ShaderType shaderType) = 0;
 	virtual void ReleaseShader(DreamShader* shader) = 0;
@@ -72,7 +74,7 @@ public:
 		return MAX_FRAMES_IN_FLIGHT;
 	}
 
-	DreamBuffer* CreateVertexInputLayout()
+	DreamPointer* CreateVertexInputLayout()
 	{
 		BeginVertexLayout();
 		AddVertexLayoutData("TEXCOORD", 3, 0, false, sizeof(DreamVector3));
@@ -91,7 +93,7 @@ public:
 
 protected:
 	DreamGraphics();
-	void LoadShaderResources(spirv_cross::Compiler& glsl, UniformList& uniList, bool& hasMat);
+	void LoadShaderResources(spirv_cross::Compiler& glsl, DreamShaderResources& uniList, bool& hasMat);
 	DreamVector4 clearScreenColor;
 	ConstantUniformData matConstData;
 	LightUniformData lightData;

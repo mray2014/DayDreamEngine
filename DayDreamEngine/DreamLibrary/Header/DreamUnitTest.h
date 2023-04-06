@@ -45,7 +45,7 @@ public:
 		printf("RESULT:\n");
 		printf("%f", result); printf("\n");
 
-		if ((DreamMath::abs(answer - result) <= EPSILON) == shouldSucceed) {
+		if ((DreamMath::D_abs(answer - result) <= EPSILON) == shouldSucceed) {
 			printf("---------------------------[SUCCEEDED!]");
 		}
 		else {

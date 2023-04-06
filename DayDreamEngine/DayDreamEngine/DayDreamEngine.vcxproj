@@ -1310,6 +1310,7 @@
     <ClCompile Include="DreamMesh.cpp" />
     <ClCompile Include="DreamShader.cpp" />
     <ClCompile Include="DreamShaderLinker.cpp" />
+    <ClCompile Include="DreamTexture.cpp" />
     <ClCompile Include="DreamVulkanGraphics.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Debug|Win32'">true</ExcludedFromBuild>
@@ -1404,6 +1405,7 @@
     <ClInclude Include="DreamMesh.h" />
     <ClInclude Include="DreamShader.h" />
     <ClInclude Include="DreamShaderLinker.h" />
+    <ClInclude Include="DreamTexture.h" />
     <ClInclude Include="DreamVulkanGraphics.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DirectX12_Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OpenGL_Debug|Win32'">true</ExcludedFromBuild>
@@ -1433,6 +1435,8 @@
     <None Include="packages.config" />
     <None Include="Shaders\pixel.frag" />
     <None Include="Shaders\pixel.glsl" />
+    <None Include="Shaders\Texture_pixel.frag" />
+    <None Include="Shaders\Texture_vertex.vert" />
     <None Include="Shaders\vertex.glsl" />
     <None Include="Shaders\vertex.vert" />
   </ItemGroup>

@@ -364,7 +364,7 @@ void DreamInput::UpdateRStick()
 
 
 	//determine how far the controller is pushed
-	RightStick.magnitude = DreamMath::sqrtf((RightStick.x  * RightStick.x) + (RightStick.y * RightStick.y));
+	RightStick.magnitude = DreamMath::D_sqrtf((RightStick.x  * RightStick.x) + (RightStick.y * RightStick.y));
 
 	//determine the direction the controller is pushed
 	RightStick.normalizedX = (RightStick.x / RightStick.magnitude);

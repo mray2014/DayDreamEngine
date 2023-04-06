@@ -75,6 +75,9 @@
     <ClCompile Include="DreamShaderLinker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DreamTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h">
@@ -131,6 +134,9 @@
     <ClInclude Include="DreamLight.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DreamTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\pixel.glsl">
@@ -146,6 +152,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="Shaders\Texture_pixel.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Texture_vertex.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\pixel.hlsl">

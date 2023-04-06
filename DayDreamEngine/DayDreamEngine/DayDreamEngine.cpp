@@ -1,5 +1,5 @@
 #include <pch.h>
-#include<assert.h>
+#include <assert.h>
 #include <iostream>
 #include "DreamGraphics.h"
 #include "DreamMesh.h"
@@ -10,6 +10,7 @@
 #include <Windows.h>
 #include "DreamCameraManager.h"
 #include "DreamMaterial.h"
+#include "DreamTexture.h"
 
 void UnitTestFileIO() {
 
@@ -46,9 +47,9 @@ void UnitTestMath() {
 
 	float num = 89.0f; // result: 0.86006940581
 
-	float sinCalc = DreamMath::round(DreamMath::sin(num));
-	float cosCalc = DreamMath::round(DreamMath::cos(num));
-	float tanCalc = DreamMath::round(DreamMath::tan(num));
+	float sinCalc = DreamMath::D_round(DreamMath::D_sin(num));
+	float cosCalc = DreamMath::D_round(DreamMath::D_cos(num));
+	float tanCalc = DreamMath::D_round(DreamMath::D_tan(num));
 
 	float sinResult = 1.00f;
 	float cosResult = 0.02f;
@@ -94,14 +95,25 @@ int main()
 
 	DreamShader* vertexShader = graphics->LoadShader(L"vertex", ShaderType::VertexShader);
 	DreamShader* pixelShader = graphics->LoadShader(L"pixel", ShaderType::PixelShader);
+	DreamShader* textureVertexShader = graphics->LoadShader(L"Texture_vertex", ShaderType::VertexShader);
+	DreamShader* texturePixelShader = graphics->LoadShader(L"Texture_pixel", ShaderType::PixelShader);
 
 	DreamShaderLinker* defaultLinker = DreamGraphics::GenerateShaderLinker();
 	defaultLinker->AttachShader(vertexShader);
 	defaultLinker->AttachShader(pixelShader);
 	defaultLinker->Finalize();
 
-	DreamMaterial* defaultMat = new DreamMaterial(defaultLinker);
+	DreamShaderLinker* textureLinker = DreamGraphics::GenerateShaderLinker();
+	textureLinker->AttachShader(textureVertexShader);
+	textureLinker->AttachShader(texturePixelShader);
+	textureLinker->Finalize();
 
+	DreamTexture* texture = new DreamTexture("Textures/HUH.jpg");
+	DreamTexture* frenchFriesTexture = new DreamTexture("Textures/FrenchFries.jpg");
+
+	DreamMaterial* defaultMat = new DreamMaterial(defaultLinker);
+	DreamMaterial* TextureMat = new DreamMaterial(textureLinker);
+	TextureMat->StoreTexture("texSampler", texture);
 
 	std::vector<uint32_t> indices = std::vector<uint32_t>();
 
@@ -117,6 +129,32 @@ int main()
 	vert2.push_back(DreamVertex(0.5, -0.5, 0.0f));
 	vert2.push_back(DreamVertex(1.0, 0.5, 0.0f));
 
+	std::vector<DreamVertex> vert3_Index = std::vector<DreamVertex>();
+	vert3_Index.push_back(DreamVertex(-0.5, -1, 0.0f));
+	vert3_Index.push_back(DreamVertex(-0.5, 1, 0.0f));
+	vert3_Index.push_back(DreamVertex(0.5, -1, 0.0f));
+	vert3_Index.push_back(DreamVertex(0.5, 1, 0.0f));
+
+	vert3_Index[0].uv = DreamVector2(0, 0);
+	vert3_Index[1].uv = DreamVector2(0, 1);
+	vert3_Index[2].uv = DreamVector2(1, 0);
+	vert3_Index[3].uv = DreamVector2(1, 1);
+
+	std::vector<DreamVertex> vert3_Vert = std::vector<DreamVertex>();
+	vert3_Vert.push_back(DreamVertex(-0.5, -1, 0.0f));
+	vert3_Vert.push_back(DreamVertex(-0.5, 1, 0.0f));
+	vert3_Vert.push_back(DreamVertex(0.5, -1, 0.0f));
+	vert3_Vert.push_back(DreamVertex(0.5, -1, 0.0f));
+	vert3_Vert.push_back(DreamVertex(-0.5, 1, 0.0f));
+	vert3_Vert.push_back(DreamVertex(0.5, 1, 0.0f));
+
+	vert3_Vert[0].uv = DreamVector2(0, 0);
+	vert3_Vert[1].uv = DreamVector2(0, 1);
+	vert3_Vert[2].uv = DreamVector2(1, 0);
+	vert3_Vert[3].uv = DreamVector2(1, 0);
+	vert3_Vert[4].uv = DreamVector2(0, 1);
+	vert3_Vert[5].uv = DreamVector2(1, 1);
+
 	indices.push_back(0);
 	indices.push_back(1);
 	indices.push_back(2);
@@ -127,13 +165,20 @@ int main()
 	DreamMesh* triangleMesh = new DreamMesh(vert2);
 	DreamMesh* parallogramMesh = new DreamMesh(vert, indices);
 
+	//DreamMesh* squareMesh = new DreamMesh(vert3_Index, indices);
+	DreamMesh* squareMesh = new DreamMesh(vert3_Vert);
+
 	std::vector<DreamGameObject*> objList;
 	DreamGameObject* triangleObj = new DreamGameObject(triangleMesh, defaultMat);
 	DreamGameObject* parallogramObj = new DreamGameObject(parallogramMesh, defaultMat);
-	objList.push_back(parallogramObj);
+	DreamGameObject* squareObj = new DreamGameObject(squareMesh, TextureMat); // TODO: can't use same material on Vulkan Api
+	//objList.push_back(parallogramObj);
 	objList.push_back(triangleObj);
+	objList.push_back(squareObj);
 
 	parallogramObj->transform.position = DreamVector3(0, 0, -5);
+	squareObj->transform.position = DreamVector3(3, 0, -3);
+	squareObj->transform.Rotate(DreamVector3(0, 45, 0));
 
 
 	DreamCameraManager* camManager = DreamCameraManager::GetInstance();

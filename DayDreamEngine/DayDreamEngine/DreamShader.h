@@ -30,12 +30,19 @@ struct UniformInfo {
 	DreamBuffer* GetUniformBuffer(int index);
 };
 
+
 using UniformList = std::unordered_map<std::string, UniformInfo>;
 
 using UniformIndexStore = std::unordered_map<std::string, unsigned int>;
 
-using UniformBindingPoints = std::unordered_map<std::string, unsigned int>;
+using ResourceBindingPoints = std::unordered_map<std::string, unsigned int>;
 
+struct DreamShaderResources {
+	UniformList uniforms;
+	ResourceBindingPoints samplerBindings;
+
+	DreamShaderResources(){}
+};
 
 enum UniformBufferLayout {
 	ConstantData = 0,
@@ -73,10 +80,10 @@ struct LightUniformData {
 class DreamShader {
 public:
 	DreamShader();
-	DreamShader(ShaderType t, DreamPointer ptr, UniformList uniforms, bool hasMat) {
+	DreamShader(ShaderType t, DreamPointer ptr, DreamShaderResources resources, bool hasMat) {
 		type = t;
 		shaderPtr = ptr;
-		shaderUniforms = uniforms;
+		shaderResources = resources;
 		hasMaterialUniform = hasMat;
 	}
 	~DreamShader();
@@ -88,14 +95,13 @@ public:
 	ShaderType GetShaderType() {
 		return type;
 	}
-	DreamBuffer* GetInputLayout() {
+	DreamPointer* GetInputLayout() {
 		return layout;
 	}
 
 	void CreateVertexInputLayout();
 
-	UniformList  shaderUniforms;
-
+	DreamShaderResources  shaderResources;
 protected:
 
 	ShaderType type;
@@ -103,7 +109,7 @@ protected:
 	bool hasMaterialUniform = false;
 
 private:
-	DreamBuffer* layout = nullptr;
+	DreamPointer* layout = nullptr;
 };
 
 //class VertexDreamShader : public DreamShader {

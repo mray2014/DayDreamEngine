@@ -4,7 +4,8 @@ enum BufferType {
 	//VertexArray,
 	ArrayBuffer,
 	ElementArrayBuffer,
-	UniformBuffer
+	UniformBuffer,
+	TextureBuffer
 };
 
 struct DreamPointer {

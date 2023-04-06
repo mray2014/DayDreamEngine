@@ -9,22 +9,22 @@
 
 #include<cmath>
 
-float DreamMath::sin(float degrees)
+float DreamMath::D_sin(float degrees)
 {	
 	return std::sinf(degrees * DEG2RAD);
 }
 
-float DreamMath::cos(float degrees)
+float DreamMath::D_cos(float degrees)
 {
 	return std::cosf(degrees * DEG2RAD);
 }
 
-float DreamMath::tan(float degrees)
+float DreamMath::D_tan(float degrees)
 {
 	return std::tanf(degrees * DEG2RAD);
 }
 
-float DreamMath::asin(float num)
+float DreamMath::D_asin(float num)
 {
 	if (num < -1 || num > 1) {
 		printf("Not a valid number...\n");
@@ -33,7 +33,7 @@ float DreamMath::asin(float num)
 	return std::asinf(num);
 }
 
-float DreamMath::acos(float num)
+float DreamMath::D_acos(float num)
 {
 	if (num < -1 && num > 1) {
 		printf("Not a valid number...\n");
@@ -42,7 +42,7 @@ float DreamMath::acos(float num)
 	return std::acosf(num);
 }
 
-float DreamMath::atan(float num)
+float DreamMath::D_atan(float num)
 {
 	if (num < -1 && num > 1) {
 		printf("Not a valid number...\n");
@@ -51,47 +51,47 @@ float DreamMath::atan(float num)
 	return std::atanf(num);
 }
 
-float DreamMath::abs(float num)
+float DreamMath::D_abs(float num)
 {
 	return std::abs(num);
 }
 
-float DreamMath::pow(float num, float exp)
+float DreamMath::D_pow(float num, float exp)
 {
 	return std::powf(num, exp);
 }
 
-float DreamMath::floor(float a)
+float DreamMath::D_floor(float a)
 {
 	return std::floorf(a);
 }
 
-float DreamMath::ceiling(float a)
+float DreamMath::D_ceiling(float a)
 {
 	return std::ceilf(a);
 }
 
-float DreamMath::rad2deg(float radians)
+float DreamMath::D_rad2deg(float radians)
 {
 	return radians * RAD2DEG;
 }
 
-float DreamMath::deg2rad(float degrees)
+float DreamMath::D_deg2rad(float degrees)
 {
 	return degrees * DEG2RAD;
 }
 
-float DreamMath::sqrtf(float num)
+float DreamMath::D_sqrtf(float num)
 {
 	return std::sqrtf(num);
 }
 
-float DreamMath::truncf(float num)
+float DreamMath::D_truncf(float num)
 {
 	return std::truncf(num);
 }
 
-float DreamMath::round(float num, int decimal)
+float DreamMath::D_round(float num, int decimal)
 {
 	float decimalMove = pow(10.0f, (float)decimal);
 
@@ -100,7 +100,7 @@ float DreamMath::round(float num, int decimal)
 	return ((float)store)/decimalMove;
 }
 
-float DreamMath::lerp(float A, float B, float time)
+float DreamMath::D_lerp(float A, float B, float time)
 {
 	return ((1 - time) * A) + (time * B);
 }
@@ -134,7 +134,7 @@ float DreamMath::FixFloatingPointError(float num)
 {
 	float returnNum = num;
 	float truncatedNum = truncf(returnNum);
-	if (DreamMath::abs(returnNum - truncatedNum) < EPSILON) {
+	if (DreamMath::D_abs(returnNum - truncatedNum) < EPSILON) {
 		returnNum = truncatedNum;
 	}
 	return returnNum;

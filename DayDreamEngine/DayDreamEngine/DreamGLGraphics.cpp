@@ -232,6 +232,24 @@ DreamBuffer* DreamGLGraphics::GenerateBuffer(BufferType type, size_t bufferSize)
 	return GenerateBuffer(type, nullptr, 1, { bufferSize }, {0}, StaticDraw);
 }
 
+DreamPointer* DreamGLGraphics::GenerateTexture(unsigned char* textureData, int texWidth, int texHeight)
+{
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	// set the texture wrapping/filtering options (on the currently bound texture object)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData); // TODO: GL_RGBA cause issues with incoming data not being 3 channels
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	return new DreamPointer(texture, (texWidth * texHeight) * 4);
+}
+
 void DreamGLGraphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage) 
 {
 	size_t buffType = -1;
@@ -298,6 +316,12 @@ void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 	
 }
 
+void DreamGLGraphics::BindTexture(DreamTexture* texture, int bindingPoint)
+{
+	glActiveTexture(GL_TEXTURE0 + bindingPoint);
+	glBindTexture(GL_TEXTURE_2D, texture->GetTexturePointer()->GetStoredHandle());
+}
+
 GLuint vertLayoutHandle = -1;
 
 void DreamGLGraphics::BeginVertexLayout()
@@ -326,18 +350,18 @@ void DreamGLGraphics::AddVertexLayoutData(std::string dataName, int size, unsign
 	}
 }
 
-DreamBuffer* DreamGLGraphics::FinalizeVertexLayout()
+DreamPointer* DreamGLGraphics::FinalizeVertexLayout()
 {
 	if (vertLayoutHandle != -1)
 	{
 		glBindVertexArray(0);
-		DreamBuffer* buff = new DreamBuffer(vertLayoutHandle);
+		DreamPointer* ptr = new DreamPointer(vertLayoutHandle);
 
 
 		vertLayoutHandle = -1;
 		vertexArrayStrideCount = 0;
 
-		return buff;
+		return ptr;
 	}
 	else {
 		printf("ERROR: No Vertex Layout creation process has started! Can't Finalize");
@@ -497,7 +521,7 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 	using namespace std;
 
 	bool hasMat = false; 
-	UniformList uniforms;
+	DreamShaderResources resources;
 	GLuint prog = -1;
 
 
@@ -519,7 +543,7 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 	size_t length;
 	DreamFileIO::ReadFullFileQuick(&shaderCode, length);
 	DreamFileIO::CloseFileRead();
-	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
+ 	uint32_t* code = reinterpret_cast<uint32_t*>(shaderCode);
 
 	// Read SPIR-V from disk or similar.
 	std::vector<uint32_t> spirv_binary;
@@ -534,7 +558,7 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 	// Compile to GLSL, ready to give to GL driver.
 	std::string source = glsl.compile();
 
-	LoadShaderResources(glsl, uniforms, hasMat);
+	LoadShaderResources(glsl, resources, hasMat);
 
 
 	///================================================
@@ -581,7 +605,7 @@ DreamShader* DreamGLGraphics::LoadShader(const wchar_t* file, ShaderType shaderT
 			delete[] debug; debug = nullptr;
 		}
 		else {
-			return new DreamShader(shaderType, DreamPointer(prog), uniforms, hasMat);
+			return new DreamShader(shaderType, DreamPointer(prog), resources, hasMat);
 		}
 	}
 	
@@ -628,7 +652,7 @@ void DreamGLShaderLinker::Finalize()
 {
 	unsigned int bindingPointIndex = 2;
 	for (int i = 0; i < linkedShaders.size(); i++) {
-		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+		for (auto& uniformData : linkedShaders[i]->shaderResources.uniforms) {
 			std::string name = uniformData.first;
 
 			if (name == "ConstantData") {
@@ -666,12 +690,21 @@ void DreamGLShaderLinker::Finalize()
 	}
 }
 
-void DreamGLShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
+void DreamGLShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap)
 {
 	glUseProgram(prog);
 
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
-		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+		for (auto& samplers : linkedShaders[i]->shaderResources.samplerBindings) {
+			if (texMap.contains(samplers.first)) {
+				DreamGraphics::GetInstance()->BindTexture(texMap[samplers.first], samplers.second);
+			}
+			else {
+				printf("MISSING BOUND TEXTURE: %s", samplers.first);
+			}
+		}
+
+		for (auto& uniformData : linkedShaders[i]->shaderResources.uniforms) {
 			uint32_t frameIndex = DreamGraphics::GetInstance()->currentFrame;
 			uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
 			int index = (indexStore[uniformData.first] * maxFramesInFlight) + frameIndex;
@@ -703,12 +736,12 @@ DreamGLVertexArray::DreamGLVertexArray(DreamBuffer* vert, DreamBuffer* ind) : Dr
 DreamGLVertexArray::~DreamGLVertexArray()
 {
 	DreamVertexArray::~DreamVertexArray();
-	graphics->DestroyBuffer(VAO);
+	//graphics->DestroyBuffer(VAO);
 }
 
 void DreamGLVertexArray::Bind()
 {
-	glBindVertexArray(VAO->GetBufferPointer().GetStoredHandle());
+	glBindVertexArray(VAO->GetStoredHandle());
 	if (indexBuffer) {
 		graphics->BindBuffer(BufferType::ElementArrayBuffer, indexBuffer);
 	}

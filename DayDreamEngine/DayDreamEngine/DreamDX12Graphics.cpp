@@ -680,6 +680,11 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, size_t bufferSiz
 	return GenerateBuffer(type, nullptr, 1, { bufferSize }, { 0 }, StaticDraw);
 }
 
+DreamPointer* DreamDX12Graphics::GenerateTexture(unsigned char* pixelBuffer, int texWidth, int texHeight)
+{
+	return nullptr;
+}
+
 void DreamDX12Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
 {
 	if (buffer->GetBufferType() == UniformBuffer) {
@@ -731,6 +736,10 @@ void DreamDX12Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 		break;
 	}			
 	}
+}
+
+void DreamDX12Graphics::BindTexture(DreamTexture* texture, int bindingPoint)
+{
 }
 
 void DreamDX12Graphics::BindDescriptorTable(unsigned int index, unsigned int heapIndex) {
@@ -788,10 +797,8 @@ void DreamDX12Graphics::AddVertexLayoutData(std::string dataName, int size, unsi
 	}
 }
 
-DreamBuffer* DreamDX12Graphics::FinalizeVertexLayout()
+DreamPointer* DreamDX12Graphics::FinalizeVertexLayout()
 {
-
-
 	return nullptr;
 }
 
@@ -956,7 +963,7 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 #pragma region ShaderReflection
 	DreamShader* shader = nullptr;
 	bool hasMat = false;
-	UniformList uniforms;
+	DreamShaderResources resources;
 
 
 	//  Loading SpirV shader file
@@ -981,7 +988,7 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	std::vector<uint32_t> spirv_binary;
 	spirv_cross::CompilerHLSL hlsl(code, length / sizeof(uint32_t));
 
-	LoadShaderResources(hlsl, uniforms, hasMat);
+	LoadShaderResources(hlsl, resources, hasMat);
 
 	//D3D12_SHADER_VISIBILITY shaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
@@ -1014,7 +1021,7 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	}
 	}
 
-	for (int i = 0; i < uniforms.size(); i++) {
+	for (int i = 0; i < resources.uniforms.size(); i++) {
 		uint32_t location = tableRangeList.size();
 
 		tableRangeList.push_back(CD3DX12_DESCRIPTOR_RANGE());
@@ -1044,7 +1051,7 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 	void* blobPtr = shaderBlob;
 	size_t blobSize = shaderBlob->GetBufferSize();
 
-	shader = new DreamShader(shaderType, DreamPointer(blobPtr, blobSize), uniforms, hasMat);
+	shader = new DreamShader(shaderType, DreamPointer(blobPtr, blobSize), resources, hasMat);
 
 	if (shaderType == VertexShader) {
 		shader->CreateVertexInputLayout();
@@ -1241,7 +1248,7 @@ void DreamDX12ShaderLinker::Finalize()
 	uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
 	int numOfBuffers = 0;
 	for (int i = 0; i < linkedShaders.size(); i++) {
-		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+		for (auto& uniformData : linkedShaders[i]->shaderResources.uniforms) {
 			numOfBuffers += uniformData.second.buffers.size();
 		}
 	}
@@ -1257,7 +1264,7 @@ void DreamDX12ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
 	uint32_t curFrame = DreamGraphics::GetInstance()->currentFrame;
 	uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
-		for (auto& uniformData : linkedShaders[i]->shaderUniforms) {
+		for (auto& uniformData : linkedShaders[i]->shaderResources.uniforms) {
 			int index = (indexStore[uniformData.first] * maxFramesInFlight) + curFrame;
 
 

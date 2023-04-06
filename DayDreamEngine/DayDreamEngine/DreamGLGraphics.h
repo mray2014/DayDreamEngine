@@ -7,7 +7,7 @@ protected:
 public:
 	void AttachShader(DreamShader* shader) override;
 	void Finalize() override;
-	void BindShaderLink(UniformIndexStore& indexStore) override;
+	void BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap) override;
 	void UnBindShaderLink() override;
 
 private:
@@ -23,7 +23,7 @@ public:
 	void Bind() override;
 	void UnBind() override;
 
-	DreamBuffer* VAO;
+	DreamPointer* VAO;
 };
 
 class DreamGLGraphics : public DreamGraphics
@@ -43,11 +43,13 @@ public:
 	DreamVertexArray* GenerateVertexArray(DreamBuffer* vert, DreamBuffer* ind = nullptr);
 	DreamBuffer* GenerateBuffer(BufferType type, void* bufferData = nullptr, size_t numOfElements = 0, std::vector<size_t> strides = { 0 }, std::vector<size_t> offests = { 0 }, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) override;
 	DreamBuffer* GenerateBuffer(BufferType type, size_t bufferSize = 0) override;
+	DreamPointer* GenerateTexture(unsigned char* textureData, int texWidth, int texHeight) override;
 	void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) override;
 	void BindBuffer(BufferType type, DreamBuffer* buffer) override;
+	void BindTexture(DreamTexture* texture, int bindingPoint) override;
 	void BeginVertexLayout() override;
 	void AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf) override;
-	DreamBuffer* FinalizeVertexLayout() override;
+	DreamPointer* FinalizeVertexLayout() override;
 	void UnBindBuffer(BufferType type) override;
 	DreamShader* LoadShader(const wchar_t* file, ShaderType shaderType) override;
 	void ReleaseShader(DreamShader* shader) override;
