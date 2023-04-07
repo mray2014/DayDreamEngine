@@ -11,6 +11,7 @@ void DreamMaterial::StoreTexture(const std::string& texName, DreamTexture* textu
 }
 
 void DreamMaterial::LoadUniformIndexs(UniformIndexStore& store) {
+	graphicsPipeLine->AddNewObjectInfo(store);
 	graphicsPipeLine->GenerateUniformIndexs(store);
 }
 

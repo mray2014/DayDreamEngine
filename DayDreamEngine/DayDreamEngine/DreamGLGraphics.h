@@ -9,7 +9,7 @@ public:
 	void Finalize() override;
 	void BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap) override;
 	void UnBindShaderLink() override;
-
+	
 private:
 	size_t prog;
 	friend class DreamGraphics;

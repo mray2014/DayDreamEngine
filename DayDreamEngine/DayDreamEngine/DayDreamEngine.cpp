@@ -172,7 +172,7 @@ int main()
 	DreamGameObject* triangleObj = new DreamGameObject(triangleMesh, defaultMat);
 	DreamGameObject* parallogramObj = new DreamGameObject(parallogramMesh, defaultMat);
 	DreamGameObject* squareObj = new DreamGameObject(squareMesh, TextureMat); // TODO: can't use same material on Vulkan Api
-	//objList.push_back(parallogramObj);
+	objList.push_back(parallogramObj);
 	objList.push_back(triangleObj);
 	objList.push_back(squareObj);
 

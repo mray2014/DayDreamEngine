@@ -540,15 +540,13 @@ void DreamVulkanGraphics::createRenderPass() {
 		throw std::runtime_error("failed to create render pass!");
 	}
 }
-VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout, std::vector<VkDescriptorSet>& pipelineDescSet, std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, DreamPointer* vertexLayoutPtr) {
+VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout, std::vector<VkDescriptorSet>& pipelineDescSet, std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, VkDescriptorSetLayout& descriptorSetLayout, DreamPointer* vertexLayoutPtr) {
 	//VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	//vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	//vertexInputInfo.vertexBindingDescriptionCount = 0;
 	//vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
 	//vertexInputInfo.vertexAttributeDescriptionCount = 0;
 	//vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
-
-	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 
 	uint32_t descriptorSize = (uint32_t)descriptorBindings.size();
 	if (descriptorSize > 0) {
@@ -561,24 +559,6 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 
 		if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-		
-		//descSetLayouts.push_back(descriptorSetLayout);
-
-		int descSetAmount = MAX_FRAMES_IN_FLIGHT * descriptorSize;
-		pipelineDescSet.resize(MAX_FRAMES_IN_FLIGHT * descriptorSize);
-		std::vector<VkDescriptorSetLayout> descLayouts(MAX_FRAMES_IN_FLIGHT * descriptorSize, descriptorSetLayout);
-
-
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		allocInfo.pSetLayouts = descLayouts.data();
-
-		VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &pipelineDescSet[0]);
-		if (result != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 	}
 
@@ -734,6 +714,26 @@ VkPipeline DreamVulkanGraphics::CreateGraphicPipeLine(std::vector<VkPipelineShad
 	return graphicsPipeline;
 }
 
+int DreamVulkanGraphics::addNewDescriptorSets(std::vector<VkDescriptorSet>& pipelineDescSet, VkDescriptorSetLayout descLayout) {
+	int allocationIndex = pipelineDescSet.size();
+	pipelineDescSet.resize(MAX_FRAMES_IN_FLIGHT + allocationIndex);
+	std::vector<VkDescriptorSetLayout> descLayouts(MAX_FRAMES_IN_FLIGHT, descLayout);
+
+
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	allocInfo.pSetLayouts = descLayouts.data();
+
+	VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &pipelineDescSet[allocationIndex]);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate descriptor sets!");
+	}
+
+	return allocationIndex / MAX_FRAMES_IN_FLIGHT;
+}
+
 void DreamVulkanGraphics::createFramebuffers() {
 	swapChainFramebuffers.resize(swapChainImageViews.size());
 
@@ -813,7 +813,7 @@ void DreamVulkanGraphics::createDescriptorPool() {
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = 2;
 	poolInfo.pPoolSizes = &poolSize[0];
-	poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 2; // TODO: hard corded this value since we making 2 graphics pipelines
+	poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 10; // TODO: hard corded this value since we making 2 graphics pipelines
 
 	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
@@ -1631,13 +1631,14 @@ void DreamVulkanShaderLinker::Finalize()
 			}
 		}
 	}
-	graphicsPipeline = vulkanGraphics->CreateGraphicPipeLine(shadersStageInfo, pipelineLayout, pipelineDescSet, descriptorBindings, vertexInputLayout);
+	graphicsPipeline = vulkanGraphics->CreateGraphicPipeLine(shadersStageInfo, pipelineLayout, pipelineDescSet, descriptorBindings, descriptorSetLayout, vertexInputLayout);
 }
 
 void DreamVulkanShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap)
 {
 	uint32_t curFrame = DreamGraphics::GetInstance()->currentFrame;
 	uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
+	int descSetIndex = (indexStore["DescriptorSet"] * maxFramesInFlight) + curFrame;
 
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
 		for (auto& samplerData : linkedShaders[i]->shaderResources.samplerBindings) {
@@ -1660,7 +1661,7 @@ void DreamVulkanShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std:
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.dstSet = pipelineDescSet[curFrame];
+			descriptorWrite.dstSet = pipelineDescSet[descSetIndex];
 			descriptorWrite.dstBinding = bindIndex;
 			descriptorWrite.dstArrayElement = 0;
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1687,7 +1688,7 @@ void DreamVulkanShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std:
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.dstSet = pipelineDescSet[curFrame];
+			descriptorWrite.dstSet = pipelineDescSet[descSetIndex];
 			descriptorWrite.dstBinding = bindPoint;
 			descriptorWrite.dstArrayElement = 0;
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1700,12 +1701,18 @@ void DreamVulkanShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std:
 		}
 	}
 
-	vulkanGraphics->BindDescriptorSet(pipelineDescSet[curFrame], pipelineLayout);
+	vulkanGraphics->BindDescriptorSet(pipelineDescSet[descSetIndex], pipelineLayout);
 	vulkanGraphics->BindGraphicsPipeline(graphicsPipeline);
 }
 
 void DreamVulkanShaderLinker::UnBindShaderLink()
 {
+}
+
+void DreamVulkanShaderLinker::AddNewObjectInfo(UniformIndexStore& store)
+{
+	int index = vulkanGraphics->addNewDescriptorSets(pipelineDescSet, descriptorSetLayout);
+	store["DescriptorSet"] = index;
 }
 
 DreamVulkanVertexArray::DreamVulkanVertexArray(DreamBuffer* vert, DreamBuffer* ind) : DreamVertexArray(vert, ind)

@@ -15,6 +15,8 @@ public:
 	virtual void Finalize() = 0;
 	virtual void BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap) = 0;
 	virtual void UnBindShaderLink() = 0;
+	virtual void AddNewObjectInfo(UniformIndexStore& store){}
+
 
 	void GenerateUniformIndexs(UniformIndexStore& indexStore) {
 		unsigned int shaderSize = linkedShaders.size();

@@ -25,6 +25,7 @@ public:
 	void Finalize() override;
 	void BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap) override;
 	void UnBindShaderLink() override;
+	void AddNewObjectInfo(UniformIndexStore& store) override;
 
 private:
 	DreamVulkanGraphics* vulkanGraphics = nullptr;
@@ -33,6 +34,7 @@ private:
 	std::vector <VkDescriptorSet> pipelineDescSet;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
+	VkDescriptorSetLayout descriptorSetLayout;
 	DreamPointer* vertexInputLayout;
 	friend class DreamGraphics;
 };
@@ -154,7 +156,7 @@ public:
 	void createImageViews();
 	void createRenderPass();
 
-	VkPipeline CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout, std::vector<VkDescriptorSet>& pipelineDescSet, std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, DreamPointer* vertexLayoutPtr);
+	VkPipeline CreateGraphicPipeLine(std::vector<VkPipelineShaderStageCreateInfo>& shadersStageInfo, VkPipelineLayout& layout, std::vector<VkDescriptorSet>& pipelineDescSet, std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, VkDescriptorSetLayout& descriptorSetLayout, DreamPointer* vertexLayoutPtr);
 
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	void createFramebuffers();
@@ -183,6 +185,8 @@ public:
 	void createTextureImageView();
 
 	void createTextureSampler();
+
+	int addNewDescriptorSets(std::vector<VkDescriptorSet>& pipelineDescSet, VkDescriptorSetLayout descLayout);
 
 private:
 	uint32_t imageIndex;
