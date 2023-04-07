@@ -111,6 +111,7 @@ void DreamCamera::Update()
 
 
 	float aspectratio = DreamGraphics::GetAspectRatio();
+	//float aspectratio = 0.1f;
 
 	projectionMat = DreamMath::CreateProjectionMatix(fieldOfView, nearClipDist, farClipDist, aspectratio, zoom);
 	viewMat = DreamMath::LookAtViewMatix(transform.position, transform.position + transform.GetForward(), transform.GetUp());

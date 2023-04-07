@@ -23,6 +23,8 @@ void DreamVulkanGraphics::OnWindowResize(GLFWwindow* window, int width, int heig
 	auto app = reinterpret_cast<DreamVulkanGraphics*>(glfwGetWindowUserPointer(window));
 	app->framebufferResized = true;
 
+	GetInstance()->width = width;
+	GetInstance()->height = height;
 	//glViewport(0, 0, width, height);
 }
 

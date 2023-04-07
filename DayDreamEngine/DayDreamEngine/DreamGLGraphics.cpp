@@ -12,6 +12,8 @@
 GLFWwindow* window = nullptr;
 
 void OnWindowResize(GLFWwindow* window, int width, int height) {
+	DreamGraphics::GetInstance()->width = width;
+	DreamGraphics::GetInstance()->height = height;
 	glViewport(0, 0, width, height);
 }
 

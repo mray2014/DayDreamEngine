@@ -1640,14 +1640,15 @@ static DreamMatrix4X4 CreateProjectionMatix(const float& angleOfView, const floa
 
 	DreamMatrix4X4 projMat;
 	// set the basic projection matrix
-	float scale = 1.0f / (DreamMath::D_tan(angleOfView * 0.5f) / zoom);
-	float zNormalScale = -far / (far - near);
-	float wNormalScale = zNormalScale * near;
+	float top = DreamMath::D_tan(angleOfView / 2.0f) * near;
+	float bot = -top;
+	float left = -top * aspectRatio;
+	float right = top * aspectRatio;
 
-	projMat.matrix.xRow = DreamVector4(aspectRatio * scale, 0.0f, 0.0f, 0.0f);
-	projMat.matrix.yRow = DreamVector4(0.0f, scale, 0.0f, 0.0f);
-	projMat.matrix.zRow = DreamVector4(0.0f, 0.0f, zNormalScale, -1.0f);
-	projMat.matrix.wRow = DreamVector4(0.0f, 0.0f, wNormalScale, 0.0f);
+	projMat.matrix.xRow = DreamVector4((2 * near)/(right - left) * zoom, 0.0f, (right + left) / (right - left), 0.0f);
+	projMat.matrix.yRow = DreamVector4(0.0f, (2 * near) / (top - bot) * zoom, (top + bot) / (top - bot), 0.0f);
+	projMat.matrix.zRow = DreamVector4(0.0f, 0.0f, -((far + near) / (far - near)), -1.0f);
+	projMat.matrix.wRow = DreamVector4(0.0f, 0.0f, -((2 * far * near) / (far - near)), 0.0f);
 
 	return projMat;
 }

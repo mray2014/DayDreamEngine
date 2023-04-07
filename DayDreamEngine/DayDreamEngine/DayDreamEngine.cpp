@@ -130,10 +130,10 @@ int main()
 	vert2.push_back(DreamVertex(1.0, 0.5, 0.0f));
 
 	std::vector<DreamVertex> vert3_Index = std::vector<DreamVertex>();
-	vert3_Index.push_back(DreamVertex(-0.5, -1, 0.0f));
-	vert3_Index.push_back(DreamVertex(-0.5, 1, 0.0f));
-	vert3_Index.push_back(DreamVertex(0.5, -1, 0.0f));
-	vert3_Index.push_back(DreamVertex(0.5, 1, 0.0f));
+	vert3_Index.push_back(DreamVertex(-1, -1, 0.0f));
+	vert3_Index.push_back(DreamVertex(-1, 1, 0.0f));
+	vert3_Index.push_back(DreamVertex(1, -1, 0.0f));
+	vert3_Index.push_back(DreamVertex(1, 1, 0.0f));
 
 	vert3_Index[0].uv = DreamVector2(0, 0);
 	vert3_Index[1].uv = DreamVector2(0, 1);
@@ -165,8 +165,8 @@ int main()
 	DreamMesh* triangleMesh = new DreamMesh(vert2);
 	DreamMesh* parallogramMesh = new DreamMesh(vert, indices);
 
-	//DreamMesh* squareMesh = new DreamMesh(vert3_Index, indices);
-	DreamMesh* squareMesh = new DreamMesh(vert3_Vert);
+	DreamMesh* squareMesh = new DreamMesh(vert3_Index, indices);
+	//DreamMesh* squareMesh = new DreamMesh(vert3_Vert);
 
 	std::vector<DreamGameObject*> objList;
 	DreamGameObject* triangleObj = new DreamGameObject(triangleMesh, defaultMat);
