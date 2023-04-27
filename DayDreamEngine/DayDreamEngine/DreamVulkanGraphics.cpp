@@ -1163,8 +1163,6 @@ void DreamVulkanGraphics::SwapBuffers()
 	else if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
-
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void DreamVulkanGraphics::CheckInputs()
@@ -1290,7 +1288,7 @@ DreamPointer* DreamVulkanGraphics::GenerateTexture(unsigned char* pixelBuffer, i
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
-	imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB; // format;
+	imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM; // format;
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL; // tiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT; // usage;
@@ -1315,15 +1313,15 @@ DreamPointer* DreamVulkanGraphics::GenerateTexture(unsigned char* pixelBuffer, i
 
 	vkBindImageMemory(device, textureImage, textureImageMemory, 0);
 
-	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	VulkanBufferContainer* container = (VulkanBufferContainer*)textureBuffer->GetBufferPointer().GetStoredPointer();
 	copyBufferToImage(container->buffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
-	VkImageView imgView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+	VkImageView imgView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM);
 
 	return new DreamPointer(new VulkanImageContainer(textureBuffer, textureImageMemory, textureImage, imgView, textureSampler));
 }

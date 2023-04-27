@@ -9,6 +9,7 @@ protected:
 	DreamShaderLinker();
 	std::vector<DreamShader*> linkedShaders;
 	ResourceBindingPoints bindingPoints;
+	DreamPointer* vertexInputLayout;
 public:
 	virtual ~DreamShaderLinker() {}
 	virtual void AttachShader(DreamShader* shader) = 0;

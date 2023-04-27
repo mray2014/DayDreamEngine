@@ -209,6 +209,7 @@ int main()
 		graphics->Draw();
 
 		graphics->SwapBuffers();
+		graphics->currentFrame = (graphics->currentFrame + 1) % graphics->GetMaxFramesInFlight();
 	}
 
 	for (unsigned int i = 0; i < objList.size(); i++) {

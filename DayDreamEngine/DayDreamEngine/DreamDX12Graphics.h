@@ -1,6 +1,8 @@
 #pragma once
 #include "DreamGraphics.h"
 
+#include "d3dx12/d3dx12.h"
+
 #include <SPIRV/spirv_hlsl.hpp>
 #pragma comment(lib, "spirv-cross-hlsld.lib")
 #pragma comment(lib, "spirv-cross-glsld.lib")
@@ -129,7 +131,7 @@ public:
 	void Flush(ComPtr<ID3D12CommandQueue> commandQueue, ComPtr<ID3D12Fence> fence, uint64_t& fenceValue, HANDLE fenceEvent);
 	void Render();
 	void SetFullscreen(bool fullscreen); // Add this graphic platorm
-	ID3D12PipelineState* CreateGraphicPipeLine(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeLineDesc);
+	ID3D12PipelineState* CreateGraphicPipeLine(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeLineDesc, std::vector<CD3DX12_DESCRIPTOR_RANGE>& tableRangeList, std::vector<CD3DX12_ROOT_PARAMETER>& rootParametersList, DreamPointer* vertexLayoutPtr);
 	void BindGraphicPipeLine(ID3D12PipelineState* pipeline, ID3D12RootSignature* rootSig, unsigned int heapCount = 0);
 
 	void BindDescriptorTable(unsigned int index, unsigned int heapIndex);
@@ -152,7 +154,7 @@ private:
 	RECT g_WindowRect;
 
 	// DirectX 12 Objects
-	ComPtr<ID3D12Device2> g_Device;
+	ComPtr<ID3D12Device2> g_Device; // TODO: "Get rid of all the snake case spelling" ~ chat [4/18/2023]
 	ComPtr<ID3D12CommandQueue> g_CommandQueue;
 	ComPtr<IDXGISwapChain4> g_SwapChain;
 	ComPtr<ID3D12Resource> g_BackBuffers[g_NumFrames];
@@ -181,6 +183,10 @@ private:
 	// Can be toggled with the Alt+Enter or F11
 	bool g_Fullscreen = false;
 	bool quit = false;
+
+	bool bInitalFrame = true;
+
+	uint32_t m_DescriptorHeapCount = 0;
 };
 
 class DreamDX12ShaderLinker : public DreamShaderLinker {
@@ -196,6 +202,8 @@ private:
 	DreamDX12Graphics* dx12Graphics;
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeLineDesc;
 	ID3D12PipelineState* pipelineState;
+	std::vector<CD3DX12_DESCRIPTOR_RANGE> tableRangeList;
+	std::vector<CD3DX12_ROOT_PARAMETER> rootParametersList;
 	friend class DreamGraphics;
 };
 

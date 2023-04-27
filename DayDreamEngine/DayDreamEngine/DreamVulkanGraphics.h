@@ -35,7 +35,6 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	VkDescriptorSetLayout descriptorSetLayout;
-	DreamPointer* vertexInputLayout;
 	friend class DreamGraphics;
 };
 

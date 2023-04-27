@@ -1,9 +1,10 @@
 #include "DreamDX12Graphics.h"
 #include <iostream>
+#include <memory>
 #include <DreamFileIO.h>
 
 // D3D12 extension library.
-#include "d3dx12/d3dx12.h"
+
 #include <dxgidebug.h>
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -44,6 +45,10 @@ void DreamDX12Graphics::EnableDebugLayer() {
 	ComPtr<ID3D12Debug> debugInterface;
 	ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)));
 	debugInterface->EnableDebugLayer();
+
+	//ComPtr<ID3D12Debug1> spDebugController1;
+	//debugInterface->QueryInterface(IID_PPV_ARGS(&spDebugController1));
+	//spDebugController1->SetEnableGPUBasedValidation(true);
 #endif
 }
 
@@ -423,6 +428,12 @@ long DreamDX12Graphics::InitGraphics()
 
 	g_IsInitialized = true;
 
+	auto commandAllocator = g_CommandAllocators[g_CurrentBackBufferIndex];
+	auto backBuffer = g_BackBuffers[g_CurrentBackBufferIndex];
+
+	commandAllocator->Reset();
+	g_CommandList->Reset(commandAllocator.Get(), nullptr);
+
 	return 0;
 }
 
@@ -525,12 +536,14 @@ bool DreamDX12Graphics::CheckWindowClose()
 
 void DreamDX12Graphics::ClearScreen()
 {
-	// Reset 
 	auto commandAllocator = g_CommandAllocators[g_CurrentBackBufferIndex];
 	auto backBuffer = g_BackBuffers[g_CurrentBackBufferIndex];
-
-	commandAllocator->Reset();
-	g_CommandList->Reset(commandAllocator.Get(), nullptr);
+	if (!bInitalFrame) {
+		// Reset 
+		commandAllocator->Reset();
+		g_CommandList->Reset(commandAllocator.Get(), nullptr);
+	}
+	bInitalFrame = false;
 
 	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 		backBuffer.Get(),
@@ -622,8 +635,10 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, void* bufferData
 	bufferSize *= numOfElements;
 	bufferSize = (bufferSize + 255) & ~255; // CB size is required to be 256-byte aligned.
 
+	D3D12_RESOURCE_DIMENSION dimensionBuffer = D3D12_RESOURCE_DIMENSION_BUFFER;
+
 	D3D12_RESOURCE_DESC bufferDesc{
-	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
+	bufferDesc.Dimension = dimensionBuffer,
 	bufferDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
 	bufferDesc.Width = bufferSize,
 	bufferDesc.Height = 1,
@@ -640,15 +655,17 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, void* bufferData
 	if (!SUCCEEDED(hr))
 		printf("Create committed resource failed (0x%08X)", hr);
 
+	if (type != TextureBuffer) {
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+		cbvDesc.BufferLocation = buf->GetGPUVirtualAddress();
+		cbvDesc.SizeInBytes = bufferSize;
 
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation = buf->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = bufferSize;   
+		int size = g_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvHandle0(CBV_SRV_UAV_Heap->GetCPUDescriptorHandleForHeapStart(), m_DescriptorHeapCount, size);
+		g_Device->CreateConstantBufferView(&cbvDesc, cbvHandle0);
+		m_DescriptorHeapCount++;
+	}
 
-	static int offset = 0;
-	int size = g_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvHandle0(CBV_SRV_UAV_Heap->GetCPUDescriptorHandleForHeapStart(), offset, size);
-	g_Device->CreateConstantBufferView(&cbvDesc, cbvHandle0);
 
 	//g_Device->CreateConstantBufferView(&cbvDesc, CBV_SRV_UAV_Heap->GetCPUDescriptorHandleForHeapStart());
 
@@ -670,8 +687,8 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, void* bufferData
 
 	buf->SetName(L"Buffer");
 
-	DreamBuffer* newBuffer = new DreamBuffer(offset, buf, vbibData, type, bufferSize, numOfBuffers, &strides[0], &offests[0]);
-	offset += 1;
+	DreamBuffer* newBuffer = new DreamBuffer(m_DescriptorHeapCount - 1, buf, vbibData, type, bufferSize, numOfBuffers, &strides[0], &offests[0]);
+
 	return newBuffer;
 }
 
@@ -682,7 +699,118 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, size_t bufferSiz
 
 DreamPointer* DreamDX12Graphics::GenerateTexture(unsigned char* pixelBuffer, int texWidth, int texHeight)
 {
-	return nullptr;
+
+	// Creating Texture Resource
+	D3D12_RESOURCE_DESC textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM,
+		static_cast<UINT64>(texWidth),
+		static_cast<UINT>(texHeight));
+
+	textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+	ID3D12Resource* textureResource;
+
+	CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE_DEFAULT);
+	ThrowIfFailed(g_Device->CreateCommittedResource(
+		&props,
+		D3D12_HEAP_FLAG_NONE,
+		&textureDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&textureResource)));
+
+
+
+	// Creating SRV
+	bool is3DTexture = false;
+	UINT descriptorSize = g_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(CBV_SRV_UAV_Heap->GetCPUDescriptorHandleForHeapStart(), m_DescriptorHeapCount * descriptorSize);
+	D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+	shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+	if (is3DTexture)
+	{
+		shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		shaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
+		shaderResourceViewDesc.TextureCube.MipLevels = 0;
+		shaderResourceViewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	}
+
+
+	g_Device->CreateShaderResourceView(textureResource, is3DTexture ? &shaderResourceViewDesc : NULL, srvHandle);
+	m_DescriptorHeapCount++;
+
+
+	// Grabbing image footprint
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+	g_Device->GetCopyableFootprints(&textureDesc, 0, 1, 0, &footprint, nullptr, nullptr, nullptr);
+
+	// Creating Buffer to hold data
+	ID3D12Resource* bufferData;
+	uint32_t bufferSize = ((texWidth * footprint.Footprint.RowPitch) + 255) & ~255; // TODO: align pls by 256
+
+	D3D12_RESOURCE_DESC bufferDesc{
+	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
+	bufferDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT,
+	bufferDesc.Width = bufferSize,
+	bufferDesc.Height = 1,
+	bufferDesc.DepthOrArraySize = 1,
+	bufferDesc.MipLevels = 1,
+	bufferDesc.Format = DXGI_FORMAT_UNKNOWN,
+	bufferDesc.SampleDesc.Count = 1,
+	bufferDesc.SampleDesc.Quality = 0,
+	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
+	bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE
+	};
+	CD3DX12_HEAP_PROPERTIES heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	HRESULT hr = g_Device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, IID_PPV_ARGS(&bufferData));
+	if (!SUCCEEDED(hr))
+		printf("Create committed resource failed (0x%08X)", hr);
+
+	D3D12_TEXTURE_COPY_LOCATION copyLocation;
+	copyLocation.pResource = textureResource;
+	copyLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	copyLocation.SubresourceIndex = 0;
+
+	D3D12_TEXTURE_COPY_LOCATION srcLocation;
+	srcLocation.pResource = bufferData;
+	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	srcLocation.PlacedFootprint = footprint;
+
+	D3D12_BOX texBox;
+	texBox.top = 0;
+	texBox.left = 0;
+	texBox.bottom = texHeight;
+	texBox.right = texWidth;
+	texBox.front = 0;
+	texBox.back = 1;
+
+	// Copying texture data to buffer
+	void* vbibData;
+	HRESULT result = bufferData->Map(0, NULL, &vbibData);
+	if (!SUCCEEDED(result))
+		printf("Map failed (0x%08X)", result);
+
+	memset(vbibData, 0, bufferSize);
+	uint8_t* uploadStart = (uint8_t*)vbibData;
+	uint8_t* sourceStart = pixelBuffer;
+	uint32_t sourcePitch = (texWidth * sizeof(uint32_t));
+	for (uint32_t i = 0; i < texHeight; i++)
+	{
+		memcpy(
+			uploadStart + (i * footprint.Footprint.RowPitch),
+			sourceStart + (i * sourcePitch),
+			sourcePitch
+		);
+	}
+
+	// Copying texture buffer to srv
+	g_CommandList->CopyTextureRegion(&copyLocation, 0, 0, 0, &srcLocation, &texBox);
+
+	textureResource->SetName(L"Texture");
+	return new DreamPointer(m_DescriptorHeapCount - 1,textureResource);
 }
 
 void DreamDX12Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
@@ -799,151 +927,157 @@ void DreamDX12Graphics::AddVertexLayoutData(std::string dataName, int size, unsi
 
 DreamPointer* DreamDX12Graphics::FinalizeVertexLayout()
 {
-	return nullptr;
+	int size = vertDesc.size();
+	D3D12_INPUT_ELEMENT_DESC* descArray = new D3D12_INPUT_ELEMENT_DESC[size];
+	std::copy(vertDesc.begin(), vertDesc.end(), descArray);
+
+	vertDesc.clear();
+	vertexStrideCount = 0;
+	layoutStarted = false;
+
+	return new DreamPointer(descArray, sizeof(D3D12_INPUT_ELEMENT_DESC) * size);
 }
 
-std::vector<CD3DX12_DESCRIPTOR_RANGE> tableRangeList;
-std::vector<CD3DX12_ROOT_PARAMETER> rootParametersList;
-ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeLineDesc) {
-	if (layoutStarted) {
+ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeLineDesc, std::vector<CD3DX12_DESCRIPTOR_RANGE>& tableRangeList, std::vector<CD3DX12_ROOT_PARAMETER>& rootParametersList, DreamPointer* vertexLayoutPtr) {
+	ID3D12RootSignature* rootSig;
 
-		ID3D12RootSignature* rootSig;
+	// Creating root signiture
+	{
+		//CD3DX12_DESCRIPTOR_RANGE  tableRange[3] = {};
+		//tableRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		//tableRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
+		//tableRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
+		//
+		//CD3DX12_ROOT_PARAMETER rootParameters[3] = {};
+		//rootParameters[0].InitAsDescriptorTable(1, &tableRange[0], D3D12_SHADER_VISIBILITY_VERTEX);
+		//rootParameters[1].InitAsDescriptorTable(1, &tableRange[1], D3D12_SHADER_VISIBILITY_VERTEX);
+		//rootParameters[2].InitAsDescriptorTable(1, &tableRange[2], D3D12_SHADER_VISIBILITY_PIXEL);
+		
 
-		// Creating root signiture
+		//D3D12_ROOT_DESCRIPTOR_TABLE table;
+		//table.NumDescriptorRanges = 1;
+		//table.pDescriptorRanges = tableRange;
+		
+		//D3D12_ROOT_PARAMETER rootParam[1] = {};
+		//rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		//rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		//rootParam[0].DescriptorTable = table;
+
+		//rootParam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		//rootParam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		//rootParam[1].DescriptorTable = table;
+		//rootParam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		//rootParam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+		//rootParam[2].Constants.Num32BitValues = 1;
+		
+		//D3D12_STATIC_SAMPLER_DESC sampleDec[1] = {};
+		//sampleDec[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		//sampleDec[0].Filter = D3D12_FILTER_ANISOTROPIC;
+		//sampleDec[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		//sampleDec[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		//sampleDec[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		//sampleDec[0].MaxLOD = 1000.0f;
+		//sampleDec[0].MaxAnisotropy = 16;
+
+		// create a static sampler
+		D3D12_STATIC_SAMPLER_DESC sampler = {};
+		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.MipLODBias = 0;
+		sampler.MaxAnisotropy = 0;
+		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		sampler.MinLOD = 0.0f;
+		sampler.MaxLOD = D3D12_FLOAT32_MAX;
+		sampler.ShaderRegister = 0;
+		sampler.RegisterSpace = 0;
+		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		D3D12_ROOT_SIGNATURE_DESC signature;
+		signature.NumParameters = rootParametersList.size();
+		signature.pParameters = &rootParametersList[0];
+		signature.NumStaticSamplers = 1;
+		signature.pStaticSamplers = &sampler;
+		signature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+		ID3DBlob* rsBlob;
+		ID3DBlob* errorBlob;
+
+		HRESULT hr = D3D12SerializeRootSignature(&signature, D3D_ROOT_SIGNATURE_VERSION_1, &rsBlob, &errorBlob);
+		const char* err = "";
+		if (!SUCCEEDED(hr))
 		{
-			//CD3DX12_DESCRIPTOR_RANGE  tableRange[3] = {};
-			//tableRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-			//tableRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-			//tableRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
-			//
-			//CD3DX12_ROOT_PARAMETER rootParameters[3] = {};
-			//rootParameters[0].InitAsDescriptorTable(1, &tableRange[0], D3D12_SHADER_VISIBILITY_VERTEX);
-			//rootParameters[1].InitAsDescriptorTable(1, &tableRange[1], D3D12_SHADER_VISIBILITY_VERTEX);
-			//rootParameters[2].InitAsDescriptorTable(1, &tableRange[2], D3D12_SHADER_VISIBILITY_PIXEL);
+			err = (const char*)errorBlob->GetBufferPointer();
+			printf("D3D12SerializeRootSignature failed (0x%08X) (%s)", hr, (char*)(errorBlob->GetBufferPointer()));
 			
+		}
 
-			//D3D12_ROOT_DESCRIPTOR_TABLE table;
-			//table.NumDescriptorRanges = 1;
-			//table.pDescriptorRanges = tableRange;
-			
-			//D3D12_ROOT_PARAMETER rootParam[1] = {};
-			//rootParam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-			//rootParam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			//rootParam[0].DescriptorTable = table;
+		hr = g_Device->CreateRootSignature(
+			0,
+			rsBlob->GetBufferPointer(),
+			rsBlob->GetBufferSize(),
+			IID_PPV_ARGS(&rootSig)
+		);
 
-			//rootParam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-			//rootParam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			//rootParam[1].DescriptorTable = table;
-			//rootParam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-			//rootParam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-			//rootParam[2].Constants.Num32BitValues = 1;
-			
-			//D3D12_STATIC_SAMPLER_DESC sampleDec[1] = {};
-			//sampleDec[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-			//sampleDec[0].Filter = D3D12_FILTER_ANISOTROPIC;
-			//sampleDec[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-			//sampleDec[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-			//sampleDec[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-			//sampleDec[0].MaxLOD = 1000.0f;
-			//sampleDec[0].MaxAnisotropy = 16;
-
-			for (int i = 0; i < tableRangeList.size(); i++) {
-				rootParametersList.push_back(CD3DX12_ROOT_PARAMETER());
-				rootParametersList[i].InitAsDescriptorTable(1, &tableRangeList[i]);
-			}
-
-			D3D12_ROOT_SIGNATURE_DESC signature;
-			signature.NumParameters = rootParametersList.size();
-			signature.pParameters = &rootParametersList[0];
-			signature.NumStaticSamplers = 0;
-			signature.pStaticSamplers = NULL;
-			signature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT; // D3D12_ROOT_SIGNATURE_FLAG_NONE;
-
-			ID3DBlob* rsBlob;
-			ID3DBlob* errorBlob;
-
-			HRESULT hr = D3D12SerializeRootSignature(&signature, D3D_ROOT_SIGNATURE_VERSION_1, &rsBlob, &errorBlob);
-			const char* err = "";
-			if (!SUCCEEDED(hr))
-			{
-				err = (const char*)errorBlob->GetBufferPointer();
-				printf("D3D12SerializeRootSignature failed (0x%08X) (%s)", hr, (char*)(errorBlob->GetBufferPointer()));
-				
-			}
-
-			hr = g_Device->CreateRootSignature(
-				0,
-				rsBlob->GetBufferPointer(),
-				rsBlob->GetBufferSize(),
-				IID_PPV_ARGS(&rootSig)
-			);
-
-			if (!SUCCEEDED(hr)) {
-				printf("CreateRootSignature failed (0x%08X)", hr);
-				rsBlob->Release();
-				return nullptr;
-			}
-
+		if (!SUCCEEDED(hr)) {
+			printf("CreateRootSignature failed (0x%08X)", hr);
 			rsBlob->Release();
+			return nullptr;
 		}
 
-		// Setting up pipelineDesc
-		D3D12_RASTERIZER_DESC rasterizeDesc{};
-		rasterizeDesc.FillMode = D3D12_FILL_MODE_SOLID;
-		rasterizeDesc.CullMode = D3D12_CULL_MODE_BACK;
-
-
-		D3D12_INPUT_LAYOUT_DESC layoutDesc{};
-		layoutDesc.NumElements = (UINT)vertDesc.size();
-		layoutDesc.pInputElementDescs = &vertDesc[0];
-
-		D3D12_DEPTH_STENCILOP_DESC depthStencilOpDesc{};
-		depthStencilOpDesc.StencilFailOp = D3D12_STENCIL_OP_ZERO;
-		depthStencilOpDesc.StencilDepthFailOp = D3D12_STENCIL_OP_ZERO;
-		depthStencilOpDesc.StencilPassOp = D3D12_STENCIL_OP_ZERO;
-
-
-		D3D12_DEPTH_STENCIL_DESC depthDesc{};
-		depthDesc.StencilEnable = FALSE;
-		depthDesc.DepthEnable = FALSE;
-		depthDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-		depthDesc.FrontFace = depthStencilOpDesc;
-		depthDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
-		pipeLineDesc.pRootSignature = rootSig;
-		pipeLineDesc.SampleMask = 0xFFFFFFFF;
-		pipeLineDesc.RasterizerState = rasterizeDesc;
-		pipeLineDesc.InputLayout = layoutDesc;
-		pipeLineDesc.DepthStencilState = depthDesc;
-		pipeLineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-		pipeLineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		pipeLineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		pipeLineDesc.NumRenderTargets = 1;
-		pipeLineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		pipeLineDesc.SampleDesc.Count = 1;
-
-		ID3D12PipelineState* graphicsPipeline;
-		HRESULT result = g_Device->CreateGraphicsPipelineState(&pipeLineDesc, IID_PPV_ARGS(&graphicsPipeline));
-		graphicsPipeline->SetName(L"Graphics Pipeline");
-		rootSig->SetName(L"Root Signature");
-
-		if (result != S_OK) {
-			printf("ERROR: Could not create Input Layout!");
-		}
-
-		vertDesc.clear();
-		vertexStrideCount = 0;
-
-		tableRangeList.clear();
-		rootParametersList.clear();
-
-		return graphicsPipeline;
-	}
-	else {
-		printf("ERROR: No Vertex Layout creation process has started! Can't Finalize Data");
+		rsBlob->Release();
 	}
 
-	return nullptr;
+	// Setting up pipelineDesc
+	D3D12_RASTERIZER_DESC rasterizeDesc{};
+	rasterizeDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	rasterizeDesc.CullMode = D3D12_CULL_MODE_BACK;
+
+	D3D12_INPUT_ELEMENT_DESC* vertLayout = (D3D12_INPUT_ELEMENT_DESC*)vertexLayoutPtr->GetStoredPointer();
+
+	D3D12_INPUT_LAYOUT_DESC layoutDesc{};
+	layoutDesc.NumElements = vertexLayoutPtr->GetPtrBlockSize() / sizeof(D3D12_INPUT_ELEMENT_DESC);
+	layoutDesc.pInputElementDescs = vertLayout;
+
+	D3D12_DEPTH_STENCILOP_DESC depthStencilOpDesc{};
+	depthStencilOpDesc.StencilFailOp = D3D12_STENCIL_OP_ZERO;
+	depthStencilOpDesc.StencilDepthFailOp = D3D12_STENCIL_OP_ZERO;
+	depthStencilOpDesc.StencilPassOp = D3D12_STENCIL_OP_ZERO;
+
+
+	D3D12_DEPTH_STENCIL_DESC depthDesc{};
+	depthDesc.StencilEnable = FALSE;
+	depthDesc.DepthEnable = FALSE;
+	depthDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	depthDesc.FrontFace = depthStencilOpDesc;
+	depthDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+	pipeLineDesc.pRootSignature = rootSig;
+	pipeLineDesc.SampleMask = 0xFFFFFFFF;
+	pipeLineDesc.RasterizerState = rasterizeDesc;
+	pipeLineDesc.InputLayout = layoutDesc;
+	pipeLineDesc.DepthStencilState = depthDesc;
+	pipeLineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	pipeLineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	pipeLineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	pipeLineDesc.NumRenderTargets = 1;
+	pipeLineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	pipeLineDesc.SampleDesc.Count = 1;
+
+	ID3D12PipelineState* graphicsPipeline;
+	HRESULT result = g_Device->CreateGraphicsPipelineState(&pipeLineDesc, IID_PPV_ARGS(&graphicsPipeline));
+	graphicsPipeline->SetName(L"Graphics Pipeline");
+	rootSig->SetName(L"Root Signature");
+
+	if (result != S_OK) {
+		printf("ERROR: Could not create Input Layout!");
+	}
+
+	tableRangeList.clear();
+
+	return graphicsPipeline;
 }
 
 void DreamDX12Graphics::BindGraphicPipeLine(ID3D12PipelineState* pipeline, ID3D12RootSignature* rootSig, unsigned int heapCount) {
@@ -1020,14 +1154,6 @@ DreamShader* DreamDX12Graphics::LoadShader(const wchar_t* file, ShaderType shade
 		break;
 	}
 	}
-
-	for (int i = 0; i < resources.uniforms.size(); i++) {
-		uint32_t location = tableRangeList.size();
-
-		tableRangeList.push_back(CD3DX12_DESCRIPTOR_RANGE());
-		tableRangeList[location].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, location);
-	}
-
 
 	version.append("_5_0");
 
@@ -1209,18 +1335,24 @@ void DreamDX12ShaderLinker::AttachShader(DreamShader* shader)
 	size_t byteCodeLenghth = shaderBlob->GetBufferSize();
 	void* shaderCodePtr = shaderBlob->GetBufferPointer();
 
+	D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_ALL;
+
 	switch (shader->GetShaderType()) {
 	case VertexShader: {
+		visibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_VERTEX;
+		vertexInputLayout = shader->GetInputLayout();
 		pipeLineDesc.VS.BytecodeLength = byteCodeLenghth;
 		pipeLineDesc.VS.pShaderBytecode = shaderCodePtr;
 		break;
 	}
 	case PixelShader: {
+		visibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_PIXEL;
 		pipeLineDesc.PS.BytecodeLength = byteCodeLenghth;
 		pipeLineDesc.PS.pShaderBytecode = shaderCodePtr;
 		break;
 	}
 	case GeometryShader: {
+		visibility = D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_GEOMETRY;
 		pipeLineDesc.GS.BytecodeLength = byteCodeLenghth;
 		pipeLineDesc.GS.pShaderBytecode = shaderCodePtr;
 		break;
@@ -1238,6 +1370,31 @@ void DreamDX12ShaderLinker::AttachShader(DreamShader* shader)
 
 	}
 
+
+	for (int i = 0; i < shader->shaderResources.uniforms.size(); i++) {
+		uint32_t location = tableRangeList.size();
+
+		tableRangeList.push_back(CD3DX12_DESCRIPTOR_RANGE());
+		tableRangeList.back().Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, location);
+
+		rootParametersList.push_back(CD3DX12_ROOT_PARAMETER());
+		rootParametersList.back().ShaderVisibility = visibility;
+	}
+	for (auto& binding : shader->shaderResources.samplerBindings) {
+
+		tableRangeList.push_back(CD3DX12_DESCRIPTOR_RANGE());
+		tableRangeList.back().Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, binding.second);
+
+		rootParametersList.push_back(CD3DX12_ROOT_PARAMETER());
+		rootParametersList.back().ShaderVisibility = visibility;
+
+		tableRangeList.push_back(CD3DX12_DESCRIPTOR_RANGE());
+		tableRangeList.back().Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, binding.second);
+
+		rootParametersList.push_back(CD3DX12_ROOT_PARAMETER());
+		rootParametersList.back().ShaderVisibility = visibility;
+	}
+
 	linkedShaders.push_back(shader);
 }
 
@@ -1253,17 +1410,35 @@ void DreamDX12ShaderLinker::Finalize()
 		}
 	}
 
-	pipelineState = dx12Graphics->CreateGraphicPipeLine(pipeLineDesc);
+	for (int i = 0; i < rootParametersList.size(); i++) {
+		rootParametersList[i].InitAsDescriptorTable(1, &tableRangeList[i]);
+	}
+	pipelineState = dx12Graphics->CreateGraphicPipeLine(pipeLineDesc, tableRangeList, rootParametersList, vertexInputLayout);
 }
 
 // TODO: Make a SetGraphicsPipeline function
-void DreamDX12ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
+void DreamDX12ShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap)
 {
 	dx12Graphics->BindGraphicPipeLine(pipelineState, pipeLineDesc.pRootSignature);
 
 	uint32_t curFrame = DreamGraphics::GetInstance()->currentFrame;
 	uint32_t maxFramesInFlight = DreamGraphics::GetInstance()->GetMaxFramesInFlight();
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
+		for (auto& samplerData : linkedShaders[i]->shaderResources.samplerBindings) {
+			int index = (indexStore[samplerData.first] * maxFramesInFlight) + curFrame;
+			std::string name = samplerData.first;
+
+			if (!texMap.contains(name)) {
+				continue;
+			}
+
+			unsigned int bindPoint = bindingPoints[name];
+			unsigned int bindIndex = samplerData.second;
+
+			//ID3D12Resource* texResource = (ID3D12Resource*)texMap[name]->GetTexturePointer()->GetStoredPointer();
+			dx12Graphics->BindDescriptorTable(bindIndex, texMap[name]->GetTexturePointer()->GetStoredHandle());
+		}
+
 		for (auto& uniformData : linkedShaders[i]->shaderResources.uniforms) {
 			int index = (indexStore[uniformData.first] * maxFramesInFlight) + curFrame;
 
