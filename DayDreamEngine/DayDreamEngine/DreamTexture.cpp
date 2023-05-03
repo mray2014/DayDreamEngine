@@ -5,7 +5,7 @@
 
 #include <stb_image.h>
 
-DreamTexture::DreamTexture(const char* filePath)
+DreamTexture::DreamTexture(const char* filePath, TextureType texType) : type(texType)
 {
 	stbi_set_flip_vertically_on_load(true);
 	stbi_uc* pixels = stbi_load(filePath, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

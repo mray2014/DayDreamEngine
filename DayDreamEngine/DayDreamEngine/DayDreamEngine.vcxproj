@@ -1241,6 +1241,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Platform\Universal\Libs\pch.cpp" />
+    <ClCompile Include="DreamAssetManager.cpp" />
     <ClCompile Include="DreamCameraManager.cpp" />
     <ClCompile Include="DayDreamEngine.cpp" />
     <ClCompile Include="DreamBuffer.cpp" />
@@ -1336,6 +1337,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Platform\Universal\Includes\pch.h" />
+    <ClInclude Include="DreamAssetManager.h" />
     <ClInclude Include="DreamCameraManager.h" />
     <ClInclude Include="DreamCamera.h" />
     <ClInclude Include="DreamBuffer.h" />

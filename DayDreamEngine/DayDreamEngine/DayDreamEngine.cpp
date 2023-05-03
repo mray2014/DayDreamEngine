@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <iostream>
 #include "DreamGraphics.h"
+#include "DreamAssetManager.h"
 #include "DreamMesh.h"
 #include <DreamAllocatorManager.h>
 #include <DreamFileIO.h>
@@ -93,92 +94,32 @@ int main()
 
 	//graphics->SetViewPort(0,0, 200, 200); // TODO: doesnt work halp ;-;
 
-	DreamShader* vertexShader = graphics->LoadShader(L"vertex", ShaderType::VertexShader);
-	DreamShader* pixelShader = graphics->LoadShader(L"pixel", ShaderType::PixelShader);
-	DreamShader* textureVertexShader = graphics->LoadShader(L"Texture_vertex", ShaderType::VertexShader);
-	DreamShader* texturePixelShader = graphics->LoadShader(L"Texture_pixel", ShaderType::PixelShader);
+	DreamAssetManager* assetManager = DreamAssetManager::GetInstance();
+	assetManager->LoadAssets();
 
-	DreamShaderLinker* defaultLinker = DreamGraphics::GenerateShaderLinker();
-	defaultLinker->AttachShader(vertexShader);
-	defaultLinker->AttachShader(pixelShader);
-	defaultLinker->Finalize();
+	DreamMaterial* defaultMat = new DreamMaterial(assetManager->GetShaderLinker("defaultShaderLinker"));
+	DreamMaterial* TextureMat = new DreamMaterial(assetManager->GetShaderLinker("textureShaderLinker"));
+	TextureMat->StoreTexture("texSampler", assetManager->GetTexture("HUH"));
 
-	DreamShaderLinker* textureLinker = DreamGraphics::GenerateShaderLinker();
-	textureLinker->AttachShader(textureVertexShader);
-	textureLinker->AttachShader(texturePixelShader);
-	textureLinker->Finalize();
-
-	DreamTexture* texture = new DreamTexture("Textures/HUH.jpg");
-	DreamTexture* frenchFriesTexture = new DreamTexture("Textures/FrenchFries.jpg");
-
-	DreamMaterial* defaultMat = new DreamMaterial(defaultLinker);
-	DreamMaterial* TextureMat = new DreamMaterial(textureLinker);
-	TextureMat->StoreTexture("texSampler", texture);
-
-	std::vector<uint32_t> indices = std::vector<uint32_t>();
-
-	std::vector<DreamVertex> vert = std::vector<DreamVertex>();
-	vert.push_back(DreamVertex(-0.5, -0.5, 0.0f));
-	vert.push_back(DreamVertex(0.0, 0.5, 0.0f));
-	vert.push_back(DreamVertex(0.5, -0.5, 0.0f));
-	vert.push_back(DreamVertex(1.0, 0.5, 0.0f));
-
-	std::vector<DreamVertex> vert2 = std::vector<DreamVertex>();
-	vert2.push_back(DreamVertex(-0.5, -0.5, 0.0f));
-	vert2.push_back(DreamVertex(0.0, 2.0f, 0.0f));
-	vert2.push_back(DreamVertex(0.5, -0.5, 0.0f));
-	vert2.push_back(DreamVertex(1.0, 0.5, 0.0f));
-
-	std::vector<DreamVertex> vert3_Index = std::vector<DreamVertex>();
-	vert3_Index.push_back(DreamVertex(-1, -1, 0.0f));
-	vert3_Index.push_back(DreamVertex(-1, 1, 0.0f));
-	vert3_Index.push_back(DreamVertex(1, -1, 0.0f));
-	vert3_Index.push_back(DreamVertex(1, 1, 0.0f));
-
-	vert3_Index[0].uv = DreamVector2(0, 0);
-	vert3_Index[1].uv = DreamVector2(0, 1);
-	vert3_Index[2].uv = DreamVector2(1, 0);
-	vert3_Index[3].uv = DreamVector2(1, 1);
-
-	std::vector<DreamVertex> vert3_Vert = std::vector<DreamVertex>();
-	vert3_Vert.push_back(DreamVertex(-0.5, -1, 0.0f));
-	vert3_Vert.push_back(DreamVertex(-0.5, 1, 0.0f));
-	vert3_Vert.push_back(DreamVertex(0.5, -1, 0.0f));
-	vert3_Vert.push_back(DreamVertex(0.5, -1, 0.0f));
-	vert3_Vert.push_back(DreamVertex(-0.5, 1, 0.0f));
-	vert3_Vert.push_back(DreamVertex(0.5, 1, 0.0f));
-
-	vert3_Vert[0].uv = DreamVector2(0, 0);
-	vert3_Vert[1].uv = DreamVector2(0, 1);
-	vert3_Vert[2].uv = DreamVector2(1, 0);
-	vert3_Vert[3].uv = DreamVector2(1, 0);
-	vert3_Vert[4].uv = DreamVector2(0, 1);
-	vert3_Vert[5].uv = DreamVector2(1, 1);
-
-	indices.push_back(0);
-	indices.push_back(1);
-	indices.push_back(2);
-	indices.push_back(2);
-	indices.push_back(1);
-	indices.push_back(3);
-
-	DreamMesh* triangleMesh = new DreamMesh(vert2);
-	DreamMesh* parallogramMesh = new DreamMesh(vert, indices);
-
-	DreamMesh* squareMesh = new DreamMesh(vert3_Index, indices);
-	//DreamMesh* squareMesh = new DreamMesh(vert3_Vert);
+	DreamMaterial* TextureMat2 = new DreamMaterial(assetManager->GetShaderLinker("textureShaderLinker"));
+	TextureMat2->StoreTexture("texSampler", assetManager->GetTexture("FrenchFries"));
 
 	std::vector<DreamGameObject*> objList;
-	DreamGameObject* triangleObj = new DreamGameObject(triangleMesh, defaultMat);
-	DreamGameObject* parallogramObj = new DreamGameObject(parallogramMesh, defaultMat);
-	DreamGameObject* squareObj = new DreamGameObject(squareMesh, TextureMat); // TODO: can't use same material on Vulkan Api
+	DreamGameObject* triangleObj = new DreamGameObject(assetManager->GetMesh("triangleMesh"), defaultMat);
+	DreamGameObject* parallogramObj = new DreamGameObject(assetManager->GetMesh("parallogramMesh"), defaultMat);
+	DreamGameObject* squareObj = new DreamGameObject(assetManager->GetMesh("squareMesh"), TextureMat); // TODO: can't use same material on Vulkan Api
+	DreamGameObject* squareObj2 = new DreamGameObject(assetManager->GetMesh("squareMesh"), TextureMat2); // TODO: can't use same material on Vulkan Api
 	objList.push_back(parallogramObj);
 	objList.push_back(triangleObj);
 	objList.push_back(squareObj);
+	objList.push_back(squareObj2);
 
 	parallogramObj->transform.position = DreamVector3(0, 0, -5);
 	squareObj->transform.position = DreamVector3(3, 0, -3);
 	squareObj->transform.Rotate(DreamVector3(0, 45, 0));
+
+	squareObj2->transform.position = DreamVector3(-3, 0, -3);
+	squareObj2->transform.Rotate(DreamVector3(0, -45, 0));
 
 
 	DreamCameraManager* camManager = DreamCameraManager::GetInstance();
@@ -220,19 +161,8 @@ int main()
 		objList.clear();
 	}
 
-	if (triangleMesh) {
-		delete triangleMesh;
-		triangleMesh = nullptr;
-	}
-
-	if (parallogramMesh) {
-		delete parallogramMesh;
-		parallogramMesh = nullptr;
-	}
-
 	// TODO: Garbage Collector? delay deletes till end of frame [MarkForDeletion]
-	graphics->ReleaseShader(vertexShader);
-	graphics->ReleaseShader(pixelShader);
+	DreamAssetManager::DestroyInstance();
 	graphics->DestroyWindow();
 	graphics->TerminateGraphics();
 
