@@ -318,7 +318,7 @@ void DreamGLGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 	
 }
 
-void DreamGLGraphics::BindTexture(DreamTexture* texture, int bindingPoint)
+void DreamGLGraphics::BindTexture(DreamTexture* texture, int bindingPoint, ShaderType shaderType)
 {
 	glActiveTexture(GL_TEXTURE0 + bindingPoint);
 	glBindTexture(GL_TEXTURE_2D, texture->GetTexturePointer()->GetStoredHandle());
@@ -699,7 +699,7 @@ void DreamGLShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std::uno
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
 		for (auto& samplers : linkedShaders[i]->shaderResources.samplerBindings) {
 			if (texMap.contains(samplers.first)) {
-				DreamGraphics::GetInstance()->BindTexture(texMap[samplers.first], samplers.second);
+				DreamGraphics::GetInstance()->BindTexture(texMap[samplers.first], samplers.second, linkedShaders[i]->GetShaderType());
 			}
 			else {
 				printf("MISSING BOUND TEXTURE: %s", samplers.first);

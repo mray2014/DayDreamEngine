@@ -205,6 +205,17 @@ long DreamDX11Graphics::InitGraphics()
 		depthBufferTexture->Release();
 	}
 
+	// Create generic sampler for textures
+	D3D11_SAMPLER_DESC tDes = {};
+	tDes.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	tDes.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	tDes.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	tDes.Filter = D3D11_FILTER_ANISOTROPIC;
+	tDes.MaxAnisotropy = 16;
+	tDes.MaxLOD = D3D11_FLOAT32_MAX;
+
+	device->CreateSamplerState(&tDes, &textureSampler);
+
 	// Bind the views to the pipeline, so rendering properly 
 	// uses their underlying textures
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
@@ -418,7 +429,33 @@ DreamBuffer* DreamDX11Graphics::GenerateBuffer(BufferType type, size_t bufferSiz
 
 DreamPointer* DreamDX11Graphics::GenerateTexture(unsigned char* textureData, int texWidth, int texHeight)
 {
-	return nullptr;
+	DXGI_SAMPLE_DESC sampleDesc = {0};
+	sampleDesc.Count = 1;
+
+	D3D11_TEXTURE2D_DESC tdesc = {0};
+	tdesc.Width = texWidth;
+	tdesc.Height = texHeight;
+	tdesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	tdesc.Usage = D3D11_USAGE_DYNAMIC;
+	tdesc.BindFlags = D3D11_BIND_SHADER_RESOURCE; // Add D3D11_BIND_RENDER_TARGET if you want to go
+	tdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	tdesc.MiscFlags = 0; // or D3D11_RESOURCE_MISC_GENERATE_MIPS for auto-mip gen.
+	tdesc.MipLevels = 1;
+	tdesc.ArraySize = 1;
+	tdesc.SampleDesc = sampleDesc;
+
+	D3D11_SUBRESOURCE_DATA srd = {0}; // (or an array of these if you have more than one mip level)
+	srd.pSysMem = textureData; // This data should be in raw pixel format
+	srd.SysMemPitch = texWidth * 4; // Sometimes pixel rows may be padded so this might not be as simple as width * pixel_size_in_bytes.
+	srd.SysMemSlicePitch = 0;
+
+	ID3D11Texture2D* texture; // TODO: store somewhere to delete later
+	device->CreateTexture2D(&tdesc, &srd, &texture);
+
+	ID3D11ShaderResourceView* texRTV;
+	device->CreateShaderResourceView(texture, NULL, &texRTV);
+
+	return new DreamPointer(texRTV, texWidth * texHeight);
 }
 
 void DreamDX11Graphics::UpdateBufferData(DreamBuffer* buffer, void* bufferData, size_t bufSize, VertexDataUsage dataUsage)
@@ -451,8 +488,19 @@ void DreamDX11Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 	}
 	}
 }
-void DreamDX11Graphics::BindTexture(DreamTexture* texture, int bindingPoint)
+void DreamDX11Graphics::BindTexture(DreamTexture* texture, int bindingPoint, ShaderType shaderType)
 {
+	ID3D11ShaderResourceView* srv = (ID3D11ShaderResourceView*)texture->GetTexturePointer()->GetStoredPointer();
+	switch (shaderType) {
+	case ShaderType::VertexShader: {
+		context->VSSetSamplers(bindingPoint, 1, &textureSampler);
+		context->VSSetShaderResources(bindingPoint, 1, &srv);
+	}
+	case ShaderType::PixelShader: {
+		context->PSSetSamplers(bindingPoint, 1, &textureSampler);
+		context->PSSetShaderResources(bindingPoint, 1, &srv);
+	}
+	}
 }
 void DreamDX11Graphics::BindUniformBuffer(ShaderType shaderType, DreamBuffer* buffer, unsigned int slotNum) {
 	ID3D11Buffer* buff = (ID3D11Buffer*)buffer->GetBufferPointer().GetStoredPointer();
@@ -991,9 +1039,9 @@ LRESULT DreamDX11Graphics::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, L
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-void DreamDX11Graphics::BindVertexLayout(DreamBuffer* layout)
+void DreamDX11Graphics::BindVertexLayout(DreamPointer* layout)
 {
-	context->IASetInputLayout((ID3D11InputLayout*)layout->GetBufferPointer().GetStoredPointer());
+	context->IASetInputLayout((ID3D11InputLayout*)layout->GetStoredPointer());
 }
 
 void DreamDX11Graphics::UnBindVertexLayout()
@@ -1018,18 +1066,27 @@ void DreamDX11ShaderLinker::Finalize()
 {
 }
 
-void DreamDX11ShaderLinker::BindShaderLink(UniformIndexStore& indexStore)
+void DreamDX11ShaderLinker::BindShaderLink(UniformIndexStore& indexStore, std::unordered_map<std::string, DreamTexture*> texMap)
 {
 	DreamDX11Graphics* dxGraphics = (DreamDX11Graphics*)graphics;
 
 	for (size_t i = 0; i < linkedShaders.size(); i++) {
 		if (linkedShaders[i]->GetShaderType() == VertexShader) {
-			DreamBuffer* layout = linkedShaders[i]->GetInputLayout();
+			DreamPointer* layout = linkedShaders[i]->GetInputLayout();
 			if (layout) {
 				dxGraphics->BindVertexLayout(layout);
 			}
 			else {
 				printf("Vertex Input lLayout didnt exsist!");
+			}
+		}
+
+		for (auto& samplers : linkedShaders[i]->shaderResources.samplerBindings) {
+			if (texMap.contains(samplers.first)) {
+				dxGraphics->BindTexture(texMap[samplers.first], samplers.second, linkedShaders[i]->GetShaderType());
+			}
+			else {
+				printf("MISSING BOUND TEXTURE: %s", samplers.first);
 			}
 		}
 

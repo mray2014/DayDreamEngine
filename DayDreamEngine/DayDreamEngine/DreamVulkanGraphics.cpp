@@ -1348,7 +1348,7 @@ void DreamVulkanGraphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 	}
 }
 
-void DreamVulkanGraphics::BindTexture(DreamTexture* texture, int bindingPoint)
+void DreamVulkanGraphics::BindTexture(DreamTexture* texture, int bindingPoint, ShaderType shaderType)
 {
 }
 

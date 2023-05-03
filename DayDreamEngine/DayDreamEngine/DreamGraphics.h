@@ -44,7 +44,7 @@ public:
 	virtual DreamPointer* GenerateTexture(unsigned char* textureData, int texWidth, int texHeight) = 0;
 	virtual void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) = 0;
 	virtual void BindBuffer(BufferType type, DreamBuffer* buffer) = 0;
-	virtual void BindTexture(DreamTexture* texture, int bindingPoint) = 0;
+	virtual void BindTexture(DreamTexture* texture, int bindingPoint, ShaderType shaderType) = 0;
 	virtual void BeginVertexLayout() = 0;
 	virtual void AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf) = 0;
 	virtual DreamPointer* FinalizeVertexLayout() = 0;

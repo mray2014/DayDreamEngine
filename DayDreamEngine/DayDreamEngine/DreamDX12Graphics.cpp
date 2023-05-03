@@ -866,7 +866,7 @@ void DreamDX12Graphics::BindBuffer(BufferType type, DreamBuffer* buffer)
 	}
 }
 
-void DreamDX12Graphics::BindTexture(DreamTexture* texture, int bindingPoint)
+void DreamDX12Graphics::BindTexture(DreamTexture* texture, int bindingPoint, ShaderType shaderType)
 {
 }
 

@@ -39,7 +39,7 @@ public:
 	DreamPointer* GenerateTexture(unsigned char* pixelBuffer, int texWidth, int texHeight) override;
 	void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) override;
 	void BindBuffer(BufferType type, DreamBuffer* buffer) override;
-	void BindTexture(DreamTexture* texture, int bindingPoint) override;
+	void BindTexture(DreamTexture* texture, int bindingPoint, ShaderType shaderType) override;
 	void BeginVertexLayout() override;
 	void AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf) override;
 	DreamPointer* FinalizeVertexLayout() override;
@@ -55,7 +55,7 @@ public:
 	void DestroyWindow() override;
 	void DestroyBuffer(DreamBuffer* buffer) override;
 
-	void BindVertexLayout(DreamBuffer* layout);
+	void BindVertexLayout(DreamPointer* layout);
 	void UnBindVertexLayout();
 
 	void BindUniformBuffer(ShaderType shaderType, DreamBuffer* buffer, unsigned int slotNum);
@@ -86,6 +86,8 @@ private:
 
 	ID3D11RenderTargetView* backBufferRTV = {};
 	ID3D11DepthStencilView* depthStencilView = {};
+
+	ID3D11SamplerState* textureSampler;
 };
 
 class DreamDX11ShaderLinker : public DreamShaderLinker {

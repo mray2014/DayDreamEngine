@@ -87,7 +87,7 @@ public:
 	DreamPointer* GenerateTexture(unsigned char* pixelBuffer, int texWidth, int texHeight) override;
 	void UpdateBufferData(DreamBuffer* buffer, void* bufferData = nullptr, size_t bufSize = 0, VertexDataUsage dataUsage = VertexDataUsage::StaticDraw) override;
 	void BindBuffer(BufferType type, DreamBuffer* buffer) override;
-	void BindTexture(DreamTexture* texture, int bindingPoint) override;
+	void BindTexture(DreamTexture* texture, int bindingPoint, ShaderType shaderType) override;
 	void BeginVertexLayout() override;
 	void AddVertexLayoutData(std::string dataName, int size, unsigned int location, bool shouldNormalize, unsigned int sizeOf) override;
 	DreamPointer* FinalizeVertexLayout() override;
