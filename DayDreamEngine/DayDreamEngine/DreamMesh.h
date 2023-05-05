@@ -12,6 +12,12 @@ struct DreamVertex {
 	DreamVector3 normal;
 	DreamVector2 uv;
 
+	DreamVertex() {
+		pos = DreamVector3(0, 0, 0);
+		normal = DreamVector3(0, 0, 1);
+		uv = DreamVector2(0, 0);
+	}
+
 	DreamVertex(DreamVector3 p) {
 		pos = p;
 		normal = DreamVector3(0, 0, 1);

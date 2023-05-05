@@ -655,7 +655,7 @@ DreamBuffer* DreamDX12Graphics::GenerateBuffer(BufferType type, void* bufferData
 	if (!SUCCEEDED(hr))
 		printf("Create committed resource failed (0x%08X)", hr);
 
-	if (type != TextureBuffer) {
+	if (type == UniformBuffer) {
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = buf->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = bufferSize;
@@ -1034,6 +1034,7 @@ ID3D12PipelineState* DreamDX12Graphics::CreateGraphicPipeLine(D3D12_GRAPHICS_PIP
 	D3D12_RASTERIZER_DESC rasterizeDesc{};
 	rasterizeDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	rasterizeDesc.CullMode = D3D12_CULL_MODE_BACK;
+	//rasterizeDesc.FrontCounterClockwise = true;
 
 	D3D12_INPUT_ELEMENT_DESC* vertLayout = (D3D12_INPUT_ELEMENT_DESC*)vertexLayoutPtr->GetStoredPointer();
 

@@ -85,6 +85,7 @@ int main()
 {
 	UnitTest();
 
+	// TODO: implement BVH or spatial hash to order visble objects in the scene dynamically
 	DreamGraphics* graphics = DreamGraphics::GetInstance();
 
 	graphics->InitWindow(800, 600, "Hey It's a window!");
@@ -109,10 +110,12 @@ int main()
 	DreamGameObject* parallogramObj = new DreamGameObject(assetManager->GetMesh("parallogramMesh"), defaultMat);
 	DreamGameObject* squareObj = new DreamGameObject(assetManager->GetMesh("squareMesh"), TextureMat); // TODO: can't use same material on Vulkan Api
 	DreamGameObject* squareObj2 = new DreamGameObject(assetManager->GetMesh("squareMesh"), TextureMat2); // TODO: can't use same material on Vulkan Api
+	DreamGameObject* cube = new DreamGameObject(assetManager->GetMesh("teapot"), TextureMat); // TODO: can't use same material on Vulkan Api
 	objList.push_back(parallogramObj);
 	objList.push_back(triangleObj);
 	objList.push_back(squareObj);
 	objList.push_back(squareObj2);
+	objList.push_back(cube);
 
 	parallogramObj->transform.position = DreamVector3(0, 0, -5);
 	squareObj->transform.position = DreamVector3(3, 0, -3);
@@ -120,6 +123,8 @@ int main()
 
 	squareObj2->transform.position = DreamVector3(-3, 0, -3);
 	squareObj2->transform.Rotate(DreamVector3(0, -45, 0));
+
+	cube->transform.position = DreamVector3(0, 0, -3);
 
 
 	DreamCameraManager* camManager = DreamCameraManager::GetInstance();

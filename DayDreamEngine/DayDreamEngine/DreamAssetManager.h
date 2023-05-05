@@ -18,6 +18,7 @@ public:
 	DreamShaderLinker* GetShaderLinker(std::string_view name);
 	DreamTexture* GetTexture(std::string_view name);
 
+	void AssimpLoadMeshes(std::string_view name, std::string_view fileName);
 	void StoreMesh(std::string_view name, DreamMesh* mesh);
 	void StoreShader(std::string_view name, DreamShader* shader);
 	void StoreShaderLinker(std::string_view name, DreamShaderLinker* linker);

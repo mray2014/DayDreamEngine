@@ -1,5 +1,7 @@
 #include "DreamAssetManager.h"
-
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 #include "DreamGraphics.h"
 
 DreamAssetManager* DreamAssetManager::assetManager = nullptr;
@@ -26,6 +28,7 @@ DreamAssetManager::DreamAssetManager()
 
 DreamAssetManager::~DreamAssetManager()
 {
+	//TODO: delete all the assets!!
 }
 
 void DreamAssetManager::LoadAssets()
@@ -194,6 +197,58 @@ void DreamAssetManager::LoadHardCodedMeshes()
 
 void DreamAssetManager::LoadAssimpMeshes()
 {
+	AssimpLoadMeshes("cube", "Models/cube.obj");
+	AssimpLoadMeshes("quad", "Models/quad.obj");
+	AssimpLoadMeshes("sphere", "Models/sphere.obj");
+	AssimpLoadMeshes("teapot", "Models/teapot.obj");
+	AssimpLoadMeshes("raygun", "Models/raygun.obj");
+	AssimpLoadMeshes("rainbow_road", "Models/RainbowRoad.obj");
+}
+
+void DreamAssetManager::AssimpLoadMeshes(std::string_view name, std::string_view fileName)
+{
+	Assimp::Importer importer;
+
+	const aiScene* pScene = importer.ReadFile(fileName.data(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+
+	std::vector<DreamVertex> verts;           // Verts we're assembling
+	std::vector<uint32_t> indices;           // Indices of these verts
+
+	unsigned int indCount = 0;
+	unsigned int vertCount = 0;
+	unsigned int vertsPerMesh = 0;
+
+	for (unsigned int i = 0; i < pScene->mNumMeshes; i++) {
+		const aiMesh* paiMesh = pScene->mMeshes[i];
+
+		const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
+
+		for (unsigned int j = 0; j < paiMesh->mNumVertices; j++) {
+			const aiVector3D* pPos = &(paiMesh->mVertices[j]);
+			const aiVector3D* pNormal = &(paiMesh->mNormals[j]);
+			const aiVector3D* pTexCoord = paiMesh->HasTextureCoords(0) ? &(paiMesh->mTextureCoords[0][j]) : &Zero3D;
+
+			DreamVertex v;
+			v.pos = DreamVector3(pPos->x, pPos->y, pPos->z);
+			v.uv = DreamVector2(pTexCoord->x, pTexCoord->y);
+			v.normal = DreamVector3(pNormal->x, pNormal->y, pNormal->z);
+
+			verts.push_back(v);
+			vertCount++;
+		}
+		for (unsigned int j = 0; j < paiMesh->mNumFaces; j++) {
+			const aiFace& Face = paiMesh->mFaces[j];
+			assert(Face.mNumIndices == 3);
+			indices.push_back(Face.mIndices[2] + vertsPerMesh);
+			indices.push_back(Face.mIndices[1] + vertsPerMesh);
+			indices.push_back(Face.mIndices[0] + vertsPerMesh);
+
+			indCount += 3;
+		}
+		vertsPerMesh = vertCount;
+	}
+	StoreMesh(name, new DreamMesh(verts, indices));
+	importer.FreeScene();
 }
 
 void DreamAssetManager::LoadShaders()

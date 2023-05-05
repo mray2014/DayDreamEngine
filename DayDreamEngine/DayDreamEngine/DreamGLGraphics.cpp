@@ -119,7 +119,9 @@ long DreamGLGraphics::InitGraphics()
 			GL_DEBUG_SEVERITY_HIGH,
 			0, nullptr, GL_TRUE);
 	}
-
+	glEnable(GL_CULL_FACE); 
+	glCullFace(GL_BACK); 
+	glFrontFace(GL_CW);
 	return 0;
 }
 
